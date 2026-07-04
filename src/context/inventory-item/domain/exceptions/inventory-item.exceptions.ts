@@ -1,5 +1,5 @@
 import { DomainException } from "@/shared";
-import { MeasurementUnit } from "../value-objects/inventory-item-unit.value-object";
+import { MeasurementUnit } from "../common/constants.common";
 
 
 export class InvalidInventoryNameException extends DomainException {

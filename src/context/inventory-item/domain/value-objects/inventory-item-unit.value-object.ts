@@ -1,11 +1,5 @@
+import { MeasurementUnit } from "../common/constants.common";
 import { InvalidInventoryUnitException } from "../exceptions/inventory-item.exceptions";
-
-/** Unidades de medida soportadas para el inventario. Ampliable según necesidad. */
-export enum MeasurementUnit {
-    Gram = 'GRAM',
-    Milliliter = 'MILLILITER',
-    Unit = 'UNIT',
-};
 
 
 /** Unidad de medida del item, restringida a un conjunto controlado. */
