@@ -86,3 +86,14 @@ export class InsufficientStockException extends DomainException {
         });
     };
 };
+
+
+
+export class InventoryItemNotFoundException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1201',
+            detail: `No se encontró el item de inventario ${itemId}.`
+        });
+    };
+};
