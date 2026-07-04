@@ -22,9 +22,16 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntry> = {
     '1001': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La unidad de medida no es válida.' },
     '1002': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El costo ingresado no es válido.' },
     '1003': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El nombre del item no es válido.' },
+    '1004': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El nombre del tenant no es válido.' },
+    '1005': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El NIT del tenant no es válido.' },
+    '1006': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El slug del tenant no es válido.' },
 
     '1200': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El nombre del item ya se encuentra registrado.' },
-
+    '1201': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El nombre del tenant ya se encuentra registrado.' },
+    '1202': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El NIT del tenant ya se encuentra registrado.' },
+    '1203': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El slug del tenant ya se encuentra registrado.' },
+    '1007': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La descripción del tenant no es válida.' },
+    
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NOT_FOUND, message: 'El recurso solicitado no existe.' },
     '2001': { status: ResponseStatus.Warn, category: ErrorCategory.CONFLICT, message: 'El item ya se encuentra registrado.' },
