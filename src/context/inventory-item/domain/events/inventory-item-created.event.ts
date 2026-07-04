@@ -11,6 +11,7 @@ export class InventoryItemCreatedEvent extends DomainEvent {
     public readonly costCurrency: string;
     public readonly isActive: boolean;
     public readonly createdAt: Date;
+    public readonly updatedAt: Date;
 
     constructor(props: InventoryItemCreatedProps) {
         super();
@@ -22,5 +23,6 @@ export class InventoryItemCreatedEvent extends DomainEvent {
         this.costCurrency = props.costCurrency;
         this.isActive = props.isActive;
         this.createdAt = props.createdAt;
+        this.updatedAt = props.updatedAt;
     };
 };

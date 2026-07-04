@@ -34,3 +34,55 @@ export class InvalidInventoryUnitException extends DomainException {
         });
     };
 };
+
+
+
+export class InvalidExpirationDateException extends DomainException {
+    constructor(detail: string) {
+        super({
+            code: '1300',
+            detail: `Fecha de vencimiento inválida: ${detail}.`
+        });
+    };
+};
+
+
+
+export class InactiveItemException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1320',
+            detail: `El item ${itemId} está inactivo y no admite recepciones de mercancía.`
+        });
+    };
+};
+
+
+export class PerishableRequiresExpirationException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1321',
+            detail: `El item ${itemId} es perecedero y requiere fecha de vencimiento en el lote.`
+        });
+    };
+};
+
+
+export class NonPositiveConsumptionException extends DomainException {
+    constructor() {
+        super({
+            code: '1322',
+            detail: 'La cantidad a consumir debe ser mayor a cero.'
+        });
+    };
+};
+
+
+export class InsufficientStockException extends DomainException {
+    constructor(itemId: string, requested: string, available: string) {
+        super({
+            code: '1323',
+            detail: `Stock insuficiente para el item ${itemId}: se solicitaron ${requested} y hay ${available} disponibles.`
+        });
+    };
+};
