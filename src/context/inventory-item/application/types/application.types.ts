@@ -1,3 +1,33 @@
+export interface Pagination {
+    pageNumber: number;
+    pageSize: number;
+};
+
+
+
+export interface Paginated<T> {
+    data: T[];
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+};
+
+
+
+export interface InventoryBatchView {
+    id: string;
+    quantityReceived: string;
+    quantityRemaining: string;
+    unitCostAmount: string;
+    unitCostCurrency: string;
+    expirationDate: string | null;
+    receivedAt: Date;
+    isExpired: boolean;
+    isDepleted: boolean;
+};
+
+
+
 export interface InventoryItemResponse {
     id: string;
     name: string;
