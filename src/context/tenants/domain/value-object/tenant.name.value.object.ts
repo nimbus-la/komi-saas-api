@@ -3,7 +3,7 @@ import { DomainException} from "@/shared";
 export class InvalidTenantNameException extends DomainException {     
     constructor(reason: string) {
         super({
-            code: '1004',
+            code: '1005',
             detail: `Nombre de tenant inválido: ${reason}.`
         });
     };
@@ -12,7 +12,7 @@ export class InvalidTenantNameException extends DomainException {
 export class TenantNameAlreadyExistsException extends DomainException {
     constructor(name: string) {
         super({
-            code: '1201',
+            code: '1204',
             detail: `El nombre "${name}" ya esta registrado.`
         });
     };

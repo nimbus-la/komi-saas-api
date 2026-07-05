@@ -3,7 +3,7 @@ import { DomainException } from "@/shared";
 export class InvalidTenantNitException extends DomainException {
     constructor(reason: string) {
         super({
-            code: '1005',
+            code: '1006',
             detail: `NIT de tenant inválido: ${reason}.`
         });
     };

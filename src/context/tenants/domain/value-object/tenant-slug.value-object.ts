@@ -3,7 +3,7 @@ import { DomainException } from "@/shared";
 export class InvalidTenantSlugException extends DomainException {
     constructor(reason: string) {
         super({
-            code: '1006',
+            code: '1008',
             detail: `Slug de tenant inválido: ${reason}.`
         });
     };
