@@ -22,6 +22,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntry> = {
     '1001': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La unidad de medida no es válida.' },
     '1002': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El costo ingresado no es válido.' },
     '1003': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El nombre del item no es válido.' },
+    '1004': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La operación monetaria no es válida.' },
 
     '1200': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El nombre del item ya se encuentra registrado.' },
 
