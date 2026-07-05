@@ -17,6 +17,7 @@ export class InventoryItemPersistenceMapper {
     public static toAggregate(itemRow: InventoryItemEntity, batchRows: InventoryBatchEntity[]) {
         const primitives: InventoryItemPrimitives = {
             id: itemRow.id,
+            sku: itemRow.sku,
             name: itemRow.name,
             unitOfMeasure: itemRow.unitOfMeasure,
             costAmount: itemRow.costAmount,
@@ -48,10 +49,11 @@ export class InventoryItemPersistenceMapper {
      * las guarda en sus tablas respectivas.
      */
     public static toPersistence(item: InventoryItem): { item: InventoryItemEntity, batch: InventoryBatchEntity[] } {
-        const { id, name, unitOfMeasure, costAmount, costCurrency, isPerishable, isActive, batches, createdAt, updatedAt } = item.toPrimitives();
+        const { id, sku, name, unitOfMeasure, costAmount, costCurrency, isPerishable, isActive, batches, createdAt, updatedAt } = item.toPrimitives();
 
         const itemRow: InventoryItemEntity = {
             id,
+            sku,
             name,
             unitOfMeasure,
             costAmount,

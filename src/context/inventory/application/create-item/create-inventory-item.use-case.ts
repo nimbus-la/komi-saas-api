@@ -6,6 +6,7 @@ import { InventoryItemRepository } from "../../domain/inventory-item.repository"
 import { InventoryItemNameAlreadyExistsException } from "../../domain/exceptions/inventory-item.exceptions";
 import { InventoryItemName } from "../../domain/value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "../../domain/value-objects/inventory-item-unit.value-object";
+import { InventoryItemSku } from "../../domain/value-objects/inventory-item-sku.value-object";
 
 export interface CreateInventoryItemParams {
     name: string;
@@ -18,7 +19,7 @@ export interface CreateInventoryItemParams {
 
 export class CreateInventoryItemUseCase {
     constructor(
-        private readonly repository: InventoryItemRepository
+        private readonly repository: InventoryItemRepository,
     ) { };
 
     public async execute(params: CreateInventoryItemParams): Promise<void> {
@@ -28,7 +29,11 @@ export class CreateInventoryItemUseCase {
             throw new InventoryItemNameAlreadyExistsException(params.name);
         };
 
+        const skuNumber = await this.repository.nextSkuSequence();
+        const sku = InventoryItemSku.fromNumber(skuNumber);
+
         const item = InventoryItem.create({
+            sku,
             name,
             unitOfMeasure: InventoryItemUnit.create(params.unitOfMeasure),
             costAmount: Money.of(params.costAmount, params.costCurrency ?? 'COP'),

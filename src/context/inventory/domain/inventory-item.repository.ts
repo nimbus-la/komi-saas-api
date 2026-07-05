@@ -7,4 +7,5 @@ export abstract class InventoryItemRepository {
     abstract findById(id: InventoryItemId): Promise<InventoryItem | null>;
     abstract search(): Promise<InventoryItem[]>;
     abstract existsByName(name: InventoryItemName): Promise<boolean>;
+    abstract nextSkuSequence(): Promise<number>;
 };

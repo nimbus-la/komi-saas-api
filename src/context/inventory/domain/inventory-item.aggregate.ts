@@ -8,9 +8,11 @@ import { InventoryItemName } from "./value-objects/inventory-item-name.value-obj
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
 import { InventoryBatch } from "./entities/inventory-batch/inventory-batch.entity";
 import { InventoryBatchExpirationDate } from "./entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
+import { InventoryItemSku } from "./value-objects/inventory-item-sku.value-object";
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
+    private readonly sku: InventoryItemSku;
     private name: InventoryItemName;
     private unitOfMeasure: InventoryItemUnit;
     private costAmount: Money;
@@ -29,6 +31,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      */
     private constructor(
         id: InventoryItemId,
+        sku: InventoryItemSku,
         name: InventoryItemName,
         unitOfMeasure: InventoryItemUnit,
         costAmount: Money,
@@ -40,6 +43,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     ) {
         super(id);
 
+        this.sku = sku;
         this.name = name;
         this.unitOfMeasure = unitOfMeasure;
         this.isPerishable = isPerishable;
@@ -59,6 +63,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * - Registra el evento de dominio InventoryItemCreatedEvent para que la infraestructura lo publique tras persistir.
      */
     public static create(params: {
+        sku: InventoryItemSku;
         name: InventoryItemName;
         unitOfMeasure: InventoryItemUnit;
         costAmount: Money;
@@ -69,6 +74,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
         const item = new InventoryItem(
             InventoryItemId.generate(),
+            params.sku,
             params.name,
             params.unitOfMeasure,
             params.costAmount,
@@ -82,6 +88,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         item.registerEvent(
             new InventoryItemCreatedEvent({
                 itemId: item.id.value,
+                sku: item.sku.value,
                 name: item.name.value,
                 unitOfMeasure: item.unitOfMeasure.value,
                 costAmount: item.costAmount.getAmount(),
@@ -299,6 +306,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     public toPrimitives(): InventoryItemPrimitives {
         return {
             id: this.id.value,
+            sku: this.sku.value,
             name: this.name.value,
             unitOfMeasure: this.unitOfMeasure.value,
             costAmount: this.costAmount.getAmount(),
@@ -323,6 +331,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     public static fromPrimitives(p: InventoryItemPrimitives): InventoryItem {
         return new InventoryItem(
             InventoryItemId.create(p.id),
+            InventoryItemSku.fromValue(p.sku),
             InventoryItemName.create(p.name),
             InventoryItemUnit.create(p.unitOfMeasure),
             Money.of(p.costAmount, p.costCurrency),

@@ -30,6 +30,7 @@ export interface InventoryBatchView {
 
 export interface InventoryItemResponse {
     id: string;
+    sku: string;
     name: string;
     unitOfMeasure: string;
     standardCostAmount: string;      // costo de referencia del item

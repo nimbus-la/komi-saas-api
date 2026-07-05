@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
-import { Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 
 import { InventoryItemRepository } from "../../../domain/inventory-item.repository";
 import { InventoryItemEntity } from "../entities/inventory-item.entity";
@@ -20,6 +20,9 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
         @InjectRepository(InventoryBatchEntity)
         private readonly batches: Repository<InventoryBatchEntity>,
+
+        @InjectDataSource()
+        private readonly dataSource: DataSource
     ) { };
 
 
@@ -88,5 +91,20 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         };
 
         return map;
+    };
+
+
+    public async nextSkuSequence(): Promise<number> {
+        const rows: Array<{ n: string }> = await this.dataSource.query(
+            "SELECT nextval('inventory_item_sku_seq') AS n"
+        );
+
+        const first = rows[0];
+
+        if (first === undefined) {
+            throw new Error('No se pudo obtener el siguiente valor de la secuencia de SKU.');
+        };
+
+        return Number(first.n);
     };
 };
