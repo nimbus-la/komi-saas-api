@@ -7,9 +7,9 @@ import { InventoryItemRepository } from "../../../domain/inventory-item.reposito
 import { InventoryItemEntity } from "../entities/inventory-item.entity";
 import { InventoryBatchEntity } from "../entities/inventory-batch.entity";
 import { InventoryItem } from "../../../domain/inventory-item.aggregate";
-import { InventoryItemId } from "@/context/inventory-item/domain/value-objects/inventory-item-id.value-object";
-import { InventoryItemName } from "@/context/inventory-item/domain/value-objects/inventory-item-name.value-object";
-import { InventoryBatchPrimitives, InventoryItemPrimitives } from "@/context/inventory-item/domain/types/domain.types";
+import { InventoryItemId } from "@/context/inventory/domain/value-objects/inventory-item-id.value-object";
+import { InventoryItemName } from "@/context/inventory/domain/value-objects/inventory-item-name.value-object";
+import { InventoryBatchPrimitives, InventoryItemPrimitives } from "@/context/inventory/domain/types/domain.types";
 
 
 @Injectable()

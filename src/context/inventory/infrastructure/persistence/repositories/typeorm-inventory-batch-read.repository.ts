@@ -3,9 +3,9 @@ import { Injectable } from "@nestjs/common";
 
 import { Repository } from "typeorm";
 
-import { InventoryBatchReadRepository } from "@/context/inventory-item/application/ports/inventory-batch-read.repository";
+import { InventoryBatchReadRepository } from "@/context/inventory/application/ports/inventory-batch-read.repository";
 import { InventoryBatchEntity } from "../entities/inventory-batch.entity";
-import { InventoryBatchView, Paginated, Pagination } from "@/context/inventory-item/application/types/application.types";
+import { InventoryBatchView, Paginated, Pagination } from "@/context/inventory/application/types/application.types";
 
 @Injectable()
 export class TypeOrmInventoryBatchReadRepository implements InventoryBatchReadRepository {
