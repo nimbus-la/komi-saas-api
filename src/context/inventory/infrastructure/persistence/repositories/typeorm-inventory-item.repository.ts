@@ -9,7 +9,7 @@ import { InventoryBatchEntity } from "../entities/inventory-batch.entity";
 import { InventoryItem } from "../../../domain/inventory-item.aggregate";
 import { InventoryItemId } from "@/context/inventory/domain/value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "@/context/inventory/domain/value-objects/inventory-item-name.value-object";
-import { InventoryBatchPrimitives, InventoryItemPrimitives } from "@/context/inventory/domain/types/domain.types";
+import { InventoryItemPersistenceMapper } from "../mappers/inventory-item.persistence-mapper";
 
 
 @Injectable()
@@ -25,33 +25,12 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
     public async save(item: InventoryItem): Promise<void> {
-        const p = item.toPrimitives();
+        const { item: itemRow, batch: batchRow } = InventoryItemPersistenceMapper.toPersistence(item);
 
-        await this.items.save({
-            id: p.id,
-            name: p.name,
-            unitOfMeasure: p.unitOfMeasure,
-            costAmount: p.costAmount,
-            costCurrency: p.costCurrency,
-            isPerishable: p.isPerishable,
-            isActive: p.isActive,
-            createdAt: p.createdAt,
-            updatedAt: p.updatedAt,
-        });
+        await this.items.save(itemRow);
 
-        if (p.batches.length > 0) {
-            await this.batches.save(
-                p.batches.map((b) => ({
-                    id: b.id,
-                    inventoryItemId: p.id,
-                    quantityReceived: b.quantityReceived,
-                    quantityRemaining: b.quantityRemaining,
-                    unitCostAmount: b.unitCostAmount,
-                    unitCostCurrency: b.unitCostCurrency,
-                    expirationDate: b.expirationDate ? new Date(b.expirationDate) : null,
-                    receivedAt: b.receivedAt,
-                })),
-            );
+        if (batchRow.length > 0) {
+            await this.batches.save(batchRow);
         };
     };
 
@@ -62,7 +41,7 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         if (row === null) return null;
 
         const batchRows = await this.activeBatchesOf([row.id]);
-        return InventoryItem.fromPrimitives(this.toItemPrimitives(row, batchRows));
+        return InventoryItemPersistenceMapper.toAggregate(row, batchRows);
     };
 
 
@@ -75,7 +54,7 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         const grouped = this.groupByItem(batchRows);
 
         return rows.map((row) =>
-            InventoryItem.fromPrimitives(this.toItemPrimitives(row, grouped.get(row.id) ?? [])),
+            InventoryItemPersistenceMapper.toAggregate(row, grouped.get(row.id) ?? []),
         );
     };
 
@@ -100,36 +79,14 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
     private groupByItem(rows: InventoryBatchEntity[]): Map<string, InventoryBatchEntity[]> {
         const map = new Map<string, InventoryBatchEntity[]>();
+
         for (const row of rows) {
             const list = map.get(row.inventoryItemId) ?? [];
+
             list.push(row);
             map.set(row.inventoryItemId, list);
         };
+
         return map;
-    };
-
-
-    
-    private toItemPrimitives(row: InventoryItemEntity, batchRows: InventoryBatchEntity[]): InventoryItemPrimitives {
-        return {
-            id: row.id,
-            name: row.name,
-            unitOfMeasure: row.unitOfMeasure,
-            costAmount: row.costAmount,
-            costCurrency: row.costCurrency,
-            isPerishable: row.isPerishable,
-            isActive: row.isActive,
-            createdAt: row.createdAt,
-            updatedAt: row.updatedAt,
-            batches: batchRows.map((b): InventoryBatchPrimitives => ({
-                id: b.id,
-                quantityReceived: b.quantityReceived,
-                quantityRemaining: b.quantityRemaining,
-                unitCostAmount: b.unitCostAmount,
-                unitCostCurrency: b.unitCostCurrency,
-                expirationDate: b.expirationDate ? b.expirationDate.toISOString() : null,
-                receivedAt: b.receivedAt,
-            })),
-        };
     };
 };
