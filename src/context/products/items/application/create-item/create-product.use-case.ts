@@ -25,12 +25,13 @@ export class CreateProductUseCase {
                 productName.value,
             );
         }
+        const sequence = await this.repository.nextSkuSequence();
 
         const product = Product.create({
             productCategoryId: params.productCategoryId,
             productName,
             productDescription: params.productDescription,
-            productSku: ProductSku.create(params.productSku),
+            productSku: ProductSku.fromNumber(sequence),
             productImgUrl: params.productImgUrl,
             productBasePrice: Money.of(params.productBasePrice),
             profitMargin: params.profitMargin,

@@ -16,4 +16,6 @@ export abstract class ProductRepository {
     abstract findById(id: ProductId): Promise<Product | null>;
 
     abstract existsByName(name: ProductName): Promise<boolean>;
+
+    abstract nextSkuSequence(): Promise<number>;
 }
