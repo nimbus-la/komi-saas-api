@@ -36,6 +36,9 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntry> = {
     '1321': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El item perecedero requiere fecha de vencimiento.' },
     '1322': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La cantidad a consumir debe ser mayor a cero.' },
     '1323': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'Stock insuficiente para completar la operación.' },
+    '1324': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'No se puede cambiar la unidad de medida; el item ya tiene lotes.' },
+    '1325': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'No se puede cambiar la perecibilidad; el item ya tiene lotes.' },
+    '1326': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'Debe enviar al menos un campo para actualizar.' },
 
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NOT_FOUND, message: 'El recurso solicitado no existe.' },

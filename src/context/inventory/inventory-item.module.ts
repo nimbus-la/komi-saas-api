@@ -14,6 +14,7 @@ import { FindInventoryItemUseCase } from "./application/find-item/find-inventory
 import { ReceiveStockUseCase } from "./application/receive-stock/receive-stock.use-case";
 import { ConsumeStockUseCase } from "./application/consume-stock/consume-stock.use-case";
 import { SearchItemBatchesUseCase } from "./application/search-item-batches/search-item-batches.use-case";
+import { UpdateInventoryItemUseCase } from "./application/update-item/update-inventory-item.use-case";
 
 
 @Module({
@@ -28,6 +29,11 @@ import { SearchItemBatchesUseCase } from "./application/search-item-batches/sear
         { provide: ReceiveStockUseCase, useFactory: (r: InventoryItemRepository) => new ReceiveStockUseCase(r), inject: [InventoryItemRepository] },
         { provide: ConsumeStockUseCase, useFactory: (r: InventoryItemRepository) => new ConsumeStockUseCase(r), inject: [InventoryItemRepository] },
         { provide: SearchItemBatchesUseCase, useFactory: (r: InventoryBatchReadRepository) => new SearchItemBatchesUseCase(r), inject: [InventoryBatchReadRepository] },
+        {
+            provide: UpdateInventoryItemUseCase,
+            useFactory: (r: InventoryItemRepository) => new UpdateInventoryItemUseCase(r),
+            inject: [InventoryItemRepository]
+        },
     ],
 })
 
