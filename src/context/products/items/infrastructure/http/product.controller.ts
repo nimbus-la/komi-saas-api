@@ -1,14 +1,17 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ProductService } from "../persistence/product.services";
+import { SearchProductsApplicationParams } from "../../domain";
 
 @Controller("products")
 export class ProductController {
@@ -37,4 +40,39 @@ export class ProductController {
       message: "Producto actualizado con éxito",
     };
   }
+  @Get()
+  async search(
+    @Query("text") text?: string,
+    @Query("productCategoryId") productCategoryId?: string,
+    @Query("productStatus") productStatus?: string,
+    @Query("page") page = "1",
+    @Query("limit") limit = "10",
+  ) {
+    const params: SearchProductsApplicationParams = {
+      page: Number(page),
+      limit: Number(limit),
+    };
+
+    if (text) {
+      params.text = text;
+    }
+
+    if (productCategoryId) {
+      params.productCategoryId = productCategoryId;
+    }
+
+    if (productStatus !== undefined) {
+      params.productStatus = productStatus === "true";
+    }
+
+    const products = await this.service.search(params);
+
+    return {
+      statusCode: 200,
+      message: "Productos obtenidos con éxito",
+      data: products,
+    };
+  }
+
 }
+

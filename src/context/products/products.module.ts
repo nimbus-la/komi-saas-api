@@ -8,6 +8,7 @@ import { ProductRepositoryImpl } from './items/infrastructure/persistence/produc
 import { CreateProductUseCase } from './items/application/create-item/create-product.use-case';
 import { ProductRepository } from './items/domain';
 import { UpdateProductUseCase } from "./items/application/update-item/update-product.use-case";
+import { SearchProductsUseCase } from "./items/application/search-items/search-product.use-case";
 
 @Module({
   imports: [
@@ -34,6 +35,12 @@ import { UpdateProductUseCase } from "./items/application/update-item/update-pro
       provide: UpdateProductUseCase,
       useFactory: (repository: ProductRepository) =>
         new UpdateProductUseCase(repository),
+      inject: [ProductRepository],
+    },
+    {
+      provide: SearchProductsUseCase,
+      useFactory: (repository: ProductRepository) =>
+        new SearchProductsUseCase(repository),
       inject: [ProductRepository],
     },
   ],

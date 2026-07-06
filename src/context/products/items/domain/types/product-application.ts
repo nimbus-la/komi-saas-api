@@ -18,3 +18,12 @@ export interface UpdateProductApplicationParams {
     profitMargin: number;
     productStatus: boolean;
 }
+
+export interface SearchProductsApplicationParams {
+    text?: string;
+    productCategoryId?: string;
+    productStatus?: boolean;
+    productionAreaId?: string;
+    page: number;
+    limit: number;
+}

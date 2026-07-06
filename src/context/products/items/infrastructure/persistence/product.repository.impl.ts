@@ -8,6 +8,7 @@ import {
   ProductName,
   ProductRepository,
   ProductResponse,
+  SearchProductsApplicationParams,
 } from "../../domain";
 
 import { ProductEntity } from "./product.entity";
@@ -54,8 +55,50 @@ export class ProductRepositoryImpl extends ProductRepository {
     });
   }
 
-  public async search(): Promise<ProductResponse[]> {
-    const rows = await this.productRepository.find();
+  public async search(
+    params: SearchProductsApplicationParams,
+  ): Promise<ProductResponse[]> {
+    const query = this.productRepository.createQueryBuilder("product");
+
+    // Buscar por nombre o SKU
+    if (params.text) {
+      query.andWhere(
+        `(LOWER(product.name) LIKE LOWER(:text)
+          OR LOWER(product.sku) LIKE LOWER(:text))`,
+        {
+          text: `%${params.text}%`,
+        },
+      );
+    }
+
+    // Filtrar por categoría
+    if (params.productCategoryId) {
+      query.andWhere(
+        "product.productCategoryId = :categoryId",
+        {
+          categoryId: params.productCategoryId,
+        },
+      );
+    }
+
+    // Filtrar por estado
+    if (params.productStatus !== undefined) {
+      query.andWhere(
+        "product.isActive = :status",
+        {
+          status: params.productStatus,
+        },
+      );
+    }
+
+    // Paginación
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 10;
+
+    query.skip((page - 1) * limit);
+    query.take(limit);
+
+    const rows = await query.getMany();
 
     return rows.map((row) => ({
       id: row.id,
