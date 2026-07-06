@@ -2,7 +2,7 @@ import { AggregateRoot, Money, Quantity } from "@/shared";
 
 import { InventoryItemPrimitives } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishableRequiresExpirationException } from "./exceptions/inventory-item.exceptions";
+import { EmptyUpdateException, InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -260,6 +260,60 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      */
     private touch(date: Date = new Date()): void {
         this.updatedAt = date;
+    };
+
+
+
+    /**
+     * Actualiza los datos editables del item (actualización parcial: solo cambia
+     * lo que venga definido). Reglas:
+     *   - name y costAmount: siempre editables (datos de catálogo).
+     *   - unitOfMeasure e isPerishable: solo si el item AÚN NO tiene lotes; si ya
+     *     los tiene, cambiarlos corrompería las cantidades/vencimientos existentes.
+     *   - sku, fechas: inmutables, no se tocan aquí.
+     * Marca el item como actualizado (touch).
+     */
+    public update(params: {
+        name?: InventoryItemName;
+        costAmount?: Money;
+        unitOfMeasure?: InventoryItemUnit;
+        isPerishable?: boolean;
+    }) {
+        const hasChanges =
+            params.name !== undefined ||
+            params.costAmount !== undefined ||
+            params.unitOfMeasure !== undefined ||
+            params.isPerishable !== undefined;
+
+        if (!hasChanges) {
+            throw new EmptyUpdateException(this.id.value);
+        };
+
+        if (params.name !== undefined) {
+            this.name = params.name;
+        };
+
+        if (params.costAmount !== undefined) {
+            this.costAmount = params.costAmount;
+        };
+
+        if (params.unitOfMeasure !== undefined) {
+            if (this.batches.length > 0) {
+                throw new UnitChangeNotAllowedException(this.id.value);
+            };
+
+            this.unitOfMeasure = params.unitOfMeasure;
+        };
+
+        if (params.isPerishable !== undefined) {
+            if (this.batches.length > 0) {
+                throw new PerishabilityChangeNotAllowedException(this.id.value);
+            };
+
+            this.isPerishable = params.isPerishable;
+        };
+
+        this.touch();
     };
 
 
