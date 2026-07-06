@@ -9,11 +9,11 @@ import {
 } from "./value-object";
 
 export class Product extends AggregateRoot<ProductId> {
-    private readonly productCategoryId: string;
-    private readonly productName: ProductName;
-    private readonly productDescription: string | undefined;
-    private readonly productSku: ProductSku;
-    private readonly productImgUrl: string | undefined;
+    private productCategoryId: string;
+    private productName: ProductName;
+    private productDescription: string | undefined;
+    private productSku: ProductSku;
+    private productImgUrl: string | undefined;
 
     private productBasePrice: Money;
     private profitMargin: number;
@@ -127,5 +127,24 @@ export class Product extends AggregateRoot<ProductId> {
         }
 
         this.productStatus = true;
+    }
+    public update(params: {
+        productCategoryId: string;
+        productName: ProductName;
+        productDescription: string | undefined;
+        productSku: ProductSku;
+        productImgUrl: string | undefined;
+        productBasePrice: Money;
+        profitMargin: number;
+        productStatus: boolean;
+    }): void {
+        this.productCategoryId = params.productCategoryId;
+        this.productName = params.productName;
+        this.productDescription = params.productDescription;
+        this.productSku = params.productSku;
+        this.productImgUrl = params.productImgUrl;
+        this.productBasePrice = params.productBasePrice;
+        this.profitMargin = params.profitMargin;
+        this.productStatus = params.productStatus;
     }
 }

@@ -6,6 +6,8 @@ import { ProductName } from "./value-object/product-name.value-object";
 export abstract class ProductRepository {
     abstract save(product: Product): Promise<void>;
 
+    abstract update(product: Product): Promise<void>;
+
     abstract search(): Promise<ProductResponse[]>;
 
     abstract findById(id: ProductId): Promise<Product | null>;

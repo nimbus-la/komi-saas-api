@@ -7,3 +7,14 @@ export interface CreateProductApplicationParams {
     productBasePrice: string;
     profitMargin: number;
 }
+export interface UpdateProductApplicationParams {
+    id: string;
+    productCategoryId: string;
+    productName: string;
+    productDescription: string | undefined;
+    productSku: string;
+    productImgUrl: string | undefined;
+    productBasePrice: string;
+    profitMargin: number;
+    productStatus: boolean;
+}
