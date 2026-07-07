@@ -1,4 +1,4 @@
-import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
 
 import { AllExceptionsFilter, ResponseInterceptor } from "@/shared";
 import { CreateInventoryItemUseCase } from "../../application/create-item/create-inventory-item.use-case";
@@ -10,6 +10,8 @@ import { SearchItemBatchesUseCase } from "../../application/search-item-batches/
 import { CreateItemDto } from "./dtos/create-item.dto";
 import { ReceiveStockDto } from "./dtos/receive-stock.dto";
 import { ConsumeStockDto } from "./dtos/consume-stock.dto";
+import { UpdateInventoryItemUseCase } from "../../application/update-item/update-inventory-item.use-case";
+import { UpdateItemDto } from "./dtos/update-item.dto";
 
 
 @UseInterceptors(ResponseInterceptor)
@@ -23,6 +25,7 @@ export class InventoryItemController {
         private readonly receiveStock: ReceiveStockUseCase,
         private readonly consumeStock: ConsumeStockUseCase,
         private readonly searchItemBatches: SearchItemBatchesUseCase,
+        private readonly updateItem: UpdateInventoryItemUseCase,
     ) { };
 
 
@@ -79,5 +82,15 @@ export class InventoryItemController {
         @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
     ) {
         return this.searchItemBatches.execute(id, { pageNumber, pageSize });
+    };
+
+
+
+    @Patch(':id')
+    public async update(
+        @Param('id') id: string,
+        @Body() dto: UpdateItemDto,
+    ): Promise<void> {
+        await this.updateItem.execute(id, dto);
     };
 };

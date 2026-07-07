@@ -4,6 +4,7 @@ import { InventoryItemCreatedProps } from "../types/domain.types";
 
 
 export class InventoryItemCreatedEvent extends DomainEvent {
+    public readonly sku: string;
     public readonly name: string;
     public readonly unitOfMeasure: string;
     public readonly isPerishable: boolean;
@@ -16,6 +17,7 @@ export class InventoryItemCreatedEvent extends DomainEvent {
     constructor(props: InventoryItemCreatedProps) {
         super();
 
+        this.sku = props.sku;
         this.name = props.name;
         this.unitOfMeasure = props.unitOfMeasure;
         this.isPerishable = props.isPerishable;

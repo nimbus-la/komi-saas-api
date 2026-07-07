@@ -109,3 +109,38 @@ export class InventoryItemNotFoundException extends DomainException {
         });
     };
 };
+
+
+
+export class UnitChangeNotAllowedException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1324',
+            detail: `No se puede cambiar la unidad de medida del item ${itemId}: ya tiene lotes registrados.`
+        });
+    };
+};
+
+
+
+/** Se intenta cambiar la perecibilidad de un item que ya tiene lotes. Código 1325. */
+export class PerishabilityChangeNotAllowedException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1325',
+            detail: `No se puede cambiar la perecibilidad del item ${itemId}: ya tiene lotes registrados.`
+        });
+    };
+};
+
+
+
+/** Se intenta actualizar un item sin enviar ningún cambio. Código 1326. */
+export class EmptyUpdateException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1326',
+            detail: `No se enviaron cambios para actualizar el item ${itemId}.`
+        });
+    };
+};
