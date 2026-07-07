@@ -45,6 +45,8 @@ export class TenantService implements TenantRepository {
             description: row.description,
             slug: row.slug,
             nit: row.nit,
+            created_at: row.createdAt,
+            updated_at: row.updatedAt,
             isActive: row.isActive,
         };
     }
@@ -72,6 +74,30 @@ export class TenantService implements TenantRepository {
         });
     }
 
+    public async searchAggregateByNit(
+        nit: TenantNit
+    ): Promise<TenantAggregate | null> {
+        const row = await this.tenantRepository.findOne({
+            where: {
+                nit: nit.value,
+            },
+        });
+
+        if (!row) {
+            return null;
+        }
+
+        return TenantAggregate.fromPrimitives({
+            id: row.id,
+            accountId: row.accountId,
+            name: row.name,
+            description: row.description,
+            slug: row.slug,
+            nit: row.nit,
+            isActive: row.isActive,
+        });
+    }
+    
     public async existsByName(name: TenantName): Promise<boolean> {
         const count = await this.tenantRepository
             .createQueryBuilder('tenant')
@@ -109,6 +135,8 @@ export class TenantService implements TenantRepository {
             description: row.description,
             slug: row.slug,
             nit: row.nit,
+            created_at: row.createdAt,
+            updated_at: row.updatedAt,
             isActive: row.isActive,
         }));
     }

@@ -5,11 +5,12 @@ export class UpdateTenantUseCase{
         private readonly repository: TenantRepository
     ){}
 
-    public async execute(id: string, params: {
-            name: string,
-            description: string,
-            slug: string,
-            nit: string
+    public async execute(id: string,
+        params: {
+            name?: string | undefined;
+            description?: string | undefined;
+            slug?: string | undefined;
+            nit?: string | undefined;
         }
     ): Promise<void> {
     
@@ -21,30 +22,63 @@ export class UpdateTenantUseCase{
             throw new Error('Tenant no encontrado')
         }
 
-        const name = TenantName.create(params.name);
+        let name: TenantName | undefined;
+        let description: TenantDescription | undefined;
+        let slug: TenantSlug | undefined;
+        let nit: TenantNit | undefined;
 
-        if (await this.repository.existsByName(name)) {
-            throw new TenantNameAlreadyExistsException(name.value);
+        if (params.name !== undefined) {
+            name = TenantName.create(params.name);
+
+            if (await this.repository.existsByName(name)) {
+                throw new TenantNameAlreadyExistsException(name.value);
+            }
         }
 
-        const slug = TenantSlug.create(params.slug);
-
-        if (await this.repository.existsBySlug(slug)) {
-            throw new TenantSlugAlreadyExistsException(slug.value);
+        if (params.description !== undefined) {
+            description = TenantDescription.create(params.description);
         }
 
-        const nit = TenantNit.create(params.nit);
+        if (params.slug !== undefined) {
+            slug = TenantSlug.create(params.slug);
 
-        if (await this.repository.existsByNit(nit)) {
-            throw new TenantNitAlreadyExistsException(nit.value);
+            if (await this.repository.existsBySlug(slug)) {
+                throw new TenantSlugAlreadyExistsException(slug.value);
+            }
         }
 
-        tenant.update({
-            name,
-            description: TenantDescription.create(params.description),
-            slug,
-            nit,
-        });
+        if (params.nit !== undefined) {
+            nit = TenantNit.create(params.nit);
+
+            if (await this.repository.existsByNit(nit)) {
+                throw new TenantNitAlreadyExistsException(nit.value);
+            }
+        }
+
+        const updateData: {
+            name?: TenantName;
+            description?: TenantDescription;
+            slug?: TenantSlug;
+            nit?: TenantNit;
+        } = {};
+
+        if (name) {
+            updateData.name = name;
+        }
+
+        if (description) {
+            updateData.description = description;
+        }
+
+        if (slug) {
+            updateData.slug = slug;
+        }
+
+        if (nit) {
+            updateData.nit = nit;
+        }
+
+        tenant.update(updateData);
 
         await this.repository.update(tenant);
     };

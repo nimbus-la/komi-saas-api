@@ -90,15 +90,26 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
     };
 
     public update(params: {
-        name: TenantName;
-        description: TenantDescription;
-        slug: TenantSlug;
-        nit: TenantNit;
+        name?: TenantName;
+        description?: TenantDescription;
+        slug?: TenantSlug;
+        nit?: TenantNit;
     }): void {
+        if (params.name) {
         this.name = params.name;
-        this.description = params.description;
-        this.slug = params.slug;
-        this.nit = params.nit;
+        }
+
+        if (params.description) {
+            this.description = params.description;
+        }
+
+        if (params.slug) {
+            this.slug = params.slug;
+        }
+
+        if (params.nit) {
+            this.nit = params.nit;
+        }
     }
     
     public desactivate(): void {
@@ -116,4 +127,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
 
         this.isActive = true;
     };
+    public get active(): boolean {
+        return this.isActive;
+    }
 };

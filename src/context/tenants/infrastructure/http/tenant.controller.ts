@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseFilters, UseInterceptors } from "@nestjs/common";
 import { CreateTenantUseCase, DeleteTenantUseCases, SearchAllTenantsUseCase, SearchTenantUseCase, UpdateTenantUseCase } from "../../application";
 import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/shared";
 import { CreateTenantDto } from "./dto/create-tenant.dto";
@@ -42,7 +42,7 @@ export class TenantController {
         return await this.searchTenantById.execute(id);
     };
 
-    @Put(':id')
+    @Patch(':id')
     @ResponseMessage('Tenant actualizado exitosamente.')
     public async update(
         @Param('id') id:string,

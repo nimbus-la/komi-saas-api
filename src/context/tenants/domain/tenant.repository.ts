@@ -11,6 +11,7 @@ export abstract class TenantRepository {
 
    abstract searchById(id: TenantId): Promise<TenantResponse  | null>;
    abstract searchAggregateById(id: TenantId): Promise<TenantAggregate | null>;
+   abstract searchAggregateByNit(nit: TenantNit): Promise<TenantAggregate | null>;
    
    abstract searchAll(): Promise<TenantResponse[]>;
 
