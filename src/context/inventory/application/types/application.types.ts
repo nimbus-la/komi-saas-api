@@ -30,6 +30,7 @@ export interface InventoryBatchView {
 
 export interface InventoryItemResponse {
     id: string;
+    tenantId: string;
     sku: string;
     name: string;
     unitOfMeasure: string;

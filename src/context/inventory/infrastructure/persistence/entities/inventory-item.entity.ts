@@ -1,10 +1,15 @@
-import { Column, Entity, PrimaryColumn } from "typeorm";
+import { Column, Entity, Index, PrimaryColumn } from "typeorm";
 
 
 @Entity({ name: 'inventory_items' })
 export class InventoryItemEntity {
     @PrimaryColumn({ name: 'inventory_item_id', type: 'uuid' })
     id!: string;
+
+
+    @Index()
+    @Column({ name: 'tenant_id', type: 'uuid' })
+    tenantId!: string;
 
 
     @Column({ name: 'sku', type: 'varchar', length: 20, unique: true })

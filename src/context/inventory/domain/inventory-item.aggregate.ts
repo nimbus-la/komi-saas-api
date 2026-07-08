@@ -12,6 +12,7 @@ import { InventoryItemSku } from "./value-objects/inventory-item-sku.value-objec
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
+    private readonly tenantId: string;
     private readonly sku: InventoryItemSku;
     private name: InventoryItemName;
     private unitOfMeasure: InventoryItemUnit;
@@ -31,6 +32,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      */
     private constructor(
         id: InventoryItemId,
+        tenantId: string,
         sku: InventoryItemSku,
         name: InventoryItemName,
         unitOfMeasure: InventoryItemUnit,
@@ -43,6 +45,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     ) {
         super(id);
 
+        this.tenantId = tenantId;
         this.sku = sku;
         this.name = name;
         this.unitOfMeasure = unitOfMeasure;
@@ -63,6 +66,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * - Registra el evento de dominio InventoryItemCreatedEvent para que la infraestructura lo publique tras persistir.
      */
     public static create(params: {
+        tenantId: string;
         sku: InventoryItemSku;
         name: InventoryItemName;
         unitOfMeasure: InventoryItemUnit;
@@ -74,6 +78,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
         const item = new InventoryItem(
             InventoryItemId.generate(),
+            params.tenantId,
             params.sku,
             params.name,
             params.unitOfMeasure,
@@ -88,6 +93,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         item.registerEvent(
             new InventoryItemCreatedEvent({
                 itemId: item.id.value,
+                tenantId: item.tenantId,
                 sku: item.sku.value,
                 name: item.name.value,
                 unitOfMeasure: item.unitOfMeasure.value,
@@ -360,6 +366,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     public toPrimitives(): InventoryItemPrimitives {
         return {
             id: this.id.value,
+            tenantId: this.tenantId,
             sku: this.sku.value,
             name: this.name.value,
             unitOfMeasure: this.unitOfMeasure.value,
@@ -385,6 +392,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     public static fromPrimitives(p: InventoryItemPrimitives): InventoryItem {
         return new InventoryItem(
             InventoryItemId.create(p.id),
+            p.tenantId,
             InventoryItemSku.fromValue(p.sku),
             InventoryItemName.create(p.name),
             InventoryItemUnit.create(p.unitOfMeasure),
