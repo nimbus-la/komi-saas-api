@@ -5,6 +5,8 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { ManyToOne, JoinColumn } from "typeorm";
+import { ProductCategoryEntity } from "../../../categories/domain/product-category.entity";
 
 @Entity({ name: "product" })
 export class ProductEntity {
@@ -40,4 +42,8 @@ export class ProductEntity {
 
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date;
+
+  @ManyToOne(() => ProductCategoryEntity, (category) => category.products)
+  @JoinColumn({ name: "product_category_id" })
+  category!: ProductCategoryEntity;
 }

@@ -16,7 +16,7 @@ export class CreateProductUseCase {
 
     public async execute(
         params: CreateProductApplicationParams,
-    ): Promise<void> {
+    ): Promise<Product> {
 
         const productName = ProductName.create(params.productName);
 
@@ -25,6 +25,7 @@ export class CreateProductUseCase {
                 productName.value,
             );
         }
+
         const sequence = await this.repository.nextSkuSequence();
 
         const product = Product.create({
@@ -38,5 +39,7 @@ export class CreateProductUseCase {
         });
 
         await this.repository.save(product);
+
+        return product; // 🔥 IMPORTANTE
     }
 }
