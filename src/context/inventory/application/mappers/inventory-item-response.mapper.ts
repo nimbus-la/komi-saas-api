@@ -10,6 +10,7 @@ export const toInventoryItemResponse = (
 
     return {
         id: p.id,
+        tenantId: p.tenantId,
         sku: p.sku,
         name: p.name,
         unitOfMeasure: p.unitOfMeasure,

@@ -1,5 +1,6 @@
 export interface InventoryItemCreatedProps {
     itemId: string;
+    tenantId: string;
     sku: string;
     name: string;
     unitOfMeasure: string;
@@ -27,6 +28,7 @@ export interface InventoryBatchPrimitives {
 
 export interface InventoryItemPrimitives {
     id: string;
+    tenantId: string;
     sku: string;
     name: string;
     unitOfMeasure: string;

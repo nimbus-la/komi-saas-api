@@ -144,3 +144,15 @@ export class EmptyUpdateException extends DomainException {
         });
     };
 };
+
+
+
+/** Se intenta crear un item para un tenant que no existe. Código 1202. */
+export class TenantNotFoundException extends DomainException {
+    constructor(tenantId: string) {
+        super({
+            code: '1205',
+            detail: `El tenant ${tenantId} no existe; no se puede crear el item.`
+        });
+    };
+};

@@ -33,6 +33,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntry> = {
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El NIT del tenant ya se encuentra registrado.' },
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El slug del tenant ya se encuentra registrado.' },
     '1204': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El nombre del tenant ya se encuentra registrado.' },
+    '1205': { status: ResponseStatus.Error, category: ErrorCategory.NOT_FOUND, message: 'El tenant indicado no existe.' },
     
     // 13xx / reglas de lote y stock
     '1300': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La fecha de vencimiento no es válida.' },

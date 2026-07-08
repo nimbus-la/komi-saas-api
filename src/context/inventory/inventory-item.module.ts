@@ -15,15 +15,26 @@ import { ReceiveStockUseCase } from "./application/receive-stock/receive-stock.u
 import { ConsumeStockUseCase } from "./application/consume-stock/consume-stock.use-case";
 import { SearchItemBatchesUseCase } from "./application/search-item-batches/search-item-batches.use-case";
 import { UpdateInventoryItemUseCase } from "./application/update-item/update-inventory-item.use-case";
+import { TenantChecker } from "./application/ports/tenant-checker";
+import { TenantCheckerAdapter } from "./infrastructure/persistence/adapter/tenant-checker.adapter";
+import { TenantModule } from "../tenants/tenant.module";
 
 
 @Module({
-    imports: [TypeOrmModule.forFeature([InventoryItemEntity, InventoryBatchEntity])],
+    imports: [
+        TypeOrmModule.forFeature([InventoryItemEntity, InventoryBatchEntity]),
+        TenantModule,
+    ],
     controllers: [InventoryItemController],
     providers: [
         { provide: InventoryItemRepository, useClass: TypeOrmInventoryItemRepository },
         { provide: InventoryBatchReadRepository, useClass: TypeOrmInventoryBatchReadRepository },
-        { provide: CreateInventoryItemUseCase, useFactory: (r: InventoryItemRepository) => new CreateInventoryItemUseCase(r), inject: [InventoryItemRepository] },
+        { provide: TenantChecker, useClass: TenantCheckerAdapter },
+        {
+            provide: CreateInventoryItemUseCase,
+            useFactory: (r: InventoryItemRepository, t: TenantChecker) => new CreateInventoryItemUseCase(r, t),
+            inject: [InventoryItemRepository, TenantChecker]
+        },
         { provide: SearchInventoryItemsUseCase, useFactory: (r: InventoryItemRepository) => new SearchInventoryItemsUseCase(r), inject: [InventoryItemRepository] },
         { provide: FindInventoryItemUseCase, useFactory: (r: InventoryItemRepository) => new FindInventoryItemUseCase(r), inject: [InventoryItemRepository] },
         { provide: ReceiveStockUseCase, useFactory: (r: InventoryItemRepository) => new ReceiveStockUseCase(r), inject: [InventoryItemRepository] },
