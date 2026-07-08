@@ -9,10 +9,16 @@ import { CreateProductUseCase } from './items/application/create-item/create-pro
 import { ProductRepository } from './items/domain';
 import { UpdateProductUseCase } from "./items/application/update-item/update-product.use-case";
 import { SearchProductsUseCase } from "./items/application/search-items/search-product.use-case";
+import { ProductCategoryEntity } from './categories/domain/product-category.entity';
+import { CategoriesModule } from "./categories/categories.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ProductEntity]),
+    TypeOrmModule.forFeature([
+      ProductEntity,
+      ProductCategoryEntity,
+    ]),
+    CategoriesModule,
   ],
   controllers: [
     ProductController,

@@ -5,7 +5,6 @@ import {
     ProductName,
     ProductNotFoundException,
     ProductRepository,
-    ProductSku,
     UpdateProductApplicationParams,
 } from "../../domain";
 
@@ -30,7 +29,6 @@ export class UpdateProductUseCase {
             productCategoryId: params.productCategoryId,
             productName: ProductName.create(params.productName),
             productDescription: params.productDescription,
-            productSku: ProductSku.create(params.productSku),
             productImgUrl: params.productImgUrl,
             productBasePrice: Money.of(params.productBasePrice),
             profitMargin: params.profitMargin,

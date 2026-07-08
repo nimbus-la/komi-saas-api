@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
+import { DataSource, Repository } from "typeorm";
 
 import {
   Product,
@@ -18,6 +18,9 @@ export class ProductRepositoryImpl extends ProductRepository {
   constructor(
     @InjectRepository(ProductEntity)
     private readonly productRepository: Repository<ProductEntity>,
+
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {
     super();
   }
@@ -150,5 +153,21 @@ export class ProductRepositoryImpl extends ProductRepository {
       profitMargin: Number(row.profitMargin),
       productStatus: row.isActive,
     });
+  }
+
+  public async nextSkuSequence(): Promise<number> {
+    const rows: Array<{ n: string }> = await this.dataSource.query(
+      "SELECT nextval('product_sku_seq') AS n",
+    );
+
+    const first = rows[0];
+
+    if (first === undefined) {
+      throw new Error(
+        "No se pudo obtener el siguiente valor de la secuencia de SKU.",
+      );
+    }
+
+    return Number(first.n);
   }
 }

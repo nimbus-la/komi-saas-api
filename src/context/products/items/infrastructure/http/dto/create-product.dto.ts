@@ -20,9 +20,6 @@ export class CreateProductDto {
   @IsOptional()
   productDescription: string | undefined;
 
-  @IsString()
-  @MinLength(2)
-  productSku!: string;
 
   @IsString()
   @IsOptional()

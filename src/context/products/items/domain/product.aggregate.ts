@@ -105,7 +105,7 @@ export class Product extends AggregateRoot<ProductId> {
             primitives.productCategoryId,
             ProductName.create(primitives.productName),
             primitives.productDescription,
-            ProductSku.create(primitives.productSku),
+            ProductSku.fromValue(primitives.productSku),
             primitives.productImgUrl,
             Money.of(primitives.productBasePrice, primitives.costCurrency),
             primitives.profitMargin,
@@ -132,7 +132,6 @@ export class Product extends AggregateRoot<ProductId> {
         productCategoryId: string;
         productName: ProductName;
         productDescription: string | undefined;
-        productSku: ProductSku;
         productImgUrl: string | undefined;
         productBasePrice: Money;
         profitMargin: number;
@@ -141,7 +140,6 @@ export class Product extends AggregateRoot<ProductId> {
         this.productCategoryId = params.productCategoryId;
         this.productName = params.productName;
         this.productDescription = params.productDescription;
-        this.productSku = params.productSku;
         this.productImgUrl = params.productImgUrl;
         this.productBasePrice = params.productBasePrice;
         this.profitMargin = params.profitMargin;

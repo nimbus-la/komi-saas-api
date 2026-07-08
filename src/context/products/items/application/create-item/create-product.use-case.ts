@@ -16,7 +16,7 @@ export class CreateProductUseCase {
 
     public async execute(
         params: CreateProductApplicationParams,
-    ): Promise<void> {
+    ): Promise<Product> {
 
         const productName = ProductName.create(params.productName);
 
@@ -26,16 +26,20 @@ export class CreateProductUseCase {
             );
         }
 
+        const sequence = await this.repository.nextSkuSequence();
+
         const product = Product.create({
             productCategoryId: params.productCategoryId,
             productName,
             productDescription: params.productDescription,
-            productSku: ProductSku.create(params.productSku),
+            productSku: ProductSku.fromNumber(sequence),
             productImgUrl: params.productImgUrl,
             productBasePrice: Money.of(params.productBasePrice),
             profitMargin: params.profitMargin,
         });
 
         await this.repository.save(product);
+
+        return product; // 🔥 IMPORTANTE
     }
 }
