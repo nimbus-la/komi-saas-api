@@ -1,9 +1,9 @@
 export class ProductCategory {
     constructor(
-        public readonly id: string,
-        public readonly name: string,
-        public readonly description?: string,
-        public readonly isActive: boolean = true,
+        public id: string,
+        public name: string,
+        public description?: string,
+        public isActive: boolean = true,
     ) { }
 
     static create(params: {

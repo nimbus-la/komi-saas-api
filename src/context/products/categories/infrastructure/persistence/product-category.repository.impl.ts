@@ -73,4 +73,30 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
 
         return count > 0;
     }
+
+    async update(category: ProductCategory): Promise<void> {
+        await this.categoryRepository.update(category.id, {
+            name: category.name,
+            description: category.description ?? null,
+            estado: category.isActive,
+        });
+    }
+    async search(params: { estado?: boolean }): Promise<ProductCategory[]> {
+        const where =
+            params.estado !== undefined
+                ? { estado: params.estado }
+                : {};
+
+        const rows = await this.categoryRepository.find({ where });
+
+        return rows.map(
+            (row) =>
+                new ProductCategory(
+                    row.id,
+                    row.name,
+                    row.description ?? undefined,
+                    row.estado,
+                ),
+        );
+    }
 }
