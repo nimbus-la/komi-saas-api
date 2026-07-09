@@ -16,6 +16,7 @@ export interface CatalogEntry {
  */
 export const RESPONSE_CATALOG: Record<string, CatalogEntry> = {
     '0000': { status: ResponseStatus.Success, category: ErrorCategory.VALIDATION, message: 'Operación exitosa.' },
+    '0001': { status: ResponseStatus.Info, category: ErrorCategory.VALIDATION, message: 'No se encontraron resultados.' },
 
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'Los datos enviados no son válidos.' },
