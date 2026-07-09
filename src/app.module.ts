@@ -4,6 +4,7 @@ import { AppConfigModule, DatabaseModule } from './shared/infrastructure';
 import { TenantModule } from './context/tenants/tenant.module';
 import { ProductsModule } from './context/products/products.module';
 import { InventoryModule } from './context/inventory/inventory-item.module';
+import { RecipeItemModule } from './context/recipes/items/recipe-item.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { InventoryModule } from './context/inventory/inventory-item.module';
     InventoryModule,
     TenantModule,
     ProductsModule,
+    RecipeItemModule,
   ],
 })
 export class AppModule { }
