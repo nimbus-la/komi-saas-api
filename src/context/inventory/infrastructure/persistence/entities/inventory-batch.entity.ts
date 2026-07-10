@@ -1,5 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { InventoryItemEntity } from "./inventory-item.entity";
+import { Column, Entity, Index, PrimaryColumn } from "typeorm";
 
 
 @Entity({ name: 'inventory_batchs' })
@@ -14,17 +13,8 @@ export class InventoryBatchEntity {
     inventoryItemId!: string;
 
 
-    // Relación SOLO de infraestructura: crea la FK hacia inventory_items.
-    // No se navega desde el dominio; existe para integridad referencial.
-    // onDelete RESTRICT: no se puede borrar un item que todavía tiene lotes.
-    @ManyToOne(() => InventoryItemEntity, { nullable: false, onDelete: 'RESTRICT' })
-    @JoinColumn({ name: 'inventory_item_id' })
-    item?: InventoryItemEntity;
-
-
-    /* @Column({ name: 'branch_id', type: 'uuid' })
-    branchId!: string; */
-    // LISTO: descomentar (y migrar) cuando exista el contexto de branches.
+    @Column({ name: 'branch_id', type: 'uuid' })
+    branchId!: string;
 
 
     @Column({ name: 'quantity_received', type: 'numeric', precision: 14, scale: 3 })

@@ -2,7 +2,7 @@ import { AggregateRoot, Money, Quantity } from "@/shared";
 
 import { InventoryItemPrimitives } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { EmptyUpdateException, InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { AmbiguousBranchScopeException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -120,9 +120,10 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * crea con expiration = null. Al final marca el item como actualizado (touch).
      */
     public recivedBatch(params: {
-        quantityReceived: Quantity,
-        unitCost: Money,
-        expirationDate: InventoryBatchExpirationDate | null,
+        branchId: string;
+        quantityReceived: Quantity;
+        unitCost: Money;
+        expirationDate: InventoryBatchExpirationDate | null;
         receivedAt?: Date
     }) {
         if (!this.isActive) {
@@ -134,6 +135,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         };
 
         const batch = InventoryBatch.create({
+            branchId: params.branchId,
             quantityReceived: params.quantityReceived,
             unitCost: params.unitCost,
             expirationDate: this.isPerishable ? params.expirationDate : null,
@@ -141,6 +143,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         });
 
         this.batches.push(batch);
+        this.touch();
     };
 
 
@@ -159,6 +162,18 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * que tiene; si un lote no alcanza, sigue con el siguiente.
      */
     public consume(quantity: Quantity, date: Date = new Date()): void {
+        // Consumir exige que el agregado venga cargado con lotes de UNA sola sucursal. 
+        // Si trae varias (carga consolidada), no sabemos de qué sede descontar.
+        const branches = new Set(
+            this.batches.filter(
+                (batch: InventoryBatch) => batch.isActive(date)
+            ).map((batchMap: InventoryBatch) => batchMap.getBranchId())
+        );
+
+        if (branches.size > 1) {
+            throw new AmbiguousBranchScopeException(this.id.value);
+        };
+
         if (quantity.isZero()) {
             throw new NonPositiveConsumptionException();
         };

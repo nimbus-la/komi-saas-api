@@ -39,21 +39,23 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
 
-    public async findById(id: InventoryItemId): Promise<InventoryItem | null> {
+    public async findById(id: InventoryItemId, branchId?: string): Promise<InventoryItem | null> {
+        console.log('branchId: ', branchId);
+        
         const row = await this.items.findOne({ where: { id: id.value } });
         if (row === null) return null;
 
-        const batchRows = await this.activeBatchesOf([row.id]);
+        const batchRows = await this.activeBatchesOf([row.id], branchId);
         return InventoryItemPersistenceMapper.toAggregate(row, batchRows);
     };
 
 
 
-    public async search(): Promise<InventoryItem[]> {
+    public async search(branchId?: string): Promise<InventoryItem[]> {
         const rows = await this.items.find();
         if (rows.length === 0) return [];
 
-        const batchRows = await this.activeBatchesOf(rows.map((r) => r.id));
+        const batchRows = await this.activeBatchesOf(rows.map((r) => r.id), branchId);
         const grouped = this.groupByItem(batchRows);
 
         return rows.map((row) =>
@@ -70,12 +72,17 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
     /** Solo lotes ACTIVOS: con existencias y no vencidos. */
-    private async activeBatchesOf(itemIds: string[]): Promise<InventoryBatchEntity[]> {
-        return this.batches.createQueryBuilder('b')
+    private async activeBatchesOf(itemIds: string[], branchId?: string): Promise<InventoryBatchEntity[]> {
+        const query = this.batches.createQueryBuilder('b')
             .where('b.inventoryItemId IN (:...itemIds)', { itemIds })
             .andWhere('b.quantityRemaining > 0')
-            .andWhere('(b.expirationDate IS NULL OR b.expirationDate > :now)', { now: new Date() })
-            .getMany();
+            .andWhere('(b.expirationDate IS NULL OR b.expirationDate > :now)', { now: new Date() });
+
+        if (branchId !== undefined) {
+            query.andWhere('b.branchId = :branchId', { branchId });
+        };
+
+        return query.getMany();
     };
 
 

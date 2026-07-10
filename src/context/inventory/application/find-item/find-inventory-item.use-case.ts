@@ -9,8 +9,8 @@ export class FindInventoryItemUseCase {
         private readonly repository: InventoryItemRepository
     ) { };
 
-    public async execute(itemId: string): Promise<InventoryItemResponse> {
-        const item = await this.repository.findById(InventoryItemId.create(itemId));
+    public async execute(itemId: string, branchId?: string): Promise<InventoryItemResponse> {
+        const item = await this.repository.findById(InventoryItemId.create(itemId), branchId);
 
         if (item === null) {
             throw new InventoryItemNotFoundException(itemId);

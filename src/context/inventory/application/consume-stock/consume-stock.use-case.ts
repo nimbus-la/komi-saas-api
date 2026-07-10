@@ -6,6 +6,7 @@ import { InventoryItemId } from "../../domain/value-objects/inventory-item-id.va
 
 export interface ConsumeStockParams {
     itemId: string;
+    branchId: string;
     quantity: string;
     consumedAt?: string;
 };
@@ -17,7 +18,10 @@ export class ConsumeStockUseCase {
     ) { };
 
     public async execute(params: ConsumeStockParams): Promise<void> {
-        const item = await this.repository.findById(InventoryItemId.create(params.itemId));
+        const item = await this.repository.findById(
+            InventoryItemId.create(params.itemId),
+            params.branchId
+        );
 
         if (item === null) {
             throw new InventoryItemNotFoundException(params.itemId);

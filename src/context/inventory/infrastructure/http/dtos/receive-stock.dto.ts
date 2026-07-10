@@ -1,7 +1,10 @@
-import { IsISO8601, IsOptional, IsString } from "class-validator";
+import { IsISO8601, IsOptional, IsString, IsUUID } from "class-validator";
 
 
 export class ReceiveStockDto {
+    @IsUUID()
+    branchId!: string;
+    
     @IsString()
     quantityReceived!: string;
 

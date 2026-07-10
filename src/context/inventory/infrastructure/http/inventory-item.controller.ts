@@ -38,23 +38,29 @@ export class InventoryItemController {
 
 
     @Get()
-    public async list() {
-        return this.searchItems.execute();
+    public async list(@Query('branchId') branchId?: string) {
+        return this.searchItems.execute(branchId);
     };
 
 
 
     @Get(':id')
-    public async find(@Param('id') id: string) {
+    public async find(
+        @Param('id') id: string,
+    ) {
         return this.findItem.execute(id);
     };
 
 
 
     @Post('receive/:id')
-    public async receive(@Param('id') id: string, @Body() dto: ReceiveStockDto): Promise<void> {
+    public async receive(
+        @Param('id') id: string,
+        @Body() dto: ReceiveStockDto
+    ): Promise<void> {
         await this.receiveStock.execute({
             itemId: id,
+            branchId: dto.branchId,
             quantityReceived: dto.quantityReceived,
             totalCostAmount: dto.totalCostAmount,
             expirationDate: dto.expirationDate ?? null,
@@ -65,9 +71,13 @@ export class InventoryItemController {
 
 
     @Post('consume/:id')
-    public async consume(@Param('id') id: string, @Body() dto: ConsumeStockDto): Promise<void> {
+    public async consume(
+        @Param('id') id: string,
+        @Body() dto: ConsumeStockDto
+    ): Promise<void> {
         await this.consumeStock.execute({
             itemId: id,
+            branchId: dto.branchId,
             quantity: dto.quantity,
             ...(dto.consumedAt ? { consumedAt: dto.consumedAt } : {}),
         });
@@ -80,8 +90,9 @@ export class InventoryItemController {
         @Param('id') id: string,
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) pageNumber: number,
         @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+        @Query('branchId') branchId?: string,
     ) {
-        return this.searchItemBatches.execute(id, { pageNumber, pageSize });
+        return this.searchItemBatches.execute(id, { pageNumber, pageSize }, branchId);
     };
 
 

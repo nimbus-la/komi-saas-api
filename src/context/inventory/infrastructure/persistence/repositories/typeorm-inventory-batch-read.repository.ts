@@ -14,9 +14,12 @@ export class TypeOrmInventoryBatchReadRepository implements InventoryBatchReadRe
         private readonly batches: Repository<InventoryBatchEntity>,
     ) { };
 
-    public async findByItem(itemId: string, pagination: Pagination): Promise<Paginated<InventoryBatchView>> {
+    public async findByItem(itemId: string, pagination: Pagination, branchId?: string): Promise<Paginated<InventoryBatchView>> {
         const [rows, total] = await this.batches.findAndCount({
-            where: { inventoryItemId: itemId },
+            where: { 
+                inventoryItemId: itemId,
+                ...(branchId && { branchId })
+            },
             order: { receivedAt: 'DESC' },
             skip: (pagination.pageNumber - 1) * pagination.pageSize,
             take: pagination.pageSize,

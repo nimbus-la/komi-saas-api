@@ -16,6 +16,7 @@ export interface InventoryItemCreatedProps {
 
 export interface InventoryBatchPrimitives {
     id: string;
+    branchId: string;
     quantityReceived: string;
     quantityRemaining: string;
     unitCostAmount: string;
