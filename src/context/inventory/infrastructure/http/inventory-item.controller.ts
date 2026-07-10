@@ -47,9 +47,8 @@ export class InventoryItemController {
     @Get(':id')
     public async find(
         @Param('id') id: string,
-        @Query('branchId') branchId?: string,
     ) {
-        return this.findItem.execute(id, branchId);
+        return this.findItem.execute(id);
     };
 
 
@@ -91,8 +90,9 @@ export class InventoryItemController {
         @Param('id') id: string,
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) pageNumber: number,
         @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
+        @Query('branchId') branchId?: string,
     ) {
-        return this.searchItemBatches.execute(id, { pageNumber, pageSize });
+        return this.searchItemBatches.execute(id, { pageNumber, pageSize }, branchId);
     };
 
 
