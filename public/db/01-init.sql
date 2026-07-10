@@ -76,10 +76,12 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_tenant
 -- --------------------------------------------------------------------------
 -- Tabla: inventory_batchs
 --   FK: inventory_item_id -> inventory_items(inventory_item_id)
+--   FK: branch_id         -> branches(branch_id)
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS inventory_batchs (
     inventory_batch_id  UUID           PRIMARY KEY,
     inventory_item_id   UUID           NOT NULL,
+    branch_id           UUID           NOT NULL,
     quantity_received   NUMERIC(14, 3) NOT NULL,
     quantity_remaining  NUMERIC(14, 3) NOT NULL,
     unit_cost_amount    NUMERIC(12, 2) NOT NULL,
@@ -91,12 +93,20 @@ CREATE TABLE IF NOT EXISTS inventory_batchs (
         FOREIGN KEY (inventory_item_id)
         REFERENCES inventory_items (inventory_item_id)
         ON DELETE RESTRICT
+
+    CONSTRAINT fk_inventory_batchs_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches (branch_id)
+        ON DELETE RESTRICT
 );
 
 
--- El lote casi siempre se consulta filtrando por su item.
+-- El lote se consulta filtrando por item y, ahora, por sucursal.
 CREATE INDEX IF NOT EXISTS idx_inventory_batchs_item
     ON inventory_batchs (inventory_item_id);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_batchs_branch
+    ON inventory_batchs (branch_id);
 
 
 

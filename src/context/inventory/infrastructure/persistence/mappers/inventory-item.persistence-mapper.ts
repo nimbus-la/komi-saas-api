@@ -30,6 +30,7 @@ export class InventoryItemPersistenceMapper {
             batches: batchRows.map(
                 (batch: InventoryBatchEntity): InventoryBatchPrimitives => ({
                     id: batch.id,
+                    branchId: batch.branchId,
                     quantityReceived: batch.quantityReceived,
                     quantityRemaining: batch.quantityRemaining,
                     unitCostAmount: batch.unitCostAmount,
@@ -69,6 +70,7 @@ export class InventoryItemPersistenceMapper {
         const batchRows: InventoryBatchEntity[] = batches.map(
             (batch: InventoryBatchPrimitives) => ({
                 id: batch.id,
+                branchId: batch.branchId,
                 inventoryItemId: id,
                 quantityReceived: batch.quantityReceived,
                 quantityRemaining: batch.quantityRemaining,

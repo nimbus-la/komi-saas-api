@@ -156,3 +156,27 @@ export class TenantNotFoundException extends DomainException {
         });
     };
 };
+
+
+
+/** La sucursal indicada no existe o no pertenece al tenant. Código 1330. */
+export class BranchNotFoundException extends DomainException {
+    constructor(branchId: string) {
+        super({
+            code: '1330',
+            detail: `La sucursal ${branchId} no existe o no está disponible.`
+        });
+    };
+};
+
+
+
+/** Se intenta consumir sobre un agregado cargado con lotes de varias sucursales. Código 1331. */
+export class AmbiguousBranchScopeException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1331',
+            detail: `No se puede consumir el item ${itemId} sin especificar una sucursal: hay lotes de varias sedes cargados.`
+        });
+    };
+};

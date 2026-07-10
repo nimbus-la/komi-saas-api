@@ -55,6 +55,8 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntry> = {
     '1324': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'No se puede cambiar la unidad de medida; el item ya tiene lotes.' },
     '1325': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'No se puede cambiar la perecibilidad; el item ya tiene lotes.' },
     '1326': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'Debe enviar al menos un campo para actualizar.' },
+    '1330': { status: ResponseStatus.Error, category: ErrorCategory.NOT_FOUND, message: 'La sucursal indicada no existe.' },
+    '1331': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT,  message: 'Debe especificar una sucursal para esta operación.' },
 
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NOT_FOUND, message: 'El recurso solicitado no existe.' },

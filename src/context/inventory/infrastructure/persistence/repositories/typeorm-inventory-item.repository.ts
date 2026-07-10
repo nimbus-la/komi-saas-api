@@ -70,12 +70,17 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
     /** Solo lotes ACTIVOS: con existencias y no vencidos. */
-    private async activeBatchesOf(itemIds: string[]): Promise<InventoryBatchEntity[]> {
-        return this.batches.createQueryBuilder('b')
+    private async activeBatchesOf(itemIds: string[], branchId?: string): Promise<InventoryBatchEntity[]> {
+        const query = this.batches.createQueryBuilder('b')
             .where('b.inventoryItemId IN (:...itemIds)', { itemIds })
             .andWhere('b.quantityRemaining > 0')
-            .andWhere('(b.expirationDate IS NULL OR b.expirationDate > :now)', { now: new Date() })
-            .getMany();
+            .andWhere('(b.expirationDate IS NULL OR b.expirationDate > :now)', { now: new Date() });
+
+        if (branchId !== undefined) {
+            query.andWhere('b.branchId = :branchId', { branchId });
+        };
+
+        return query.getMany();
     };
 
 
