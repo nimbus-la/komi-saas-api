@@ -28,6 +28,12 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntry> = {
     '1006': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El NIT del tenant no es válido.' },
     '1007': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El slug del tenant no es válido.' },
     '1008': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La descripción del tenant no es válida.' },
+    '1009': {status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El nombre de la sucursal no es válido.' },
+    '1010': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La dirección de la sucursal no es válida.' },
+    '1011': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El teléfono de la sucursal no es válido.' },
+    '1012': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La ciudad de la sucursal no es válida.' },
+    '1013': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'El departamento de la sucursal no es válido.' },
+
 
     '1200': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El nombre del item ya se encuentra registrado.' },
     '1201': { status: ResponseStatus.Error, category: ErrorCategory.NOT_FOUND, message: 'El item de inventario no existe.' },
@@ -35,7 +41,9 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntry> = {
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El slug del tenant ya se encuentra registrado.' },
     '1204': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El nombre del tenant ya se encuentra registrado.' },
     '1205': { status: ResponseStatus.Error, category: ErrorCategory.NOT_FOUND, message: 'El tenant indicado no existe.' },
-    
+    '1206': { status: ResponseStatus.Error, category: ErrorCategory.CONFLICT, message: 'El nombre de la sucursal ya se encuentra registrado.' },
+    '1207': { status: ResponseStatus.Error, category: ErrorCategory.NOT_FOUND, message: 'La sucursal indicada no existe.' },
+
     // 13xx / reglas de lote y stock
     '1300': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La fecha de vencimiento no es válida.' },
     '1310': { status: ResponseStatus.Error, category: ErrorCategory.VALIDATION, message: 'La cantidad recibida del lote no es válida.' },

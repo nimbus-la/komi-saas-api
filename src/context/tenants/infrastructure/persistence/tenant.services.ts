@@ -28,11 +28,19 @@ export class TenantService implements TenantRepository {
     };
 
     public async searchById(id: TenantId) : Promise<TenantResponse  | null> {
-        const row = await this.tenantRepository.findOne({
+        /*const row = await this.tenantRepository.findOne({
             where: {
                 id: id.value
             },
-        });
+        });*/
+        const row = await this.tenantRepository.findOne({
+    where: {
+        id: id.value,
+    },
+    relations: {
+        branches: true,
+    },
+});
 
         if(!row) {
             return null;
@@ -48,6 +56,8 @@ export class TenantService implements TenantRepository {
             created_at: row.createdAt,
             updated_at: row.updatedAt,
             isActive: row.isActive,
+            
+            branches: row.branches,
         };
     }
 
