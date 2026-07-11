@@ -1,6 +1,6 @@
+import { InventoryItem } from "../../domain";
 import { DEFAULT_CURRENCY } from "../../domain/common/constants.common";
-import { InventoryItem } from "../../domain/inventory-item.aggregate";
-import { InventoryItemResponse } from "../types/application.types";
+import { InventoryItemResponse } from "../dtos/inventory-item.response";
 
 
 export interface ToResponseOptions {

@@ -1,10 +1,9 @@
 import { Money, Quantity } from "@/shared";
-import { BranchNotFoundException, InventoryItemNotFoundException } from "../../domain/exceptions/inventory-item.exceptions";
-import { InventoryItemRepository } from "../../domain/inventory-item.repository";
-import { InventoryItemId } from "../../domain/value-objects/inventory-item-id.value-object";
-import { InventoryBatchExpirationDate } from "../../domain/entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
-import { BranchChecker } from "../ports/branch-checker";
-import { DEFAULT_CURRENCY } from "../../domain/common/constants.common";
+import { BranchNotFoundException, InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
+import { BranchChecker } from "../../ports/branch-checker";
+import { DEFAULT_CURRENCY } from "@/context/inventory/domain/common/constants.common";
+import { InventoryBatchExpirationDate } from "@/context/inventory/domain/entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
+
 
 
 export interface ReceiveStockParams {

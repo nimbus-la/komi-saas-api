@@ -1,8 +1,6 @@
 import { Quantity } from "@/shared";
+import { InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
 
-import { InventoryItemNotFoundException } from "../../domain/exceptions/inventory-item.exceptions";
-import { InventoryItemRepository } from "../../domain/inventory-item.repository";
-import { InventoryItemId } from "../../domain/value-objects/inventory-item-id.value-object";
 
 export interface ConsumeStockParams {
     itemId: string;

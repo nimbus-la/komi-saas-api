@@ -1,8 +1,7 @@
-import { InventoryItemNotFoundException } from "../../domain/exceptions/inventory-item.exceptions";
-import { InventoryItemRepository } from "../../domain/inventory-item.repository";
-import { InventoryItemId } from "../../domain/value-objects/inventory-item-id.value-object";
-import { toInventoryItemResponse } from "../mappers/inventory-item-response.mapper";
-import { InventoryItemResponse } from "../types/application.types";
+import { InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
+import { toInventoryItemResponse } from "../../mappers/inventory-item-response.mapper";
+import { InventoryItemResponse } from "../../dtos/inventory-item.response";
+
 
 export class FindInventoryItemUseCase {
     constructor(

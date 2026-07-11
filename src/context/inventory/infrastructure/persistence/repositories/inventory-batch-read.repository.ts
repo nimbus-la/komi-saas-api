@@ -3,9 +3,10 @@ import { Injectable } from "@nestjs/common";
 
 import { Repository } from "typeorm";
 
+import { Paginated, Pagination } from "@/interfaces";
 import { InventoryBatchReadRepository } from "@/context/inventory/application/ports/inventory-batch-read.repository";
-import { InventoryBatchEntity } from "../entities/inventory-batch.entity";
-import { InventoryBatchView, Paginated, Pagination } from "@/context/inventory/application/types/application.types";
+import { InventoryBatchView } from "@/context/inventory/application";
+import { InventoryBatchEntity } from "../models/inventory-batch.entity";
 
 @Injectable()
 export class TypeOrmInventoryBatchReadRepository implements InventoryBatchReadRepository {

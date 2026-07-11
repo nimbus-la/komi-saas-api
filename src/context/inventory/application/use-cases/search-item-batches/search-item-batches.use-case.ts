@@ -1,5 +1,7 @@
-import { InventoryBatchReadRepository } from "../ports/inventory-batch-read.repository";
-import { InventoryBatchView, Paginated, Pagination } from "../types/application.types";
+import { Paginated, Pagination } from "@/interfaces";
+import { InventoryBatchReadRepository } from "../../ports/inventory-batch-read.repository";
+import { InventoryBatchView } from "../../dtos/inventory-item.response";
+
 
 export class SearchItemBatchesUseCase {
     constructor(

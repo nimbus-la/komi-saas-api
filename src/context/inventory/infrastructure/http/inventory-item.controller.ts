@@ -1,18 +1,11 @@
 import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
 
 import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
-import { CreateInventoryItemUseCase } from "../../application/create-item/create-inventory-item.use-case";
-import { SearchInventoryItemsUseCase } from "../../application/search-items/search-inventory-items.use-case";
-import { FindInventoryItemUseCase } from "../../application/find-item/find-inventory-item.use-case";
-import { ReceiveStockUseCase } from "../../application/receive-stock/receive-stock.use-case";
-import { ConsumeStockUseCase } from "../../application/consume-stock/consume-stock.use-case";
-import { SearchItemBatchesUseCase } from "../../application/search-item-batches/search-item-batches.use-case";
+import { ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetMinimumStockUseCase, UpdateInventoryItemUseCase } from "../../application";
 import { CreateItemDto } from "./dtos/create-item.dto";
 import { ReceiveStockDto } from "./dtos/receive-stock.dto";
 import { ConsumeStockDto } from "./dtos/consume-stock.dto";
-import { UpdateInventoryItemUseCase } from "../../application/update-item/update-inventory-item.use-case";
 import { UpdateItemDto } from "./dtos/update-item.dto";
-import { SetMinimumStockUseCase } from "../../application/set-minimum-stock/set-minimum-stock.use-case";
 import { SetMinimumStockDto } from "./dtos/set-minimum-stock.dto";
 
 
