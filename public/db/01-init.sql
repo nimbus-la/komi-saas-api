@@ -54,8 +54,6 @@ CREATE TABLE IF NOT EXISTS inventory_items (
     tenant_id          UUID           NOT NULL,
     name               VARCHAR(120)   NOT NULL,
     unit_of_measure    VARCHAR(20)    NOT NULL,
-    cost_amount        NUMERIC(12, 2) NOT NULL,
-    cost_currency      VARCHAR(3)     NOT NULL,
     is_perishable      BOOLEAN        NOT NULL,
     is_active          BOOLEAN        NOT NULL DEFAULT TRUE,
     created_at         TIMESTAMPTZ    NOT NULL,
