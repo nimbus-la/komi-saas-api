@@ -1,8 +1,6 @@
 import { Quantity } from "@/shared";
-import { BranchNotFoundException, InventoryItemNotFoundException, MinimumStockValueRequiredException } from "../../domain/exceptions/inventory-item.exceptions";
-import { InventoryItemRepository } from "../../domain/inventory-item.repository";
-import { InventoryItemId } from "../../domain/value-objects/inventory-item-id.value-object";
-import { BranchChecker } from "../ports/branch-checker";
+import { BranchNotFoundException, InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository, MinimumStockValueRequiredException } from "../../../domain";
+import { BranchChecker } from "../../ports/branch-checker";
 
 export interface SetMinimumStockParams {
     itemId: string;

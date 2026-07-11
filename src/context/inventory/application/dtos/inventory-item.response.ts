@@ -1,19 +1,3 @@
-export interface Pagination {
-    pageNumber: number;
-    pageSize: number;
-};
-
-
-
-export interface Paginated<T> {
-    data: T[];
-    pageNumber: number;
-    pageSize: number;
-    total: number;
-};
-
-
-
 export interface InventoryBatchView {
     id: string;
     quantityReceived: string;

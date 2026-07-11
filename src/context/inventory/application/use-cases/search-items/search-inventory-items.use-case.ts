@@ -1,6 +1,7 @@
-import { InventoryItemRepository } from "../../domain/inventory-item.repository";
-import { toInventoryItemResponse } from "../mappers/inventory-item-response.mapper";
-import { InventoryItemResponse } from "../types/application.types";
+import { InventoryItemRepository } from "../../../domain";
+import { InventoryItemResponse } from "../../dtos/inventory-item.response";
+import { toInventoryItemResponse } from "../../mappers/inventory-item-response.mapper";
+
 
 export class SearchInventoryItemsUseCase {
     constructor(

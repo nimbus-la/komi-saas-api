@@ -1,10 +1,7 @@
-import { InventoryItem } from "../../domain/inventory-item.aggregate";
-import { InventoryItemRepository } from "../../domain/inventory-item.repository";
-import { InventoryItemNameAlreadyExistsException, TenantNotFoundException } from "../../domain/exceptions/inventory-item.exceptions";
-import { InventoryItemName } from "../../domain/value-objects/inventory-item-name.value-object";
-import { InventoryItemUnit } from "../../domain/value-objects/inventory-item-unit.value-object";
-import { InventoryItemSku } from "../../domain/value-objects/inventory-item-sku.value-object";
-import { TenantChecker } from "../ports/tenant-checker";
+
+import { InventoryItem, InventoryItemName, InventoryItemNameAlreadyExistsException, InventoryItemRepository, InventoryItemSku, InventoryItemUnit, TenantNotFoundException } from "../../../domain";
+import { TenantChecker } from "../../ports/tenant-checker";
+
 
 export interface CreateInventoryItemParams {
     tenantId: string;

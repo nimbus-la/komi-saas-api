@@ -4,13 +4,13 @@ import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 
 import { InventoryItemRepository } from "../../../domain/inventory-item.repository";
-import { InventoryItemEntity } from "../entities/inventory-item.entity";
-import { InventoryBatchEntity } from "../entities/inventory-batch.entity";
+import { InventoryItemEntity } from "../models/inventory-item.entity";
+import { InventoryBatchEntity } from "../models/inventory-batch.entity";
 import { InventoryItem } from "../../../domain/inventory-item.aggregate";
 import { InventoryItemId } from "@/context/inventory/domain/value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "@/context/inventory/domain/value-objects/inventory-item-name.value-object";
 import { InventoryItemPersistenceMapper } from "../mappers/inventory-item.persistence-mapper";
-import { InventoryStockEntity } from "../entities/inventory-stock.entity";
+import { InventoryStockEntity } from "../models/inventory-stock.entity";
 
 
 @Injectable()

@@ -1,8 +1,8 @@
 import { InventoryBatchPrimitives, InventoryItemPrimitives, InventoryStockPrimitives } from "@/context/inventory/domain/types/domain.types";
-import { InventoryBatchEntity } from "../entities/inventory-batch.entity";
-import { InventoryItemEntity } from "../entities/inventory-item.entity";
+import { InventoryBatchEntity } from "../models/inventory-batch.entity";
+import { InventoryItemEntity } from "../models/inventory-item.entity";
 import { InventoryItem } from "@/context/inventory/domain/inventory-item.aggregate";
-import { InventoryStockEntity } from "../entities/inventory-stock.entity";
+import { InventoryStockEntity } from "../models/inventory-stock.entity";
 
 /**
  * Traduce entre el agregado de dominio (InventoryItem) y las entidades de

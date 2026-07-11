@@ -1,9 +1,5 @@
 import { Money } from "@/shared";
-import { InventoryItemNameAlreadyExistsException, InventoryItemNotFoundException } from "../../domain/exceptions/inventory-item.exceptions";
-import { InventoryItemRepository } from "../../domain/inventory-item.repository";
-import { InventoryItemId } from "../../domain/value-objects/inventory-item-id.value-object";
-import { InventoryItemName } from "../../domain/value-objects/inventory-item-name.value-object";
-import { InventoryItemUnit } from "../../domain/value-objects/inventory-item-unit.value-object";
+import { InventoryItemId, InventoryItemName, InventoryItemNameAlreadyExistsException, InventoryItemNotFoundException, InventoryItemRepository, InventoryItemUnit } from "../../../domain";
 
 export interface UpdateInventoryItemParams {
     name?: string;

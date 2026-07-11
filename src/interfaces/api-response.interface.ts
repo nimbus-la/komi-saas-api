@@ -7,3 +7,19 @@ export interface ApiResponse<T = unknown> {
     message: string;
     data: T | null;
 };
+
+
+
+export interface Pagination {
+    pageNumber: number;
+    pageSize: number;
+};
+
+
+
+export interface Paginated<T> {
+    data: T[];
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+};
