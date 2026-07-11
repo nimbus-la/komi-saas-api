@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import { DomainException } from '../exception/domain.exception';
+import { DomainException } from '../domain/domain.exception';
 
 
 /**
