@@ -4,3 +4,7 @@ export enum MeasurementUnit {
     Milliliter = 'MILLILITER',
     Unit = 'UNIT',
 };
+
+
+/** Moneda por defecto del sistema. Cuando se soporte multi-moneda, subirá al tenant. */
+export const DEFAULT_CURRENCY = 'COP';

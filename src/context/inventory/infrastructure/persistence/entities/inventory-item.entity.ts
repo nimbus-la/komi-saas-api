@@ -24,14 +24,6 @@ export class InventoryItemEntity {
     unitOfMeasure!: string;
 
 
-    @Column({ name: 'cost_amount', type: 'numeric', precision: 12, scale: 2 })
-    costAmount!: string;
-
-
-    @Column({ name: 'cost_currency', type: 'varchar', length: 3 })
-    costCurrency!: string;
-
-
     @Column({ name: 'is_perishable', type: 'boolean' })
     isPerishable!: boolean;
 

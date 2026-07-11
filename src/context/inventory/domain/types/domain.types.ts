@@ -4,8 +4,6 @@ export interface InventoryItemCreatedProps {
     sku: string;
     name: string;
     unitOfMeasure: string;
-    costAmount: string;
-    costCurrency: string;
     isPerishable: boolean;
     isActive: boolean;
     createdAt: Date;
@@ -33,8 +31,6 @@ export interface InventoryItemPrimitives {
     sku: string;
     name: string;
     unitOfMeasure: string;
-    costAmount: string;
-    costCurrency: string;
     isPerishable: boolean;
     isActive: boolean;
     createdAt: Date;

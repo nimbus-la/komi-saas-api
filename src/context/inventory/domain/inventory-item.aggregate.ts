@@ -9,6 +9,7 @@ import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-obj
 import { InventoryBatch } from "./entities/inventory-batch/inventory-batch.entity";
 import { InventoryBatchExpirationDate } from "./entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
 import { InventoryItemSku } from "./value-objects/inventory-item-sku.value-object";
+import { DEFAULT_CURRENCY } from "./common/constants.common";
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
@@ -16,7 +17,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     private readonly sku: InventoryItemSku;
     private name: InventoryItemName;
     private unitOfMeasure: InventoryItemUnit;
-    private costAmount: Money;
     private batches: InventoryBatch[];
     private isPerishable: boolean;
     private isActive: boolean;
@@ -36,7 +36,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         sku: InventoryItemSku,
         name: InventoryItemName,
         unitOfMeasure: InventoryItemUnit,
-        costAmount: Money,
         isPerishable: boolean,
         isActive: boolean,
         createdAt: Date,
@@ -50,7 +49,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         this.name = name;
         this.unitOfMeasure = unitOfMeasure;
         this.isPerishable = isPerishable;
-        this.costAmount = costAmount;
         this.isActive = isActive;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -70,7 +68,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         sku: InventoryItemSku;
         name: InventoryItemName;
         unitOfMeasure: InventoryItemUnit;
-        costAmount: Money;
         isPerishable: boolean;
         createdAt?: Date;
     }): InventoryItem {
@@ -82,7 +79,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             params.sku,
             params.name,
             params.unitOfMeasure,
-            params.costAmount,
             params.isPerishable,
             true,
             now,
@@ -97,8 +93,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
                 sku: item.sku.value,
                 name: item.name.value,
                 unitOfMeasure: item.unitOfMeasure.value,
-                costAmount: item.costAmount.getAmount(),
-                costCurrency: item.costAmount.currency,
                 isPerishable: item.isPerishable,
                 isActive: item.isActive,
                 createdAt: now,
@@ -235,7 +229,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
         if (active.length === 0) return null;
 
-        let totalValue = Money.zero(this.costAmount.currency);
+        let totalValue = Money.zero(DEFAULT_CURRENCY);
         let totalQuantity = Quantity.zero();
 
         for (const batch of active) {
@@ -296,13 +290,11 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      */
     public update(params: {
         name?: InventoryItemName;
-        costAmount?: Money;
         unitOfMeasure?: InventoryItemUnit;
         isPerishable?: boolean;
     }) {
         const hasChanges =
             params.name !== undefined ||
-            params.costAmount !== undefined ||
             params.unitOfMeasure !== undefined ||
             params.isPerishable !== undefined;
 
@@ -312,10 +304,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
         if (params.name !== undefined) {
             this.name = params.name;
-        };
-
-        if (params.costAmount !== undefined) {
-            this.costAmount = params.costAmount;
         };
 
         if (params.unitOfMeasure !== undefined) {
@@ -385,8 +373,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             sku: this.sku.value,
             name: this.name.value,
             unitOfMeasure: this.unitOfMeasure.value,
-            costAmount: this.costAmount.getAmount(),
-            costCurrency: this.costAmount.currency,
             isPerishable: this.isPerishable,
             isActive: this.isActive,
             createdAt: this.createdAt,
@@ -411,7 +397,6 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             InventoryItemSku.fromValue(p.sku),
             InventoryItemName.create(p.name),
             InventoryItemUnit.create(p.unitOfMeasure),
-            Money.of(p.costAmount, p.costCurrency),
             p.isPerishable,
             p.isActive,
             p.createdAt,
