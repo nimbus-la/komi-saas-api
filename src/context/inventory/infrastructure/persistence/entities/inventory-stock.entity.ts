@@ -1,5 +1,6 @@
-import { Column, PrimaryColumn } from "typeorm";
+import { Column, Entity, PrimaryColumn } from "typeorm";
 
+@Entity({ name: 'inventory_stock' })
 export class InventoryStockEntity {
 
     @PrimaryColumn({ name: 'inventory_stock_id', type: 'uuid' })
