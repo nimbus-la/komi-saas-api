@@ -4,10 +4,10 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nes
 
 import { map, Observable } from "rxjs";
 
-import { ApiResponse } from "@/shared/response/api-response";
+import { ApiResponse } from "@/interfaces";
+import { RESPONSE_CODE, ResponseStatus } from "@/utils";
 import { RESPONSE_MESSAGE_KEY } from "./response-message.decorator";
-import { ResponseStatus } from "@/shared/response/response-status";
-import { ResponseCode } from "@/shared/response/response-code";
+
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
@@ -26,7 +26,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
                 if (ResponseInterceptor.isEmptyResult(data)) {
                     return {
                         status: ResponseStatus.Info,
-                        code: ResponseCode.NO_CONTENT,
+                        code: RESPONSE_CODE.NO_CONTENT,
                         httpStatus,
                         message: 'No se encontraron resultados.',
                         data: (data ?? null) as T | null,
@@ -35,7 +35,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
 
                 return {
                     status: ResponseStatus.Success,
-                    code: ResponseCode.SUCCESS,
+                    code: RESPONSE_CODE.SUCCESS,
                     httpStatus,
                     message,
                     data: (data ?? null) as T | null,

@@ -1,4 +1,4 @@
-import { ResponseStatus } from "./response-status";
+import { ResponseStatus } from "@/utils";
 
 export interface ApiResponse<T = unknown> {
     status: ResponseStatus;
