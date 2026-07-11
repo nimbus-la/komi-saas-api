@@ -25,6 +25,14 @@ export interface InventoryBatchPrimitives {
 
 
 
+export interface InventoryStockPrimitives {
+    id: string;
+    branchId: string;
+    minStock: string;
+};
+
+
+
 export interface InventoryItemPrimitives {
     id: string;
     tenantId: string;
@@ -33,7 +41,9 @@ export interface InventoryItemPrimitives {
     unitOfMeasure: string;
     isPerishable: boolean;
     isActive: boolean;
+    minGlobalStock: string | null;
     createdAt: Date;
     updatedAt: Date;
     batches: InventoryBatchPrimitives[];
+    stocks: InventoryStockPrimitives[];
 };

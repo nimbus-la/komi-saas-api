@@ -12,6 +12,8 @@ import { ReceiveStockDto } from "./dtos/receive-stock.dto";
 import { ConsumeStockDto } from "./dtos/consume-stock.dto";
 import { UpdateInventoryItemUseCase } from "../../application/update-item/update-inventory-item.use-case";
 import { UpdateItemDto } from "./dtos/update-item.dto";
+import { SetMinimumStockUseCase } from "../../application/set-minimum-stock/set-minimum-stock.use-case";
+import { SetMinimumStockDto } from "./dtos/set-minimum-stock.dto";
 
 
 @UseInterceptors(ResponseInterceptor)
@@ -26,6 +28,7 @@ export class InventoryItemController {
         private readonly consumeStock: ConsumeStockUseCase,
         private readonly searchItemBatches: SearchItemBatchesUseCase,
         private readonly updateItem: UpdateInventoryItemUseCase,
+        private readonly setMinimumStock: SetMinimumStockUseCase,
     ) { };
 
 
@@ -103,5 +106,19 @@ export class InventoryItemController {
         @Body() dto: UpdateItemDto,
     ): Promise<void> {
         await this.updateItem.execute(id, dto);
+    };
+
+
+
+    @Patch('minimum-stock/:id')
+    public async setMinimum(
+        @Param('id') id: string,
+        @Body() dto: SetMinimumStockDto,
+    ) {
+        await this.setMinimumStock.execute({
+            itemId: id,
+            ...(dto.branchId ? { branchId: dto.branchId } : {}),
+            minStock: dto.minStock
+        });
     };
 };
