@@ -1,5 +1,5 @@
 import { validate as IsUUID } from 'uuid';
-import { DomainException } from '../exception/domain.exception';
+import { DomainException } from '../domain/domain.exception';
 
 
 export class InvalidUuidException extends DomainException {
