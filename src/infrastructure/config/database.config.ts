@@ -1,15 +1,5 @@
 import { registerAs } from "@nestjs/config";
-
-export interface DatabaseConfig {
-    host: string;
-    port: number;
-    username: string;
-    password: string;
-    database: string;
-    synchronize: boolean;
-    logging: boolean;
-    ssl: boolean;
-};
+import { DatabaseConfig } from "@/interfaces";
 
 
 /**

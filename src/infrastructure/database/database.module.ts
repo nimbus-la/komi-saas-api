@@ -2,7 +2,7 @@ import { Logger, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { DatabaseConfig } from "../config/database.config";
+import { DatabaseConfig } from "@/interfaces";
 
 
 /**

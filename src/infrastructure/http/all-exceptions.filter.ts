@@ -1,11 +1,10 @@
 import { Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common";
 
-import { DomainException } from "@/shared/exception/domain.exception";
-import { ErrorCategory } from "@/shared/exception/error-category.exception";
-import { ApiResponse } from "@/shared/response/api-response";
-import { CatalogEntry, RESPONSE_CATALOG, UNEXPECTED_CODE } from "@/shared/response/response-catalog";
-import { ResponseCode } from "@/shared/response/response-code";
+import { DomainException, RESPONSE_CATALOG } from "@/shared";
+import { CatalogEntryResponse, ErrorCategory, RESPONSE_CODE } from "@/utils";
+import { ApiResponse } from "@/interfaces";
+
 
 
 @Catch()
@@ -14,10 +13,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
 
     private static readonly CATEGORY_TO_HTTP: Record<ErrorCategory, HttpStatus> = {
-        [ErrorCategory.VALIDATION]: HttpStatus.BAD_REQUEST,
-        [ErrorCategory.NOT_FOUND]: HttpStatus.NOT_FOUND,
-        [ErrorCategory.CONFLICT]: HttpStatus.CONFLICT,
-        [ErrorCategory.UNAVAILABLE]: HttpStatus.SERVICE_UNAVAILABLE,
+        [ErrorCategory.Validation]: HttpStatus.BAD_REQUEST,
+        [ErrorCategory.NotFound]: HttpStatus.NOT_FOUND,
+        [ErrorCategory.Conflict]: HttpStatus.CONFLICT,
+        [ErrorCategory.Unavailable]: HttpStatus.SERVICE_UNAVAILABLE,
     };
 
 
@@ -30,8 +29,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
 
     /** Busca el código en el catálogo; si no existe, cae al genérico. Nunca devuelve undefined. */
-    private resolveEntry(code: string): CatalogEntry {
-        return RESPONSE_CATALOG[code] ?? RESPONSE_CATALOG[UNEXPECTED_CODE]!;
+    private resolveEntry(code: string): CatalogEntryResponse {
+        return RESPONSE_CATALOG[code] ?? RESPONSE_CATALOG[RESPONSE_CODE.INTERNAL_ERROR]!;
     };
 
 
@@ -57,11 +56,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
             this.logger.warn(`[HTTP ${httpStatus}] ${JSON.stringify(exception.getResponse())}`);
 
-            const entry = this.resolveEntry(ResponseCode.VALIDATION_ERROR);
+            const entry = this.resolveEntry(RESPONSE_CODE.VALIDATION_ERROR);
 
             return {
                 status: entry.status,
-                code: ResponseCode.VALIDATION_ERROR,
+                code: RESPONSE_CODE.VALIDATION_ERROR,
                 httpStatus,
                 message: entry.message,
                 data: null
@@ -70,11 +69,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
 
         this.logger.error(exception);
-        const entry = this.resolveEntry(UNEXPECTED_CODE);
+        const entry = this.resolveEntry(RESPONSE_CODE.INTERNAL_ERROR);
 
         return {
             status: entry.status,
-            code: UNEXPECTED_CODE,
+            code: RESPONSE_CODE.INTERNAL_ERROR,
             httpStatus: HttpStatus.INTERNAL_SERVER_ERROR,
             message: entry.message,
             data: null

@@ -10,6 +10,4 @@ export * from './value-object/quantity.value-object';
 
 
 export * from './exception/domain.exception';
-
-
-export * from './infrastructure';
+export * from './response/response-catalog';

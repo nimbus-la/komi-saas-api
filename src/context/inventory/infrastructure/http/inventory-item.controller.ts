@@ -1,6 +1,6 @@
 import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor } from "@/shared";
+import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
 import { CreateInventoryItemUseCase } from "../../application/create-item/create-inventory-item.use-case";
 import { SearchInventoryItemsUseCase } from "../../application/search-items/search-inventory-items.use-case";
 import { FindInventoryItemUseCase } from "../../application/find-item/find-inventory-item.use-case";
