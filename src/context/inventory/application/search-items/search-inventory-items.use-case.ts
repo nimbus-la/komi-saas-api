@@ -11,6 +11,11 @@ export class SearchInventoryItemsUseCase {
         const items = await this.repository.search(branchId);
         const now = new Date();
 
-        return items.map((item) => toInventoryItemResponse(item, now));
+        return items.map((item) =>
+            toInventoryItemResponse(item, {
+                date: now,
+                ...(branchId !== undefined ? { branchId } : {}),
+            }),
+        );
     };
 };

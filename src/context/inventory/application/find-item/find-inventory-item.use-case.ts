@@ -16,6 +16,6 @@ export class FindInventoryItemUseCase {
             throw new InventoryItemNotFoundException(itemId);
         };
 
-        return toInventoryItemResponse(item);
+        return toInventoryItemResponse(item, branchId !== undefined ? { branchId } : {});
     };
 };

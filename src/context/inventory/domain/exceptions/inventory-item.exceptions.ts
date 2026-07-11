@@ -180,3 +180,15 @@ export class AmbiguousBranchScopeException extends DomainException {
         });
     };
 };
+
+
+
+/** Se intenta fijar un mínimo por sucursal sin enviar la cantidad. Código 1341. */
+export class MinimumStockValueRequiredException extends DomainException {
+    constructor(branchId: string) {
+        super({
+            code: '1341',
+            detail: `Debe indicar la cantidad mínima para la sucursal ${branchId}.`
+        });
+    };
+};

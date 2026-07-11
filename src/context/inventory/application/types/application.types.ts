@@ -39,6 +39,8 @@ export interface InventoryItemResponse {
     isPerishable: boolean;
     isActive: boolean;
     currentStock: string;            // Σ restante de lotes activos (derivado)
+    minStock: string | null;            // Mínimo efectivo para la sucursal consultada y global
+    isBelowMinimum: boolean | null;     // Solo se calcula cuando se consulta con branchId
     createdAt: Date;
     updatedAt: Date;
 };

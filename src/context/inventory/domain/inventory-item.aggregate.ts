@@ -10,6 +10,7 @@ import { InventoryBatch } from "./entities/inventory-batch/inventory-batch.entit
 import { InventoryBatchExpirationDate } from "./entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
 import { InventoryItemSku } from "./value-objects/inventory-item-sku.value-object";
 import { DEFAULT_CURRENCY } from "./common/constants.common";
+import { InventoryStock } from "./entities/inventory-stock/inventory-stock.entity";
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
@@ -20,6 +21,8 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     private batches: InventoryBatch[];
     private isPerishable: boolean;
     private isActive: boolean;
+    private minGlobalStock: Quantity | null;
+    private stocks: InventoryStock[];
     private readonly createdAt: Date;
     private updatedAt: Date;
 
@@ -41,6 +44,8 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         createdAt: Date,
         updatedAt: Date,
         batches: InventoryBatch[],
+        minGlobalStock: Quantity | null,
+        stocks: InventoryStock[]
     ) {
         super(id);
 
@@ -53,6 +58,8 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.batches = batches;
+        this.minGlobalStock = minGlobalStock;
+        this.stocks = stocks;
     };
 
 
@@ -83,6 +90,8 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             true,
             now,
             now,
+            [],
+            null,
             []
         );
 
@@ -210,6 +219,82 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         return this.batches
             .filter((batch) => batch.isActive(date))
             .reduce((total, batch) => total.add(batch.getRemaining()), Quantity.zero());
+    };
+
+
+
+    /**
+     * Fija (o limpia con null) el mínimo GLOBAL del item: el umbral por defecto
+     * que aplica a toda sucursal que no tenga un override propio.
+     */
+    public setGlobalMinimum(minStock: Quantity | null): void {
+        this.minGlobalStock = minStock;
+        this.touch();
+    };
+
+
+
+    /**
+     * Crea o actualiza el OVERRIDE de mínimo de una sucursal concreta. A partir de
+     * aquí esa sede deja de derivar del global y usa su propio umbral. Es un upsert:
+     * si ya existía un override para la sucursal, se actualiza; si no, se agrega.
+     */
+    public setBranchMinimum(branchId: string, minStock: Quantity): void {
+        const existing = this.stocks.find(
+            (stock: InventoryStock) => stock.getBranchId() === branchId
+        );
+
+        if (existing !== undefined) {
+            existing.changeMinimum(minStock);
+
+        } else {
+            this.stocks.push(InventoryStock.create({ branchId, minStock }));
+        };
+
+        this.touch();
+    };
+
+
+
+    /**
+     * Mínimo EFECTIVO para una sucursal, el override de la sede si existe; si no,
+     * el mínimo global; si tampoco hay global, null (el item no tiene política de
+     * mínimos y nunca se reporta "bajo mínimo").
+     */
+    public minimumStockFor(branchId: string): Quantity | null {
+        const override = this.stocks.find(
+            (stock: InventoryStock) => stock.getBranchId() === branchId
+        );
+
+        return override ? override.getMinStock() : this.minGlobalStock;
+    };
+
+
+
+    /**
+     * Stock disponible (derivado de lotes activos) de UNA sucursal a la fecha dada.
+     * Igual que currentStock() pero acotado a una sede; útil cuando el agregado se
+     * cargó con lotes de varias sucursales.
+     */
+    public currentStockForBranch(branchId: string, date: Date = new Date()): Quantity {
+        return this.batches
+            .filter((batch) => batch.isActive(date) && batch.getBranchId() === branchId)
+            .reduce((total, batch) => total.add(batch.getRemaining()), Quantity.zero());
+    };
+
+
+
+    /**
+     * ¿La sucursal está por debajo de su mínimo efectivo a la fecha dada?
+     * Devuelve null cuando no hay política aplicable (ni override ni global): no se
+     * puede afirmar nada. "Bajo mínimo" es estricto: stock == mínimo NO cuenta.
+     */
+    public isBelowMinimumFor(branchId: string, date: Date = new Date()): boolean | null {
+        const minimum = this.minimumStockFor(branchId);
+
+        if (minimum === null) return null;
+
+        return minimum.isGreaterThan(this.currentStockForBranch(branchId, date));
     };
 
 
@@ -375,9 +460,11 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             unitOfMeasure: this.unitOfMeasure.value,
             isPerishable: this.isPerishable,
             isActive: this.isActive,
+            minGlobalStock: this.minGlobalStock ? this.minGlobalStock.getValue() : null,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             batches: this.batches.map((batch) => batch.toPrimitives()),
+            stocks: this.stocks.map((stock) => stock.toPrimitives()),
         };
     };
 
@@ -402,6 +489,8 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             p.createdAt,
             p.updatedAt,
             p.batches.map((batch) => InventoryBatch.fromPrimitives(batch)),
+            p.minGlobalStock !== null ? Quantity.of(p.minGlobalStock) : null,
+            p.stocks.map((stock) => InventoryStock.fromPrimitives(stock)),
         );
     };
 };

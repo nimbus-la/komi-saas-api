@@ -32,6 +32,10 @@ export class InventoryItemEntity {
     isActive!: boolean;
 
 
+    @Column({ name: 'min_global_stock', type: 'numeric', precision: 14, scale: 3, nullable: true })
+    minGlobalStock!: string | null;
+
+
     @Column({ name: 'created_at', type: 'timestamptz' })
     createdAt!: Date;
 
