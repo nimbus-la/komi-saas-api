@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from "../../domain/common/constants.common";
 import { InventoryItem } from "../../domain/inventory-item.aggregate";
 import { InventoryItemResponse } from "../types/application.types";
 
@@ -14,10 +15,8 @@ export const toInventoryItemResponse = (
         sku: p.sku,
         name: p.name,
         unitOfMeasure: p.unitOfMeasure,
-        standardCostAmount: p.costAmount,
-        effectiveCostAmount: weighted ? weighted.getAmount() : p.costAmount,
-        costSource: weighted ? 'BATCHES' : 'STANDARD',
-        costCurrency: p.costCurrency,
+        effectiveCostAmount: weighted ? weighted.getAmount() : null,
+        currency: DEFAULT_CURRENCY,
         isPerishable: p.isPerishable,
         isActive: p.isActive,
         currentStock: item.currentStock(date).getValue(),

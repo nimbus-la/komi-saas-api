@@ -4,6 +4,7 @@ import { InventoryItemRepository } from "../../domain/inventory-item.repository"
 import { InventoryItemId } from "../../domain/value-objects/inventory-item-id.value-object";
 import { InventoryBatchExpirationDate } from "../../domain/entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
 import { BranchChecker } from "../ports/branch-checker";
+import { DEFAULT_CURRENCY } from "../../domain/common/constants.common";
 
 
 export interface ReceiveStockParams {
@@ -34,8 +35,7 @@ export class ReceiveStockUseCase {
         };
 
         const quantityReceived = Quantity.of(params.quantityReceived);
-        const currency = item.toPrimitives().costCurrency;
-        const unitCost = Money.of(params.totalCostAmount, currency).divide(quantityReceived.getValue());
+        const unitCost = Money.of(params.totalCostAmount, DEFAULT_CURRENCY).divide(quantityReceived.getValue());
 
         item.recivedBatch({
             branchId: params.branchId,

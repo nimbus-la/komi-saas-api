@@ -1,6 +1,3 @@
-
-import { Money } from "@/shared";
-
 import { InventoryItem } from "../../domain/inventory-item.aggregate";
 import { InventoryItemRepository } from "../../domain/inventory-item.repository";
 import { InventoryItemNameAlreadyExistsException, TenantNotFoundException } from "../../domain/exceptions/inventory-item.exceptions";
@@ -13,7 +10,6 @@ export interface CreateInventoryItemParams {
     tenantId: string;
     name: string;
     unitOfMeasure: string;
-    costAmount: string;
     costCurrency?: string;
     isPerishable: boolean;
 };
@@ -44,7 +40,6 @@ export class CreateInventoryItemUseCase {
             sku,
             name,
             unitOfMeasure: InventoryItemUnit.create(params.unitOfMeasure),
-            costAmount: Money.of(params.costAmount, params.costCurrency ?? 'COP'),
             isPerishable: params.isPerishable,
             createdAt: new Date()
         });
