@@ -40,7 +40,6 @@ export const toInventoryItemResponse = (
         isPerishable: p.isPerishable,
         isActive: p.isActive,
         currentStock: item.currentStock(date).getValue(),
-        minGlobalStock: p.minGlobalStock,
         minStock,
         isBelowMinimum,
         createdAt: p.createdAt,
