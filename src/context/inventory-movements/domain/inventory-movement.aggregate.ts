@@ -4,7 +4,6 @@ import { InventoryMovementId } from "./value-objects/inventory-movement-id.value
 import { InventoryMovementType } from "./value-objects/inventory-movement-type.value-object";
 import { MovementReasonRequiredException, NonPositiveMovementQuantityException } from "./exceptions/inventory-movement.exceptions";
 import { InventoryMovementCreated, InventoryMovementPrimitives } from "./types/domain.types";
-import { MovementType } from "./common/catalog.common";
 
 
 /**

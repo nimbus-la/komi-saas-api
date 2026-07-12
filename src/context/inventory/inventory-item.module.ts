@@ -6,6 +6,7 @@ import { TenantModule } from "../tenants/tenant.module";
 import { BranchModule } from "../branch/branch.module";
 import { BranchChecker, ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, InventoryBatchReadRepository, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetMinimumStockUseCase, TenantChecker, UpdateInventoryItemUseCase } from "./application";
 import { BranchCheckerAdapter, InventoryBatchEntity, InventoryItemController, InventoryItemEntity, InventoryStockEntity, TenantCheckerAdapter, TypeOrmInventoryBatchReadRepository, TypeOrmInventoryItemRepository } from "./infrastructure";
+import { EventPublisher } from "@/shared";
 
 
 @Module({
@@ -36,12 +37,16 @@ import { BranchCheckerAdapter, InventoryBatchEntity, InventoryItemController, In
         },
         {
             provide: ReceiveStockUseCase,
-            useFactory: (repository: InventoryItemRepository, branchChecker: BranchChecker,) => new ReceiveStockUseCase(repository, branchChecker),
+            useFactory: (
+                repository: InventoryItemRepository, 
+                branchChecker: BranchChecker, 
+                eventPublisher: EventPublisher
+            ) => new ReceiveStockUseCase(repository, branchChecker, eventPublisher),
             inject: [InventoryItemRepository, BranchChecker]
         },
         {
             provide: ConsumeStockUseCase,
-            useFactory: (r: InventoryItemRepository) => new ConsumeStockUseCase(r),
+            useFactory: (repository: InventoryItemRepository, eventPublisher: EventPublisher) => new ConsumeStockUseCase(repository, eventPublisher),
             inject: [InventoryItemRepository]
         },
         {
