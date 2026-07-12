@@ -1,4 +1,4 @@
-import { Money, Quantity } from "@/shared";
+import { EventPublisher, Money, Quantity } from "@/shared";
 import { BranchNotFoundException, InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
 import { BranchChecker } from "../../ports/branch-checker";
 import { DEFAULT_CURRENCY } from "@/context/inventory/domain/common/constants.common";
@@ -20,6 +20,7 @@ export class ReceiveStockUseCase {
     constructor(
         private readonly repository: InventoryItemRepository,
         private readonly branchCheker: BranchChecker,
+        private readonly eventPublisher: EventPublisher
     ) { };
 
     public async execute(params: ReceiveStockParams) {
@@ -47,5 +48,8 @@ export class ReceiveStockUseCase {
         });
 
         await this.repository.save(item);
+
+        await this.eventPublisher.publish(item.getDomainEvents());
+        item.clearDomainEvents();
     };
 };
