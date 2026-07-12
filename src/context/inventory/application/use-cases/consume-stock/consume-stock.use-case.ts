@@ -1,4 +1,4 @@
-import { Quantity } from "@/shared";
+import { EventPublisher, Quantity } from "@/shared";
 import { InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
 
 
@@ -12,7 +12,8 @@ export interface ConsumeStockParams {
 
 export class ConsumeStockUseCase {
     constructor(
-        private readonly repository: InventoryItemRepository
+        private readonly repository: InventoryItemRepository,
+        private readonly eventPublisher: EventPublisher
     ) { };
 
     public async execute(params: ConsumeStockParams): Promise<void> {
@@ -31,5 +32,8 @@ export class ConsumeStockUseCase {
         );
 
         await this.repository.save(item);
+
+        await this.eventPublisher.publish(item.getDomainEvents());
+        item.clearDomainEvents();
     };
 };

@@ -11,6 +11,8 @@ import { InventoryBatchExpirationDate } from "./entities/inventory-batch/value-o
 import { InventoryItemSku } from "./value-objects/inventory-item-sku.value-object";
 import { DEFAULT_CURRENCY } from "./common/constants.common";
 import { InventoryStock } from "./entities/inventory-stock/inventory-stock.entity";
+import { StockReceivedEvent } from "./events/stock-received.event";
+import { StockConsumeEvent } from "./events/stock-consumed.event";
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
@@ -146,6 +148,19 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         });
 
         this.batches.push(batch);
+
+        this.registerEvent(
+            new StockReceivedEvent({
+                itemId: this.id.value,
+                tenantId: this.tenantId,
+                branchId: params.branchId,
+                quantity: params.quantityReceived.getValue(),
+                unitCostAmount: params.unitCost.getAmount(),
+                unitCostCurrency: params.unitCost.currency,
+                occurredOn: params.receivedAt ?? new Date()
+            })
+        );
+
         this.touch();
     };
 
@@ -202,6 +217,20 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
             batch.consume(take);
             pending = pending.subtract(take);
+        };
+
+        const [branchId] = branches;
+
+        if (branchId !== undefined) {
+            this.registerEvent(
+                new StockConsumeEvent({
+                    itemId: this.id.value,
+                    tenantId: this.tenantId,
+                    branchId,
+                    quantity: quantity.getValue(),
+                    occurredOn: date,
+                })
+            );
         };
 
         this.touch();
