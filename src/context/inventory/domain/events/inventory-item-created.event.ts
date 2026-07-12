@@ -4,6 +4,8 @@ import { InventoryItemCreatedProps } from "../types/domain.types";
 
 
 export class InventoryItemCreatedEvent extends DomainEvent {
+    public readonly eventName = 'inventory.item.created';
+    
     public readonly tenantId: string;
     public readonly sku: string;
     public readonly name: string;
