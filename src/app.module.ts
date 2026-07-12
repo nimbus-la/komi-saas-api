@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import { AppConfigModule, DatabaseModule } from './infrastructure';
 import { TenantModule } from './context/tenants/tenant.module';
@@ -8,6 +9,7 @@ import { BranchModule } from './context/branch/branch.module';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     AppConfigModule,
     DatabaseModule,
     InventoryModule,
@@ -16,4 +18,5 @@ import { BranchModule } from './context/branch/branch.module';
     BranchModule
   ],
 })
-export class AppModule { }
+
+export class AppModule { };
