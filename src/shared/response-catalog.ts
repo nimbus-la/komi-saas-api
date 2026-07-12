@@ -21,7 +21,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1006': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El NIT del tenant no es válido.' },
     '1007': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El slug del tenant no es válido.' },
     '1008': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La descripción del tenant no es válida.' },
-    '1009': {status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la sucursal no es válido.' },
+    '1009': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la sucursal no es válido.' },
     '1010': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La dirección de la sucursal no es válida.' },
     '1011': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El teléfono de la sucursal no es válido.' },
     '1012': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La ciudad de la sucursal no es válida.' },
@@ -49,7 +49,10 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1325': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se puede cambiar la perecibilidad; el item ya tiene lotes.' },
     '1326': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar.' },
     '1330': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
-    '1331': { status: ResponseStatus.Error, category: ErrorCategory.Conflict,  message: 'Debe especificar una sucursal para esta operación.' },
+    '1331': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Debe especificar una sucursal para esta operación.' },
+
+    '1500': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad del movimiento debe ser mayor a cero.' },
+    '1501': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Este tipo de movimiento requiere un motivo.' },
 
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El recurso solicitado no existe.' },
