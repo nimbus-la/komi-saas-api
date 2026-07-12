@@ -2,6 +2,8 @@ import { DomainEvent } from "@/shared";
 import { ProductCreatedProps } from "./types/product-events";
 
 export class ProductCreatedEvent extends DomainEvent {
+    public readonly eventName = 'product.created';
+
     public readonly productCategoryId: string;
     public readonly productName: string;
     public readonly productSku: string;

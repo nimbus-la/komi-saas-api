@@ -6,6 +6,9 @@ export * from './config/env.validation';
 export * from './database/database.module';
 
 
+export * from './events/event-emitter.publisher';
+
+
 export * from './http/all-exceptions.filter';
 export * from './http/response-message.decorator';
 export * from './http/response.interceptor';

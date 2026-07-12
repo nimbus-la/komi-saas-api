@@ -2,6 +2,8 @@ import { DomainEvent } from "@/shared";
 import { BranchCreatedProps } from "./types";
 
 export class BranchCreatedEvent extends DomainEvent {
+    public readonly eventName = 'branch.created';
+
     public readonly branchId: string;
     public readonly tenantId: string;
     public readonly name: string;
