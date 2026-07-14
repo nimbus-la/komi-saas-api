@@ -7,7 +7,7 @@ import {
     UpdateDateColumn,
 } from "typeorm";
 
-import { ProductEntity } from "../../../../products/products/infrastructure/persistence/product.entity";
+import { ProductEntity } from "../../../../products/infrastructure/persistence/models/product.entity";
 import { InventoryItemEntity } from "@/context/inventory";
 
 @Entity({ name: "recipe_item" })

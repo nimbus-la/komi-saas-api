@@ -1,16 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { ProductController } from './products/infrastructure/http/product.controller';
-import { ProductService } from './products/infrastructure/persistence/product.services';
-import { ProductEntity } from './products/infrastructure/persistence/product.entity';
-import { ProductRepositoryImpl } from './products/infrastructure/persistence/product.repository.impl';
-import { CreateProductUseCase } from './products/application/application/create-item/create-product.use-case';
-import { ProductRepository } from './products/domain';
-import { UpdateProductUseCase } from "./products/application/application/update-item/update-product.use-case";
-import { SearchProductsUseCase } from "./products/application/application/search-items/search-product.use-case";
+import { ProductController } from './infrastructure/http/product.controller';
+import { ProductEntity } from './infrastructure/persistence/models/product.entity';
+import { ProductRepositoryImpl, ProductService } from './infrastructure/persistence/repositories/product.repository.impl';
+import { ProductRepository } from './domain';
 import { ProductCategoryEntity } from '../product-categories/domain/product-category.entity';
 import { CategoriesModule } from "../product-categories/categories.module";
+import { UpdateProductUseCase } from './application/use-cases/update-item/update-product.use-case';
+import { SearchProductsUseCase } from './application/use-cases/search-items/search-product.use-case';
+import { CreateProductUseCase } from './application';
 
 @Module({
   imports: [
