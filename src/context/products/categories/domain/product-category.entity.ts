@@ -6,7 +6,7 @@ import {
     UpdateDateColumn,
     OneToMany,
 } from "typeorm";
-import { ProductEntity } from "../../items/infrastructure/persistence/product.entity";
+import { ProductEntity } from "../../products/infrastructure/persistence/product.entity";
 
 @Entity("product_category")
 export class ProductCategoryEntity {
