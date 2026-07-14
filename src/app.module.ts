@@ -5,7 +5,7 @@ import { AppConfigModule, DatabaseModule } from './infrastructure';
 import { TenantModule } from './context/tenants/tenant.module';
 import { ProductsModule } from './context/products/products.module';
 import { InventoryModule } from './context/inventory/inventory-item.module';
-import { BranchModule } from './context/branch/branch.module';
+import { RecipeItemModule } from './context/recipes/items/recipe-item.module';
 import { InventoryMovementModule } from './context/inventory-movements';
 
 @Module({
@@ -17,7 +17,7 @@ import { InventoryMovementModule } from './context/inventory-movements';
     InventoryMovementModule,
     TenantModule,
     ProductsModule,
-    BranchModule
+    RecipeItemModule,
   ],
 })
 
