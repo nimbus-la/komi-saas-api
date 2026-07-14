@@ -1,7 +1,7 @@
 import { DomainEvent } from "@/shared";
 import { StockConsumeEventParams } from "../types/events.types";
 
-export class StockConsumeEvent extends DomainEvent {
+export class StockConsumedEvent extends DomainEvent {
     public readonly eventName = 'inventory.item.consumed';
 
     public readonly itemId: string;
