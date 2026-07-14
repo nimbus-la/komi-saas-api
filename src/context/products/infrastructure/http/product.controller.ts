@@ -22,10 +22,13 @@ export class ProductController {
     const product = await this.service.create(dto);
 
     return {
-      statusCode: 201,
-      message: "Producto creado con éxito",
+      status: "SUCCESS",
+      code: "0000",
+      statusCode: 200,
+      message: "Producto creado exitosamente.",
       data: product,
     };
+
   }
 
   @Patch(":id")
@@ -36,6 +39,8 @@ export class ProductController {
     await this.service.update(id, dto);
 
     return {
+      status: "SUCCESS",
+      code: "0000",
       statusCode: 200,
       message: "Producto actualizado con éxito",
     };
@@ -69,6 +74,8 @@ export class ProductController {
     const products = await this.service.search(params);
 
     return {
+      status: "SUCCESS",
+      code: "0000",
       statusCode: 200,
       message: "Productos obtenidos con éxito",
       data: products,
