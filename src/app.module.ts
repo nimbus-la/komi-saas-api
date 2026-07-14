@@ -6,6 +6,7 @@ import { TenantModule } from './context/tenants/tenant.module';
 import { ProductsModule } from './context/products/products.module';
 import { InventoryModule } from './context/inventory/inventory-item.module';
 import { BranchModule } from './context/branch/branch.module';
+import { InventoryMovementModule } from './context/inventory-movements';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { BranchModule } from './context/branch/branch.module';
     AppConfigModule,
     DatabaseModule,
     InventoryModule,
+    InventoryMovementModule,
     TenantModule,
     ProductsModule,
     BranchModule

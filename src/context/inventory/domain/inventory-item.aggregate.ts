@@ -12,7 +12,7 @@ import { InventoryItemSku } from "./value-objects/inventory-item-sku.value-objec
 import { DEFAULT_CURRENCY } from "./common/constants.common";
 import { InventoryStock } from "./entities/inventory-stock/inventory-stock.entity";
 import { StockReceivedEvent } from "./events/stock-received.event";
-import { StockConsumeEvent } from "./events/stock-consumed.event";
+import { StockConsumedEvent } from "./events/stock-consumed.event";
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
@@ -223,7 +223,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
         if (branchId !== undefined) {
             this.registerEvent(
-                new StockConsumeEvent({
+                new StockConsumedEvent({
                     itemId: this.id.value,
                     tenantId: this.tenantId,
                     branchId,
