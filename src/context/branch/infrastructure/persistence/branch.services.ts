@@ -129,4 +129,26 @@ export class BranchService implements BranchRepository {
             }
         );
     }
+
+    public async searchByTenantId(tenantId: string,): Promise<BranchResponse[]> {
+
+        const rows = await this.branchRepository.find({
+            where: {
+                tenantId,
+            },
+        });
+
+        return rows.map((row) => ({
+            id: row.id,
+            tenantId: row.tenantId,
+            name: row.name,
+            address: row.address,
+            phone: row.phone,
+            city: row.city,
+            department: row.department,
+            created_at: row.createdAt,
+            updated_at: row.updatedAt,
+            isActive: row.isActive,
+        }));
+    }
 }

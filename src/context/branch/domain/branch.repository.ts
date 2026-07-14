@@ -15,4 +15,5 @@ export abstract class BranchRepository {
     abstract searchAll(): Promise<BranchResponse[]>;
 
     abstract existsByName(name: BranchName): Promise<boolean>;
-}
+
+    public abstract searchByTenantId(tenantId: string,): Promise<BranchResponse[]>;}

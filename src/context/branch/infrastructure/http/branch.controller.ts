@@ -2,7 +2,7 @@ import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/sha
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseFilters, UseInterceptors } from "@nestjs/common";
 import { UpdateBranchDto } from "./dto/update-branch.dto";
 import { CreateBranchDto } from "./dto/create-branch.dto";
-import { CreateBranchUseCase, DeleteBranchUseCase, SearchAllBranchUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "../../application";
+import { CreateBranchUseCase, DeleteBranchUseCase, SearchAllBranchUseCase, SearchBranchesByTenantUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "../../application";
 
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(AllExceptionsFilter)
@@ -14,7 +14,8 @@ export class BranchController {
         private readonly searchBranchById: SearchBranchUseCase,
         private readonly searchAllBranches: SearchAllBranchUseCase,
         private readonly updateBranch: UpdateBranchUseCase,
-        private readonly deleteBranch: DeleteBranchUseCase
+        private readonly deleteBranch: DeleteBranchUseCase,
+        private readonly searchBranchesByTenant: SearchBranchesByTenantUseCase,
     ) {}
 
     @Post()
@@ -38,6 +39,12 @@ export class BranchController {
         return await this.searchAllBranches.execute();
     }
 
+     @Get("tenant/:tenantId")
+    public async findByTenant(
+        @Param("tenantId") tenantId: string,
+    ) {
+        return await this.searchBranchesByTenant.execute(tenantId);
+    }
 
     @Get(':id')
     public async findOne(
