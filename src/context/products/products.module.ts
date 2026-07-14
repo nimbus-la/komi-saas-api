@@ -9,8 +9,8 @@ import { CreateProductUseCase } from './products/application/application/create-
 import { ProductRepository } from './products/domain';
 import { UpdateProductUseCase } from "./products/application/application/update-item/update-product.use-case";
 import { SearchProductsUseCase } from "./products/application/application/search-items/search-product.use-case";
-import { ProductCategoryEntity } from './categories/domain/product-category.entity';
-import { CategoriesModule } from "./categories/categories.module";
+import { ProductCategoryEntity } from '../product-categories/domain/product-category.entity';
+import { CategoriesModule } from "../product-categories/categories.module";
 
 @Module({
   imports: [
