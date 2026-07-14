@@ -15,6 +15,9 @@ export class InventoryMovementModel {
     @Column({ name: 'branch_id', type: 'uuid' })
     branchId!: string;
 
+    @Column({ name: 'batch_id', type: 'uuid', nullable: true })
+    batchId!: string | null;
+
     @Column({ name: 'movement_type', type: 'varchar', length: 20 })
     movementType!: string;
 

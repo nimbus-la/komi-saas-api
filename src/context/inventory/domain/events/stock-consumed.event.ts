@@ -1,16 +1,18 @@
 import { DomainEvent } from "@/shared";
 import { StockConsumeEventParams } from "../types/events.types";
+import { ConsumedBatchDetail } from "../types/domain.types";
 
 export class StockConsumedEvent extends DomainEvent {
-    public readonly eventName = 'inventory.item.consumed';
+    public readonly eventName = 'inventory.stock.consumed';
 
     public readonly itemId: string;
     public readonly tenantId: string;
     public readonly branchId: string;
     public readonly quantity: string;
+    public readonly consumedBatches: ReadonlyArray<ConsumedBatchDetail>;
 
     constructor(params: StockConsumeEventParams) {
-        const { itemId, tenantId, branchId, quantity, occurredOn } = params;
+        const { itemId, tenantId, branchId, quantity, consumedBatches, occurredOn } = params;
 
         super(occurredOn);
 
@@ -18,5 +20,6 @@ export class StockConsumedEvent extends DomainEvent {
         this.tenantId = tenantId;
         this.branchId = branchId;
         this.quantity = quantity;
+        this.consumedBatches = consumedBatches;
     };
 };

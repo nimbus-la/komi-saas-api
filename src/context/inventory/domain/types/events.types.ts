@@ -1,7 +1,10 @@
+import { ConsumedBatchDetail } from "./domain.types";
+
 export interface StockReceivedEventParams {
     itemId: string;
     tenantId: string;
     branchId: string;
+    batchId: string;
     quantity: string;
     unitCostAmount: string;
     unitCostCurrency: string;
@@ -10,4 +13,6 @@ export interface StockReceivedEventParams {
 
 
 
-export type StockConsumeEventParams = Omit<StockReceivedEventParams, 'unitCostAmount' | 'unitCostCurrency'>;
+export type StockConsumeEventParams = Omit<StockReceivedEventParams, 'batchId' | 'unitCostAmount' | 'unitCostCurrency'> & {
+    consumedBatches: ConsumedBatchDetail[];
+};

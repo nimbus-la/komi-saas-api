@@ -47,3 +47,12 @@ export interface InventoryItemPrimitives {
     batches: InventoryBatchPrimitives[];
     stocks: InventoryStockPrimitives[];
 };
+
+
+
+export interface ConsumedBatchDetail {
+    batchId: string;
+    quantity: string;
+    unitCostAmount: string;
+    unitCostCurrency: string;
+};

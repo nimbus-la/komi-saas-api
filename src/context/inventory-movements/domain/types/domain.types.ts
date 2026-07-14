@@ -5,14 +5,15 @@ import { InventoryMovementType } from "../value-objects/inventory-movement-type.
 
 
 export interface InventoryMovementCreated {
-    tenantId: string,
-    inventoryItemId: string,
-    branchId: string,
-    movementType: InventoryMovementType,
-    quantity: Quantity,
-    unitCost?: Money | null,
-    reason?: string | null,
-    occurredAt?: Date,
+    tenantId: string;
+    inventoryItemId: string;
+    branchId: string;
+    batchId: string | null;
+    movementType: InventoryMovementType;
+    quantity: Quantity;
+    unitCost?: Money | null;
+    reason?: string | null;
+    occurredAt?: Date;
 };
 
 
@@ -22,6 +23,7 @@ export interface InventoryMovementPrimitives {
     tenantId: string;
     inventoryItemId: string;
     branchId: string;
+    batchId: string | null;
     movementType: MovementType;
     quantity: string;
     unitCostAmount: string | null;
