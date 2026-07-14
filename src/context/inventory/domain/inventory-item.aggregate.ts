@@ -1,6 +1,6 @@
 import { AggregateRoot, Money, Quantity } from "@/shared";
 
-import { InventoryItemPrimitives } from "./types/domain.types";
+import { ConsumedBatchDetail, InventoryItemPrimitives } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
 import { AmbiguousBranchScopeException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
@@ -154,6 +154,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
                 itemId: this.id.value,
                 tenantId: this.tenantId,
                 branchId: params.branchId,
+                batchId: batch.getId(),
                 quantity: params.quantityReceived.getValue(),
                 unitCostAmount: params.unitCost.getAmount(),
                 unitCostCurrency: params.unitCost.currency,
@@ -180,54 +181,86 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * que tiene; si un lote no alcanza, sigue con el siguiente.
      */
     public consume(quantity: Quantity, date: Date = new Date()): void {
-        // Consumir exige que el agregado venga cargado con lotes de UNA sola sucursal. 
-        // Si trae varias (carga consolidada), no sabemos de qué sede descontar.
-        const branches = new Set(
-            this.batches.filter(
-                (batch: InventoryBatch) => batch.isActive(date)
-            ).map((batchMap: InventoryBatch) => batchMap.getBranchId())
+        // Consumir exige que el agregado venga cargado con lotes de UNA sola
+        // sucursal; si hay varias (carga consolidada), no sabemos de qué sede
+        // descontar. De paso capturamos esa única sede para el evento.
+        const activeBranches = new Set(
+            this.batches
+                .filter((batch: InventoryBatch) => batch.isActive(date))
+                .map((batchMap: InventoryBatch) => batchMap.getBranchId())
         );
 
-        if (branches.size > 1) {
+
+        if (activeBranches.size > 1) {
             throw new AmbiguousBranchScopeException(this.id.value);
         };
+
+
+        // Un Set es iterable: la desestructuración toma su primer elemento.
+        // Tras el guard solo hay dos casos: una sede (normal) o ninguna (sin
+        // lotes activos). El tipo queda string | undefined por el segundo caso.
+        const [scopeBranchId] = activeBranches;
+
 
         if (quantity.isZero()) {
             throw new NonPositiveConsumptionException();
         };
 
+
         const available = this.currentStock(date);
+
 
         if (quantity.isGreaterThan(available)) {
             throw new InsufficientStockException(this.id.value, quantity.getValue(), available.getValue());
         };
 
+        // NOTA: si no había lotes activos, available era cero y el guard anterior
+        // ya lanzó. Por lo tanto, de aquí en adelante scopeBranchId SIEMPRE tiene
+        // valor; el chequeo de undefined de abajo solo existe porque TypeScript
+        // no puede deducir ese razonamiento.
+
+
+        // Ordena los lotes activos por FEFO (vence primero, sale primero) y va
+        // descontando de uno en uno. De cada lote registra cuánto se tomó y a qué
+        // costo, para que el movimiento quede con trazabilidad y costeo por lote.
         const ordered = this.batches
             .filter((batch) => batch.isActive(date))
             .sort(InventoryItem.compararPorFefo);
 
+
         let pending = quantity;
+        const consumedBatches: ConsumedBatchDetail[] = [];
+
 
         for (const batch of ordered) {
             if (pending.isZero()) break;
 
+            // De este lote se toma lo que falte, sin exceder lo que le queda.
             const take = pending.isGreaterThan(batch.getRemaining())
                 ? batch.getRemaining()
                 : pending;
 
             batch.consume(take);
+
+            consumedBatches.push({
+                batchId: batch.getId(),
+                quantity: take.getValue(),
+                unitCostAmount: batch.getUnitCost().getAmount(),
+                unitCostCurrency: batch.getUnitCost().currency,
+            });
+
             pending = pending.subtract(take);
         };
 
-        const [branchId] = branches;
 
-        if (branchId !== undefined) {
+        if (scopeBranchId !== undefined) {
             this.registerEvent(
                 new StockConsumedEvent({
                     itemId: this.id.value,
                     tenantId: this.tenantId,
-                    branchId,
+                    branchId: scopeBranchId,
                     quantity: quantity.getValue(),
+                    consumedBatches,
                     occurredOn: date,
                 })
             );

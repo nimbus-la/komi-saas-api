@@ -30,6 +30,7 @@ export class StockMovementHandlers {
                 tenantId: event.tenantId,
                 inventoryItemId: event.itemId,
                 branchId: event.branchId,
+                batchId: event.batchId,
                 movementType: MovementType.Entry,
                 quantity: event.quantity,
                 unitCostAmount: event.unitCostAmount,
@@ -45,14 +46,19 @@ export class StockMovementHandlers {
     @OnEvent('inventory.stock.consumed')
     public async onStockConsumed(event: StockConsumedEvent): Promise<void> {
         try {
-            await this.recordMovement.execute({
-                tenantId: event.tenantId,
-                inventoryItemId: event.itemId,
-                branchId: event.branchId,
-                movementType: MovementType.Consumption,
-                quantity: event.quantity,
-                occurredAt: event.occurredOn,
-            });
+            for (const detail of event.consumedBatches) {
+                await this.recordMovement.execute({
+                    tenantId: event.tenantId,
+                    inventoryItemId: event.itemId,
+                    branchId: event.branchId,
+                    batchId: detail.batchId,
+                    movementType: MovementType.Consumption,
+                    quantity: detail.quantity,
+                    unitCostAmount: detail.unitCostAmount,
+                    unitCostCurrency: detail.unitCostCurrency,
+                    occurredAt: event.occurredOn,
+                });
+            };
 
         } catch (error) {
             this.logger.error(`No se pudo registrar el movimiento de consumo del item ${event.itemId}`, error);

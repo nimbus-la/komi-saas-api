@@ -4,6 +4,7 @@ export interface InventoryMovementView {
     id: string;
     inventoryItemId: string;
     branchId: string;
+    batchId: string | null;
     movementType: MovementType;
     quantity: string;
     unitCostAmount: string | null;
@@ -24,6 +25,7 @@ export interface RecordMovementParams {
     tenantId: string;
     inventoryItemId: string;
     branchId: string;
+    batchId: string | null;
     movementType: MovementType;
     quantity: string;
     unitCostAmount?: string;
