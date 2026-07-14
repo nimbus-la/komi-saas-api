@@ -3,7 +3,7 @@ import { StockConsumeEventParams } from "../types/events.types";
 import { ConsumedBatchDetail } from "../types/domain.types";
 
 export class StockConsumedEvent extends DomainEvent {
-    public readonly eventName = 'inventory.item.consumed';
+    public readonly eventName = 'inventory.stock.consumed';
 
     public readonly itemId: string;
     public readonly tenantId: string;
