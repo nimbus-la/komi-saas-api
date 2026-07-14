@@ -35,6 +35,6 @@ export class CreateProductUseCase {
 
         await this.repository.save(product);
 
-        return product; // 🔥 IMPORTANTE
+        return product;
     }
 }

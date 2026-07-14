@@ -40,6 +40,7 @@ export class ProductController {
       message: "Producto actualizado con éxito",
     };
   }
+
   @Get()
   async search(
     @Query("text") text?: string,
@@ -73,6 +74,5 @@ export class ProductController {
       data: products,
     };
   }
-
 }
 

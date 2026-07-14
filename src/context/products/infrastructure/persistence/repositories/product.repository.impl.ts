@@ -15,6 +15,7 @@ import { ProductId } from "../../../domain/value-object/product-id.value-object"
 import { CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "@/context/products/application";
 import { CreateProductDto } from "../../http/dto/create-product.dto";
 import { UpdateProductDto } from "../../http/dto/update-product.dto";
+import { ProductMapper } from "../mappers/products-mapper";
 
 @Injectable()
 export class ProductService {
@@ -56,36 +57,21 @@ export class ProductRepositoryImpl extends ProductRepository {
   }
 
   public async save(product: Product): Promise<void> {
-    const primitives = product.toPrimitives();
 
-    const row = this.productRepository.create({
-      id: primitives.id,
-      productCategoryId: primitives.productCategoryId,
-      name: primitives.productName,
-      description: primitives.productDescription ?? null,
-      sku: primitives.productSku,
-      imageUrl: primitives.productImgUrl ?? null,
-      basePrice: primitives.productBasePrice,
-      profitMargin: primitives.profitMargin.toString(),
-      isActive: primitives.productStatus,
-    });
+    const row = this.productRepository.create(
+      ProductMapper.toEntity(product)
+    );
 
     await this.productRepository.save(row);
   }
 
   public async update(product: Product): Promise<void> {
-    const primitives = product.toPrimitives();
 
-    await this.productRepository.update(primitives.id, {
-      productCategoryId: primitives.productCategoryId,
-      name: primitives.productName,
-      description: primitives.productDescription ?? null,
-      sku: primitives.productSku,
-      imageUrl: primitives.productImgUrl ?? null,
-      basePrice: primitives.productBasePrice,
-      profitMargin: primitives.profitMargin.toString(),
-      isActive: primitives.productStatus,
-    });
+    await this.productRepository.update(
+      product.id.value,
+      ProductMapper.toEntity(product)
+    );
+
   }
 
   public async search(
@@ -133,20 +119,7 @@ export class ProductRepositoryImpl extends ProductRepository {
 
     const rows = await query.getMany();
 
-    return rows.map((row) => ({
-      id: row.id,
-      productCategoryId: row.productCategoryId,
-      productName: row.name,
-      productDescription: row.description ?? undefined,
-      productSku: row.sku,
-      productImgUrl: row.imageUrl ?? undefined,
-      productBasePrice: row.basePrice,
-      costCurrency: "COP",
-      profitMargin: Number(row.profitMargin),
-      productStatus: row.isActive,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    }));
+    return rows.map(ProductMapper.toResponse);
   }
 
   public async existsByName(name: ProductName): Promise<boolean> {
@@ -171,18 +144,7 @@ export class ProductRepositoryImpl extends ProductRepository {
       return null;
     }
 
-    return Product.fromPrimitives({
-      id: row.id,
-      productCategoryId: row.productCategoryId,
-      productName: row.name,
-      productDescription: row.description ?? undefined,
-      productSku: row.sku,
-      productImgUrl: row.imageUrl ?? undefined,
-      productBasePrice: row.basePrice,
-      costCurrency: "COP",
-      profitMargin: Number(row.profitMargin),
-      productStatus: row.isActive,
-    });
+    return ProductMapper.toDomain(row);
   }
 
   public async nextSkuSequence(): Promise<number> {
