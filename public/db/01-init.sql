@@ -1,3 +1,42 @@
+
+-- ============================================
+-- TABLA DE TENANTS
+-- ============================================
+CREATE TABLE IF NOT EXISTS tenants (
+    tenant_id UUID PRIMARY KEY,
+    account_id UUID NOT NULL,
+    tenant_name VARCHAR(120) NOT NULL,
+    tenant_description VARCHAR(225) NOT NULL,
+    tenant_slug VARCHAR(120) NOT NULL UNIQUE,
+    tenant_nit VARCHAR(20) NOT NULL UNIQUE,
+    tenant_is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    tenant_created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    tenant_updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLA DE BRANCHES
+-- ============================================
+CREATE TABLE IF NOT EXISTS branches (
+    branch_id UUID PRIMARY KEY,
+    tenant_id UUID NOT NULL,
+    branch_name VARCHAR(120) NOT NULL,
+    branch_address VARCHAR(225) NOT NULL,
+    branch_phone VARCHAR(20) NOT NULL,
+    branch_city VARCHAR(120) NOT NULL,
+    branch_department VARCHAR(120) NOT NULL,
+    branch_is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    branch_created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    branch_updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_branch_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants (tenant_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+);
+
+
 -- --------------------------------------------------------------------------
 -- Secuencia para el consecutivo del SKU (INV-0001, INV-0002, ...)
 -- --------------------------------------------------------------------------
@@ -16,10 +55,9 @@ CREATE TABLE IF NOT EXISTS inventory_items (
     tenant_id          UUID           NOT NULL,
     name               VARCHAR(120)   NOT NULL,
     unit_of_measure    VARCHAR(20)    NOT NULL,
-    cost_amount        NUMERIC(12, 2) NOT NULL,
-    cost_currency      VARCHAR(3)     NOT NULL,
     is_perishable      BOOLEAN        NOT NULL,
     is_active          BOOLEAN        NOT NULL DEFAULT TRUE,
+    min_global_stock   NUMERIC(14,3)  NULL,
     created_at         TIMESTAMPTZ    NOT NULL,
     updated_at         TIMESTAMPTZ    NOT NULL,
 
@@ -38,10 +76,12 @@ CREATE INDEX IF NOT EXISTS idx_inventory_items_tenant
 -- --------------------------------------------------------------------------
 -- Tabla: inventory_batchs
 --   FK: inventory_item_id -> inventory_items(inventory_item_id)
+--   FK: branch_id         -> branches(branch_id)
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS inventory_batchs (
     inventory_batch_id  UUID           PRIMARY KEY,
     inventory_item_id   UUID           NOT NULL,
+    branch_id           UUID           NOT NULL,
     quantity_received   NUMERIC(14, 3) NOT NULL,
     quantity_remaining  NUMERIC(14, 3) NOT NULL,
     unit_cost_amount    NUMERIC(12, 2) NOT NULL,
@@ -53,12 +93,31 @@ CREATE TABLE IF NOT EXISTS inventory_batchs (
         FOREIGN KEY (inventory_item_id)
         REFERENCES inventory_items (inventory_item_id)
         ON DELETE RESTRICT
+
+    CONSTRAINT fk_inventory_batchs_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches (branch_id)
+        ON DELETE RESTRICT
 );
 
 
--- El lote casi siempre se consulta filtrando por su item.
+
+CREATE TABLE inventory_stocks (
+    inventory_stock_id uuid PRIMARY KEY,
+    inventory_item_id  uuid NOT NULL REFERENCES inventory_items (inventory_item_id),
+    branch_id          uuid NOT NULL,
+    min_stock          numeric(14,3) NOT NULL,
+    CONSTRAINT uq_inventory_stocks_item_branch UNIQUE (inventory_item_id, branch_id)
+);
+
+CREATE INDEX idx_inventory_stocks_item ON inventory_stocks (inventory_item_id);
+
+-- El lote se consulta filtrando por item y, ahora, por sucursal.
 CREATE INDEX IF NOT EXISTS idx_inventory_batchs_item
     ON inventory_batchs (inventory_item_id);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_batchs_branch
+    ON inventory_batchs (branch_id);
 
 
 

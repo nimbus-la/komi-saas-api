@@ -1,12 +1,33 @@
-import { InventoryItem } from "../../domain/inventory-item.aggregate";
-import { InventoryItemResponse } from "../types/application.types";
+import { InventoryItem } from "../../domain";
+import { DEFAULT_CURRENCY } from "../../domain/common/constants.common";
+import { InventoryItemResponse } from "../dtos/inventory-item.response";
+
+
+export interface ToResponseOptions {
+    branchId?: string;
+    date?: Date;
+};
+
 
 export const toInventoryItemResponse = (
     item: InventoryItem,
-    date: Date = new Date(),
+    options: ToResponseOptions = {},
 ): InventoryItemResponse => {
+    const date = options.date ?? new Date();
+    const { branchId } = options;
+
     const p = item.toPrimitives();
     const weighted = item.weightedAverageCost(date);
+
+    // Con sucursal: mínimo efectivo (override ?? global) y estado bajo-mínimo de esa sede.
+    // Sin sucursal: solo tiene sentido reportar el global; el estado queda indeterminado.
+    const minStock = branchId !== undefined
+        ? (item.minimumStockFor(branchId)?.getValue() ?? null)
+        : p.minGlobalStock;
+
+    const isBelowMinimum = branchId !== undefined
+        ? item.isBelowMinimumFor(branchId, date)
+        : null;
 
     return {
         id: p.id,
@@ -14,13 +35,13 @@ export const toInventoryItemResponse = (
         sku: p.sku,
         name: p.name,
         unitOfMeasure: p.unitOfMeasure,
-        standardCostAmount: p.costAmount,
-        effectiveCostAmount: weighted ? weighted.getAmount() : p.costAmount,
-        costSource: weighted ? 'BATCHES' : 'STANDARD',
-        costCurrency: p.costCurrency,
+        effectiveCostAmount: weighted ? weighted.getAmount() : null,
+        currency: DEFAULT_CURRENCY,
         isPerishable: p.isPerishable,
         isActive: p.isActive,
         currentStock: item.currentStock(date).getValue(),
+        minStock,
+        isBelowMinimum,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
     };

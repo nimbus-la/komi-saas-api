@@ -17,6 +17,7 @@ import { InventoryBatchId } from "./value-objects/inventory-batch-id.value-objec
  * que se consume; el resto de sus datos son inmutables una vez creado el lote.
  */
 export class InventoryBatch extends Entity<InventoryBatchId> {
+    private readonly branchId: string;
     private readonly quantityReceived: Quantity;
     private quantityRemaining: Quantity;
     private readonly unitCost: Money;
@@ -32,6 +33,7 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
      */
     private constructor(
         id: InventoryBatchId,
+        branchId: string,
         quantityReceived: Quantity,
         quantityRemaining: Quantity,
         unitCost: Money,
@@ -40,6 +42,7 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
     ) {
         super(id);
 
+        this.branchId = branchId;
         this.quantityReceived = quantityReceived;
         this.quantityRemaining = quantityRemaining;
         this.unitCost = unitCost;
@@ -58,6 +61,7 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
      * responsabilidad del root (InventoryItem).
      */
     public static create(params: {
+        branchId: string;
         quantityReceived: Quantity;
         unitCost: Money;
         expirationDate: InventoryBatchExpirationDate | null;
@@ -69,6 +73,7 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
 
         return new InventoryBatch(
             InventoryBatchId.generate(),
+            params.branchId,
             params.quantityReceived,
             params.quantityReceived,
             params.unitCost,
@@ -165,6 +170,24 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
 
 
 
+    public getBranchId(): string {
+        return this.branchId;
+    };
+
+
+
+    public getId(): string {
+        return this.id.value;
+    };
+
+
+
+    public getUnitCost(): Money {
+        return this.unitCost;
+    };
+
+
+
     /**
      * Serializa el lote a un objeto plano (primitivas): tipos simples listos para
      * persistir o exponer. Los value objects se reducen a su valor (Quantity ->
@@ -175,6 +198,7 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
     public toPrimitives(): InventoryBatchPrimitives {
         return {
             id: this.id.value,
+            branchId: this.branchId,
             quantityReceived: this.quantityReceived.getValue(),
             quantityRemaining: this.quantityRemaining.getValue(),
             unitCostAmount: this.unitCost.getAmount(),
@@ -195,6 +219,7 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
     public static fromPrimitives(p: InventoryBatchPrimitives): InventoryBatch {
         return new InventoryBatch(
             InventoryBatchId.create(p.id),
+            p.branchId,
             Quantity.of(p.quantityReceived),
             Quantity.of(p.quantityRemaining),
             Money.of(p.unitCostAmount, p.unitCostCurrency),

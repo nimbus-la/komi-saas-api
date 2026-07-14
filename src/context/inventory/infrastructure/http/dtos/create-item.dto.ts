@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
+import { IsBoolean, IsString, IsUUID, MinLength } from "class-validator";
 
 
 export class CreateItemDto {
@@ -13,15 +13,6 @@ export class CreateItemDto {
 
     @IsString()
     unitOfMeasure!: string;
-
-
-    @IsString()
-    costAmount!: string;
-
-
-    @IsOptional()
-    @IsString()
-    costCurrency?: string;
 
 
     @IsBoolean()

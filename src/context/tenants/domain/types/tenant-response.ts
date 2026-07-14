@@ -1,3 +1,5 @@
+import { BranchEntity } from "@/context/branch/infrastructure/persistence/branch.entity";
+
 export interface TenantResponse {
     id: string;
     accountId: string;
@@ -8,4 +10,6 @@ export interface TenantResponse {
     created_at: Date;
     updated_at: Date;
     isActive: boolean;
+
+    branches?: BranchEntity[] | undefined;
 }

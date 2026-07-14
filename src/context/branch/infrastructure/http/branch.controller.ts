@@ -1,0 +1,76 @@
+
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseFilters, UseInterceptors } from "@nestjs/common";
+
+import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
+import { UpdateBranchDto } from "./dto/update-branch.dto";
+import { CreateBranchDto } from "./dto/create-branch.dto";
+import { CreateBranchUseCase, DeleteBranchUseCase, SearchAllBranchUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "../../application";
+
+@UseInterceptors(ResponseInterceptor)
+@UseFilters(AllExceptionsFilter)
+@Controller("branch")
+export class BranchController {
+
+    constructor(
+        private readonly createBranch: CreateBranchUseCase,
+        private readonly searchBranchById: SearchBranchUseCase,
+        private readonly searchAllBranches: SearchAllBranchUseCase,
+        private readonly updateBranch: UpdateBranchUseCase,
+        private readonly deleteBranch: DeleteBranchUseCase
+    ) {}
+
+    @Post()
+    @ResponseMessage('Sucursal creada exitosamente.')
+    public async create(
+        @Body() dto: CreateBranchDto
+    ) {
+        await this.createBranch.execute({
+            tenantId: dto.tenantId,
+            name: dto.name,
+            address: dto.address,
+            phone: dto.phone,
+            city: dto.city,
+            department: dto.department,
+        });
+    };
+
+
+    @Get()
+    public async findAll() {
+        return await this.searchAllBranches.execute();
+    }
+
+
+    @Get(':id')
+    public async findOne(
+        @Param('id') id: string
+    ) {
+        return await this.searchBranchById.execute(id);
+    };
+
+
+    @Patch(':id')
+    @ResponseMessage('Sucursal actualizada exitosamente.')
+    public async update(
+        @Param('id') id: string,
+        @Body() dto: UpdateBranchDto
+    ) {
+        await this.updateBranch.execute(id, {
+            name: dto.name,
+            address: dto.address,
+            phone: dto.phone,
+            city: dto.city,
+            department: dto.department
+        });
+    };
+
+
+    @Delete(':id')
+    @ResponseMessage('Sucursal desactivada exitosamente.')
+    public async delete(
+        @Param('id') id: string
+    ) {
+        await this.deleteBranch.execute(id);
+    }
+
+};

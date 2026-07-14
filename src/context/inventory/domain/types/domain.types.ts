@@ -4,8 +4,6 @@ export interface InventoryItemCreatedProps {
     sku: string;
     name: string;
     unitOfMeasure: string;
-    costAmount: string;
-    costCurrency: string;
     isPerishable: boolean;
     isActive: boolean;
     createdAt: Date;
@@ -16,6 +14,7 @@ export interface InventoryItemCreatedProps {
 
 export interface InventoryBatchPrimitives {
     id: string;
+    branchId: string;
     quantityReceived: string;
     quantityRemaining: string;
     unitCostAmount: string;
@@ -26,17 +25,34 @@ export interface InventoryBatchPrimitives {
 
 
 
+export interface InventoryStockPrimitives {
+    id: string;
+    branchId: string;
+    minStock: string;
+};
+
+
+
 export interface InventoryItemPrimitives {
     id: string;
     tenantId: string;
     sku: string;
     name: string;
     unitOfMeasure: string;
-    costAmount: string;
-    costCurrency: string;
     isPerishable: boolean;
     isActive: boolean;
+    minGlobalStock: string | null;
     createdAt: Date;
     updatedAt: Date;
     batches: InventoryBatchPrimitives[];
+    stocks: InventoryStockPrimitives[];
+};
+
+
+
+export interface ConsumedBatchDetail {
+    batchId: string;
+    quantity: string;
+    unitCostAmount: string;
+    unitCostCurrency: string;
 };
