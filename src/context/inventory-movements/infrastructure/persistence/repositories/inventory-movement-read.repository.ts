@@ -5,7 +5,7 @@ import { Repository } from "typeorm";
 
 import { Paginated, Pagination } from "@/interfaces";
 import { InventoryMovementReadRepository, InventoryMovementView, MovementSearchFilters } from "../../../application";
-import { InventoryMovementModel } from "../models/inventory-movements.models";
+import { InventoryMovementModel } from "../models/inventory-movements.model";
 import { InventoryMovementPersistenceMapper } from "../mappers/inventory-movement.persistence-mapper";
 
 

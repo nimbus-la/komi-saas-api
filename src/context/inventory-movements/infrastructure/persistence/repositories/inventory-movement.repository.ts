@@ -4,7 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
 import { InventoryMovement, InventoryMovementRepository } from "../../../domain";
-import { InventoryMovementModel } from "../models/inventory-movements.models";
+import { InventoryMovementModel } from "../models/inventory-movements.model";
 import { InventoryMovementPersistenceMapper } from "../mappers/inventory-movement.persistence-mapper";
 
 

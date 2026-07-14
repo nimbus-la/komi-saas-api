@@ -1,6 +1,6 @@
 import { InventoryMovement, MovementType } from "../../../domain";
 import { InventoryMovementView } from "../../../application";
-import { InventoryMovementModel } from "../models/inventory-movements.models";
+import { InventoryMovementModel } from "../models/inventory-movements.model";
 
 
 export class InventoryMovementPersistenceMapper {
