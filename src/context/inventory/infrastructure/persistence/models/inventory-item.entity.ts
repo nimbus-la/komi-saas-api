@@ -1,0 +1,45 @@
+import { Column, Entity, Index, PrimaryColumn } from "typeorm";
+
+
+@Entity({ name: 'inventory_items' })
+export class InventoryItemEntity {
+    @PrimaryColumn({ name: 'inventory_item_id', type: 'uuid' })
+    id!: string;
+
+
+    @Index()
+    @Column({ name: 'tenant_id', type: 'uuid' })
+    tenantId!: string;
+
+
+    @Column({ name: 'sku', type: 'varchar', length: 20, unique: true })
+    sku!: string;
+
+
+    @Column({ name: 'name', type: 'varchar', length: 120 })
+    name!: string;
+
+
+    @Column({ name: 'unit_of_measure', type: 'varchar', length: 20 })
+    unitOfMeasure!: string;
+
+
+    @Column({ name: 'is_perishable', type: 'boolean' })
+    isPerishable!: boolean;
+
+
+    @Column({ name: 'is_active', type: 'boolean', default: true })
+    isActive!: boolean;
+
+
+    @Column({ name: 'min_global_stock', type: 'numeric', precision: 14, scale: 3, nullable: true })
+    minGlobalStock!: string | null;
+
+
+    @Column({ name: 'created_at', type: 'timestamptz' })
+    createdAt!: Date;
+
+    
+    @Column({ name: 'updated_at', type: 'timestamptz' })
+    updatedAt!: Date;
+};

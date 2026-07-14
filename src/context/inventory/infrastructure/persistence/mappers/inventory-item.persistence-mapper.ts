@@ -1,7 +1,8 @@
-import { InventoryBatchPrimitives, InventoryItemPrimitives } from "@/context/inventory/domain/types/domain.types";
-import { InventoryBatchEntity } from "../entities/inventory-batch.entity";
-import { InventoryItemEntity } from "../entities/inventory-item.entity";
+import { InventoryBatchPrimitives, InventoryItemPrimitives, InventoryStockPrimitives } from "@/context/inventory/domain/types/domain.types";
+import { InventoryBatchEntity } from "../models/inventory-batch.entity";
+import { InventoryItemEntity } from "../models/inventory-item.entity";
 import { InventoryItem } from "@/context/inventory/domain/inventory-item.aggregate";
+import { InventoryStockEntity } from "../models/inventory-stock.entity";
 
 /**
  * Traduce entre el agregado de dominio (InventoryItem) y las entidades de
@@ -14,7 +15,7 @@ export class InventoryItemPersistenceMapper {
      * De persistencia a dominio: reconstruye el agregado a partir de la fila del
      * item y sus filas de lotes (solo los activos, ya filtrados por el repo).
      */
-    public static toAggregate(itemRow: InventoryItemEntity, batchRows: InventoryBatchEntity[]) {
+    public static toAggregate(itemRow: InventoryItemEntity, batchRows: InventoryBatchEntity[], stockRows: InventoryStockEntity[],) {
         const primitives: InventoryItemPrimitives = {
             id: itemRow.id,
             tenantId: itemRow.tenantId,
@@ -23,6 +24,7 @@ export class InventoryItemPersistenceMapper {
             unitOfMeasure: itemRow.unitOfMeasure,
             isPerishable: itemRow.isPerishable,
             isActive: itemRow.isActive,
+            minGlobalStock: itemRow.minGlobalStock,
             createdAt: itemRow.createdAt,
             updatedAt: itemRow.updatedAt,
             batches: batchRows.map(
@@ -37,6 +39,13 @@ export class InventoryItemPersistenceMapper {
                     receivedAt: batch.receivedAt,
                 })
             ),
+            stocks: stockRows.map(
+                (stock: InventoryStockEntity): InventoryStockPrimitives => ({
+                    id: stock.id,
+                    branchId: stock.branchId,
+                    minStock: stock.minStock,
+                })
+            ),
         };
 
         return InventoryItem.fromPrimitives(primitives);
@@ -48,8 +57,8 @@ export class InventoryItemPersistenceMapper {
      * las filas de sus lotes (con la FK inventoryItemId puesta). El repositorio
      * las guarda en sus tablas respectivas.
      */
-    public static toPersistence(item: InventoryItem): { item: InventoryItemEntity, batch: InventoryBatchEntity[] } {
-        const { id, tenantId, sku, name, unitOfMeasure, isPerishable, isActive, batches, createdAt, updatedAt } = item.toPrimitives();
+    public static toPersistence(item: InventoryItem): { item: InventoryItemEntity, batch: InventoryBatchEntity[], stock: InventoryStockEntity[]; } {
+        const { id, tenantId, sku, name, unitOfMeasure, isPerishable, isActive, batches, minGlobalStock, stocks, createdAt, updatedAt } = item.toPrimitives();
 
         const itemRow: InventoryItemEntity = {
             id,
@@ -59,6 +68,7 @@ export class InventoryItemPersistenceMapper {
             unitOfMeasure,
             isPerishable,
             isActive,
+            minGlobalStock,
             createdAt,
             updatedAt,
         };
@@ -77,6 +87,15 @@ export class InventoryItemPersistenceMapper {
             })
         );
 
-        return { item: itemRow, batch: batchRows };
+        const stockRows: InventoryStockEntity[] = stocks.map(
+            (stock: InventoryStockPrimitives) => ({
+                id: stock.id,
+                inventoryItemId: id,
+                branchId: stock.branchId,
+                minStock: stock.minStock,
+            })
+        );
+
+        return { item: itemRow, batch: batchRows, stock: stockRows };
     };
 };

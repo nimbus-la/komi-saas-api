@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS inventory_items (
     unit_of_measure    VARCHAR(20)    NOT NULL,
     is_perishable      BOOLEAN        NOT NULL,
     is_active          BOOLEAN        NOT NULL DEFAULT TRUE,
+    min_global_stock   NUMERIC(14,3)  NULL,
     created_at         TIMESTAMPTZ    NOT NULL,
     updated_at         TIMESTAMPTZ    NOT NULL,
 
@@ -98,6 +99,17 @@ CREATE TABLE IF NOT EXISTS inventory_batchs (
         ON DELETE RESTRICT
 );
 
+
+
+CREATE TABLE inventory_stocks (
+    inventory_stock_id uuid PRIMARY KEY,
+    inventory_item_id  uuid NOT NULL REFERENCES inventory_items (inventory_item_id),
+    branch_id          uuid NOT NULL,
+    min_stock          numeric(14,3) NOT NULL,
+    CONSTRAINT uq_inventory_stocks_item_branch UNIQUE (inventory_item_id, branch_id)
+);
+
+CREATE INDEX idx_inventory_stocks_item ON inventory_stocks (inventory_item_id);
 
 -- El lote se consulta filtrando por item y, ahora, por sucursal.
 CREATE INDEX IF NOT EXISTS idx_inventory_batchs_item

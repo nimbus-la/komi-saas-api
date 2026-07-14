@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseFilters, UseInterceptors } from "@nestjs/common";
+
+import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
 import { CreateTenantUseCase, DeleteTenantUseCases, SearchAllTenantsUseCase, SearchTenantUseCase, UpdateTenantUseCase } from "../../application";
-import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/shared";
 import { CreateTenantDto } from "./dto/create-tenant.dto";
 import { UpdateTenantDto } from "./dto/update-tenant.dto";
 

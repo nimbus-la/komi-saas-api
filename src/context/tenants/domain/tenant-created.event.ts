@@ -2,6 +2,8 @@ import { DomainEvent } from "@/shared";
 import { TenantCreatedProps } from "./types/tenant-event";
 
 export class TenantCreatedEvent extends DomainEvent {
+    public readonly eventName = 'tenant.created';
+
     public readonly tenantId: string;
     public readonly accountId: string;
     public readonly name: string;

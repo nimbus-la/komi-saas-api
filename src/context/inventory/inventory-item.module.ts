@@ -1,31 +1,17 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { InventoryItemEntity } from "./infrastructure/persistence/entities/inventory-item.entity";
-import { InventoryBatchEntity } from "./infrastructure/persistence/entities/inventory-batch.entity";
-import { InventoryItemController } from "./infrastructure/http/inventory-item.controller";
 import { InventoryItemRepository } from "./domain/inventory-item.repository";
-import { TypeOrmInventoryItemRepository } from "./infrastructure/persistence/repositories/typeorm-inventory-item.repository";
-import { InventoryBatchReadRepository } from "./application/ports/inventory-batch-read.repository";
-import { TypeOrmInventoryBatchReadRepository } from "./infrastructure/persistence/repositories/typeorm-inventory-batch-read.repository";
-import { CreateInventoryItemUseCase } from "./application/create-item/create-inventory-item.use-case";
-import { SearchInventoryItemsUseCase } from "./application/search-items/search-inventory-items.use-case";
-import { FindInventoryItemUseCase } from "./application/find-item/find-inventory-item.use-case";
-import { ReceiveStockUseCase } from "./application/receive-stock/receive-stock.use-case";
-import { ConsumeStockUseCase } from "./application/consume-stock/consume-stock.use-case";
-import { SearchItemBatchesUseCase } from "./application/search-item-batches/search-item-batches.use-case";
-import { UpdateInventoryItemUseCase } from "./application/update-item/update-inventory-item.use-case";
-import { TenantChecker } from "./application/ports/tenant-checker";
-import { TenantCheckerAdapter } from "./infrastructure/persistence/adapter/tenant-checker.adapter";
 import { TenantModule } from "../tenants/tenant.module";
-import { BranchChecker } from "./application/ports/branch-checker";
-import { BranchCheckerAdapter } from "./infrastructure/persistence/adapter/branch-checker.adapter";
 import { BranchModule } from "../branch/branch.module";
+import { BranchChecker, ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, InventoryBatchReadRepository, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetMinimumStockUseCase, TenantChecker, UpdateInventoryItemUseCase } from "./application";
+import { BranchCheckerAdapter, InventoryBatchEntity, InventoryItemController, InventoryItemEntity, InventoryStockEntity, TenantCheckerAdapter, TypeOrmInventoryBatchReadRepository, TypeOrmInventoryItemRepository } from "./infrastructure";
+import { EventPublisher } from "@/shared";
 
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([InventoryItemEntity, InventoryBatchEntity]),
+        TypeOrmModule.forFeature([InventoryItemEntity, InventoryBatchEntity, InventoryStockEntity]),
         TenantModule,
         BranchModule
     ],
@@ -40,34 +26,43 @@ import { BranchModule } from "../branch/branch.module";
             useFactory: (r: InventoryItemRepository, t: TenantChecker) => new CreateInventoryItemUseCase(r, t),
             inject: [InventoryItemRepository, TenantChecker]
         },
-        { 
-            provide: SearchInventoryItemsUseCase, 
-            useFactory: (r: InventoryItemRepository) => new SearchInventoryItemsUseCase(r), inject: [InventoryItemRepository] 
+        {
+            provide: SearchInventoryItemsUseCase,
+            useFactory: (r: InventoryItemRepository) => new SearchInventoryItemsUseCase(r), inject: [InventoryItemRepository]
         },
-        { 
-            provide: FindInventoryItemUseCase, 
-            useFactory: (r: InventoryItemRepository) => new FindInventoryItemUseCase(r), 
-            inject: [InventoryItemRepository] 
+        {
+            provide: FindInventoryItemUseCase,
+            useFactory: (r: InventoryItemRepository) => new FindInventoryItemUseCase(r),
+            inject: [InventoryItemRepository]
         },
-        { 
-            provide: ReceiveStockUseCase, 
-            useFactory: (repository: InventoryItemRepository, branchChecker: BranchChecker,) => new ReceiveStockUseCase(repository, branchChecker), 
-            inject: [InventoryItemRepository, BranchChecker] 
+        {
+            provide: ReceiveStockUseCase,
+            useFactory: (
+                repository: InventoryItemRepository, 
+                branchChecker: BranchChecker, 
+                eventPublisher: EventPublisher
+            ) => new ReceiveStockUseCase(repository, branchChecker, eventPublisher),
+            inject: [InventoryItemRepository, BranchChecker]
         },
-        { 
-            provide: ConsumeStockUseCase, 
-            useFactory: (r: InventoryItemRepository) => new ConsumeStockUseCase(r), 
-            inject: [InventoryItemRepository] 
+        {
+            provide: ConsumeStockUseCase,
+            useFactory: (repository: InventoryItemRepository, eventPublisher: EventPublisher) => new ConsumeStockUseCase(repository, eventPublisher),
+            inject: [InventoryItemRepository]
         },
-        { 
-            provide: SearchItemBatchesUseCase, 
-            useFactory: (r: InventoryBatchReadRepository) => new SearchItemBatchesUseCase(r), 
-            inject: [InventoryBatchReadRepository] 
+        {
+            provide: SearchItemBatchesUseCase,
+            useFactory: (r: InventoryBatchReadRepository) => new SearchItemBatchesUseCase(r),
+            inject: [InventoryBatchReadRepository]
         },
         {
             provide: UpdateInventoryItemUseCase,
             useFactory: (r: InventoryItemRepository) => new UpdateInventoryItemUseCase(r),
             inject: [InventoryItemRepository]
+        },
+        {
+            provide: SetMinimumStockUseCase,
+            useFactory: (r: InventoryItemRepository, b: BranchChecker) => new SetMinimumStockUseCase(r, b),
+            inject: [InventoryItemRepository, BranchChecker],
         },
     ],
 })
