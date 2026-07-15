@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS inventory_batchs (
         ON DELETE RESTRICT
 );
 
+-- El lote se consulta filtrando por item y, ahora, por sucursal.
+CREATE INDEX IF NOT EXISTS idx_inventory_batchs_item
+    ON inventory_batchs (inventory_item_id);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_batchs_branch
+    ON inventory_batchs (branch_id);
+
 
 
 CREATE TABLE inventory_stocks (
@@ -112,12 +119,50 @@ CREATE TABLE inventory_stocks (
 
 CREATE INDEX idx_inventory_stocks_item ON inventory_stocks (inventory_item_id);
 
--- El lote se consulta filtrando por item y, ahora, por sucursal.
-CREATE INDEX IF NOT EXISTS idx_inventory_batchs_item
-    ON inventory_batchs (inventory_item_id);
 
-CREATE INDEX IF NOT EXISTS idx_inventory_batchs_branch
-    ON inventory_batchs (branch_id);
+
+-- --------------------------------------------------------------------------
+-- Tabla: inventory_movements
+--   Bitácora append-only de cambios de cantidad (entradas, salidas, mermas,
+--   ajustes). No se edita ni se borra: una correccion es un movimiento nuevo.
+--   FK: inventory_item_id -> inventory_items(inventory_item_id)
+--   FK: branch_id         -> branches(branch_id)
+-- --------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS inventory_movements (
+    inventory_movement_id  UUID           PRIMARY KEY,
+    tenant_id              UUID           NOT NULL,
+    inventory_item_id      UUID           NOT NULL,
+    branch_id              UUID           NOT NULL,
+    batch_id               UUID           NULL,
+    movement_type          VARCHAR(20)    NOT NULL,
+    quantity               NUMERIC(14, 3) NOT NULL,
+    unit_cost_amount       NUMERIC(12, 2) NULL,
+    unit_cost_currency     VARCHAR(3)     NULL,
+    reason                 VARCHAR(255)   NULL,
+    -- user_id             UUID           NULL,   -- pendiente: modulo de auth
+    occurred_at            TIMESTAMPTZ    NOT NULL,
+    registered_at          TIMESTAMPTZ    NOT NULL,
+
+    CONSTRAINT fk_inventory_movements_item
+        FOREIGN KEY (inventory_item_id)
+        REFERENCES inventory_items (inventory_item_id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_inventory_movements_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches (branch_id)
+        ON DELETE RESTRICT
+);
+
+-- La bitacora se consulta filtrando por item y sucursal, y ordenada por fecha.
+CREATE INDEX IF NOT EXISTS idx_inventory_movements_item_branch
+    ON inventory_movements (inventory_item_id, branch_id);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_movements_occurred
+    ON inventory_movements (occurred_at);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_movements_tenant
+    ON inventory_movements (tenant_id);
 
 
 
