@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import {
     ProductCategoryRepository,
     ProductCategoryNotFoundException,
-} from "../../domain";
+} from "../../../domain";
 
 export interface UpdateCategoryApplicationParams {
     name?: string;

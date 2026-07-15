@@ -1,10 +1,8 @@
 import { Injectable } from "@nestjs/common";
+import { UpdateCategoryDto } from "../../http/dto/update-category.dto";
+import { CreateCategoryDto } from "../../http/dto/create-category.dto";
+import { CreateCategoryUseCase, SearchCategoriesUseCase, UpdateCategoryUseCase } from "@/context/product-categories/application";
 
-import { CreateCategoryDto } from "../http/dto/create-category.dto";
-import { CreateCategoryUseCase } from "../../application/create-category/create-category.use-case";
-import { UpdateCategoryUseCase } from "../../application/update-category/update-category.use-case";
-import { UpdateCategoryDto } from "../http/dto/update-category.dto";
-import { SearchCategoriesUseCase } from "../../application/search-categories/search-categories.use-case";
 
 @Injectable()
 export class CategoryService {

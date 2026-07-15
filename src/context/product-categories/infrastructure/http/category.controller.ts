@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 
-import { CategoryService } from "../persistence/category.service";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
+import { CategoryService } from "../persistence/services/category.service";
 
 @Controller("categories")
 export class CategoryController {
@@ -17,7 +17,9 @@ export class CategoryController {
         await this.service.create(dto);
 
         return {
-            statusCode: 201,
+            status: "SUCCESS",
+            code: "0000",
+            statusCode: 200,
             message: "Categoría creada con éxito",
         };
     }
@@ -29,20 +31,36 @@ export class CategoryController {
         await this.service.update(id, dto);
 
         return {
+            status: "SUCCESS",
+            code: "0000",
             statusCode: 200,
             message: 'Categoría actualizada con éxito',
         };
     }
     @Get()
-    async search(
-        @Query("estado") estado?: string,
-    ) {
-        const params: { estado?: boolean } = {};
+async search(
+    @Query("text") text?: string,
+    @Query("id") id?: string,
+    @Query("estado") estado?: string,
+) {
+    const params: {
+        text?: string;
+        id?: string;
+        estado?: boolean;
+    } = {};
 
-        if (estado !== undefined) {
-            params.estado = estado === "true";
-        }
-
-        return this.service.search(params);
+    if (text) {
+        params.text = text;
     }
+
+    if (id) {
+        params.id = id;
+    }
+
+    if (estado !== undefined) {
+        params.estado = estado === "true";
+    }
+
+    return this.service.search(params);
+}
 }

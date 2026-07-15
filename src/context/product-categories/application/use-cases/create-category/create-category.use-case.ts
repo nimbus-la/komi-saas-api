@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import {
     ProductCategory,
     ProductCategoryRepository,
-} from "../../domain";
+} from "../../../domain";
 
 export interface CreateCategoryApplicationParams {
     name: string;

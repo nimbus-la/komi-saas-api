@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { ManyToOne, JoinColumn } from "typeorm";
-import { ProductCategoryEntity } from "../../../../product-categories/domain/product-category.entity";
+import { ProductCategoryEntity } from "../../../../product-categories/infrastructure/persistence/models/product-category.entity";
 
 @Entity({ name: "product" })
 export class ProductEntity {

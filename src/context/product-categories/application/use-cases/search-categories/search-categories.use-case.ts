@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { ProductCategoryRepository } from "../../domain";
+import { ProductCategoryRepository } from "../../../domain";
 
 @Injectable()
 export class SearchCategoriesUseCase {
