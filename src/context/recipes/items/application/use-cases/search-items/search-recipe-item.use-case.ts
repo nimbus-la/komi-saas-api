@@ -4,7 +4,7 @@ import {
   RecipeItemRepository,
   RecipeItemResponse,
   SearchRecipeItemsApplicationParams,
-} from "../../domain";
+} from "../../../domain";
 
 @Injectable()
 export class SearchRecipeItemsUseCase {

@@ -3,11 +3,11 @@ import { Injectable } from "@nestjs/common";
 import {
   RecipeItemRepository,
   RecipeItemId,
-} from "../../domain";
+} from "../../../domain";
 
 import {
   UpdateRecipeItemApplicationParams,
-} from "../../domain/types";
+} from "../../../domain/types";
 
 @Injectable()
 export class UpdateRecipeItemUseCase {

@@ -8,13 +8,17 @@ import {
   Query,
 } from "@nestjs/common";
 
-import { CreateRecipeItemUseCase } from "../../application/create-item/create-recipe-item.use-case";
-import { UpdateRecipeItemUseCase } from "../../application/update-item/update-recipe-item.use-case";
-import { SearchRecipeItemsUseCase } from "../../application/search-items/search-recipe-item.use-case";
-
 import { CreateRecipeItemDto } from "./dto/create-recipe-item.dto";
 import { UpdateRecipeItemDto } from "./dto/update-recipe-item.dto";
 import { SearchRecipeItemDto } from "./dto/search-recipe-item.dto";
+
+import {
+  CreateRecipeItemUseCase,
+  SearchRecipeItemsUseCase,
+  UpdateRecipeItemUseCase,
+} from "../../application";
+import { ResponseUtil } from "@/utils/response.util";
+
 
 @Controller("recipe-items")
 export class RecipeItemController {
@@ -25,10 +29,13 @@ export class RecipeItemController {
   ) {}
 
   @Post()
-  async create(
-    @Body() dto: CreateRecipeItemDto,
-  ) {
-    return await this.createRecipeItemUseCase.execute(dto);
+  async create(@Body() dto: CreateRecipeItemDto) {
+    const data = await this.createRecipeItemUseCase.execute(dto);
+
+    return ResponseUtil.success(
+      "Recipe item creado con éxito",
+      data,
+    );
   }
 
   @Put(":id")
@@ -36,16 +43,24 @@ export class RecipeItemController {
     @Param("id") id: string,
     @Body() dto: UpdateRecipeItemDto,
   ) {
-    return await this.updateRecipeItemUseCase.execute({
+    const data = await this.updateRecipeItemUseCase.execute({
       ...dto,
       id,
     });
+
+    return ResponseUtil.success(
+      "Recipe item actualizado con éxito",
+      data,
+    );
   }
 
   @Get()
-  async search(
-    @Query() dto: SearchRecipeItemDto,
-  ) {
-    return await this.searchRecipeItemsUseCase.execute(dto);
+  async search(@Query() dto: SearchRecipeItemDto) {
+    const data = await this.searchRecipeItemsUseCase.execute(dto);
+
+    return ResponseUtil.success(
+      "Consulta de recipe items exitosa",
+      data,
+    );
   }
 }

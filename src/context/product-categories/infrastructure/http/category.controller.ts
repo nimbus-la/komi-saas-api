@@ -23,6 +23,7 @@ export class CategoryController {
             message: "Categoría creada con éxito",
         };
     }
+
     @Patch(':id')
     async update(
         @Param('id') id: string,
@@ -37,30 +38,31 @@ export class CategoryController {
             message: 'Categoría actualizada con éxito',
         };
     }
+
     @Get()
-async search(
-    @Query("text") text?: string,
-    @Query("id") id?: string,
-    @Query("estado") estado?: string,
-) {
-    const params: {
-        text?: string;
-        id?: string;
-        estado?: boolean;
-    } = {};
+    async search(
+        @Query("text") text?: string,
+        @Query("id") id?: string,
+        @Query("estado") estado?: string,
+    ) {
+        const params: {
+            text?: string;
+            id?: string;
+            estado?: boolean;
+        } = {};
 
-    if (text) {
-        params.text = text;
+        if (text) {
+            params.text = text;
+        }
+
+        if (id) {
+            params.id = id;
+        }
+
+        if (estado !== undefined) {
+            params.estado = estado === "true";
+        }
+
+        return this.service.search(params);
     }
-
-    if (id) {
-        params.id = id;
-    }
-
-    if (estado !== undefined) {
-        params.estado = estado === "true";
-    }
-
-    return this.service.search(params);
-}
 }

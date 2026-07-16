@@ -1,13 +1,13 @@
 import { Injectable } from "@nestjs/common";
 
-import { CreateRecipeItemDto } from "../http/dto/create-recipe-item.dto";
-import { UpdateRecipeItemDto } from "../http/dto/update-recipe-item.dto";
+import { CreateRecipeItemDto } from "../../http/dto/create-recipe-item.dto";
+import { UpdateRecipeItemDto } from "../../http/dto/update-recipe-item.dto";
 
-import { CreateRecipeItemUseCase } from "../../application/create-item/create-recipe-item.use-case";
-import { UpdateRecipeItemUseCase } from "../../application/update-item/update-recipe-item.use-case";
-import { SearchRecipeItemsUseCase } from "../../application/search-items/search-recipe-item.use-case";
+import { CreateRecipeItemUseCase } from "../../../application/use-cases/create-item/create-recipe-item.use-case";
+import { UpdateRecipeItemUseCase } from "../../../application/use-cases/update-item/update-recipe-item.use-case";
+import { SearchRecipeItemsUseCase } from "../../../application/use-cases/search-items/search-recipe-item.use-case";
 
-import { SearchRecipeItemsApplicationParams } from "../../domain";
+import { SearchRecipeItemsApplicationParams } from "../../../domain";
 
 @Injectable()
 export class RecipeItemService {

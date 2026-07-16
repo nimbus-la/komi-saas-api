@@ -15,4 +15,10 @@ export abstract class RecipeItemRepository {
     ): Promise<RecipeItemResponse[]>;
 
     abstract findById(id: RecipeItemId): Promise<RecipeItem | null>;
+    abstract existsRecipeItem(
+  productId: string,
+  inventoryItemId: string,
+  quantity: string,
+  unit: string,
+): Promise<boolean>;
 }
