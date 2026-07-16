@@ -1,5 +1,6 @@
 export interface ProductPrimitives {
     id: string;
+    tenantId: string;
     productCategoryId: string;
     productName: string;
     productDescription: string | undefined;

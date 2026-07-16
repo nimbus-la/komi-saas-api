@@ -7,6 +7,7 @@ export class ProductMapper {
     static toResponse(row: ProductEntity): ProductResponse {
         return {
             id: row.id,
+            tenantId: row.tenantId,
             productCategoryId: row.productCategoryId,
             productName: row.name,
             productDescription: row.description ?? undefined,
@@ -26,6 +27,7 @@ export class ProductMapper {
 
         return Product.fromPrimitives({
             id: row.id,
+            tenantId: row.tenantId,
             productCategoryId: row.productCategoryId,
             productName: row.name,
             productDescription: row.description ?? undefined,
@@ -46,6 +48,7 @@ export class ProductMapper {
 
         return {
             id: primitives.id,
+            tenantId: primitives.tenantId,
             productCategoryId: primitives.productCategoryId,
             name: primitives.productName,
             description: primitives.productDescription ?? null,

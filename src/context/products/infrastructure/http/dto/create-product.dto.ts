@@ -9,6 +9,10 @@ import {
 } from "class-validator";
 
 export class CreateProductDto {
+
+  @IsUUID()
+  tenantId!: string;
+
   @IsUUID()
   productCategoryId!: string;
 

@@ -1,12 +1,12 @@
+import { ProductEntity } from "@/context/products";
 import {
     Column,
     CreateDateColumn,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
-    OneToMany,
 } from "typeorm";
-import { ProductEntity } from "../../../../products/infrastructure/persistence/models/product.entity";
 
 @Entity("product_category")
 export class ProductCategoryEntity {
@@ -29,7 +29,6 @@ export class ProductCategoryEntity {
     @UpdateDateColumn({ name: "updated_at" })
     updatedAt!: Date;
 
-    // 🔥 RELACIÓN INVERSA
     @OneToMany(() => ProductEntity, (product) => product.category)
     products!: ProductEntity[];
 }

@@ -8,6 +8,7 @@ import { ProductPrimitives } from "./types/product-primitives";
 
 
 export class Product extends AggregateRoot<ProductId> {
+    private tenantId: string;
     private productCategoryId: string;
     private productName: ProductName;
     private productDescription: string | undefined;
@@ -20,6 +21,7 @@ export class Product extends AggregateRoot<ProductId> {
 
     private constructor(
         id: ProductId,
+        tenantId: string,
         productCategoryId: string,
         productName: ProductName,
         productDescription: string | undefined,
@@ -30,7 +32,7 @@ export class Product extends AggregateRoot<ProductId> {
         productStatus: boolean,
     ) {
         super(id);
-
+        this.tenantId = tenantId;
         this.productCategoryId = productCategoryId;
         this.productName = productName;
         this.productDescription = productDescription;
@@ -42,6 +44,7 @@ export class Product extends AggregateRoot<ProductId> {
     }
 
     public static create(params: {
+        tenantId: string;
         productCategoryId: string;
         productName: ProductName;
         productDescription: string | undefined;
@@ -53,6 +56,7 @@ export class Product extends AggregateRoot<ProductId> {
 
         const product = new Product(
             ProductId.generate(),
+            params.tenantId,
             params.productCategoryId,
             params.productName,
             params.productDescription,
@@ -66,6 +70,7 @@ export class Product extends AggregateRoot<ProductId> {
         product.registerEvent(
             new ProductCreatedEvent({
                 productId: product.id.value,
+                tenantId: product.tenantId,
                 productCategoryId: product.productCategoryId,
                 productName: product.productName.value,
                 productDescription: product.productDescription,
@@ -84,6 +89,7 @@ export class Product extends AggregateRoot<ProductId> {
     public toPrimitives(): ProductPrimitives {
         return {
             id: this.id.value,
+            tenantId: this.tenantId,
             productCategoryId: this.productCategoryId,
             productName: this.productName.value,
             productDescription: this.productDescription,
@@ -101,6 +107,7 @@ export class Product extends AggregateRoot<ProductId> {
     ): Product {
         return new Product(
             ProductId.create(primitives.id),
+            primitives.tenantId,
             primitives.productCategoryId,
             ProductName.create(primitives.productName),
             primitives.productDescription,

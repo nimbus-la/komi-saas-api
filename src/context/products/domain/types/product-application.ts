@@ -1,4 +1,5 @@
 export interface CreateProductApplicationParams {
+    tenantId: string;
     productCategoryId: string;
     productName: string;
     productDescription: string | undefined;
@@ -8,6 +9,7 @@ export interface CreateProductApplicationParams {
 }
 export interface UpdateProductApplicationParams {
     id: string;
+    tenantId: string;
     productCategoryId: string;
     productName: string;
     productDescription: string | undefined;
@@ -18,6 +20,7 @@ export interface UpdateProductApplicationParams {
 }
 
 export interface SearchProductsApplicationParams {
+    tenantId: string;
     text?: string;
     productCategoryId?: string;
     productStatus?: boolean;

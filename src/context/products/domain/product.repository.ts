@@ -13,9 +13,15 @@ export abstract class ProductRepository {
         params: SearchProductsApplicationParams,
     ): Promise<ProductResponse[]>;
 
-    abstract findById(id: ProductId): Promise<Product | null>;
+    abstract findById(
+        id: ProductId,
+        tenantId: string,
+    ): Promise<Product | null>;
 
-    abstract existsByName(name: ProductName): Promise<boolean>;
+    abstract existsByName(
+        name: ProductName,
+        tenantId: string,
+    ): Promise<boolean>;
 
     abstract nextSkuSequence(): Promise<number>;
 }

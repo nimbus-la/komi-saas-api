@@ -36,6 +36,7 @@ export class ProductService {
       ...dto,
     });
   }
+
   async search(params: SearchProductsApplicationParams) {
     return this.searchProductsUseCase.execute(params);
   }
@@ -78,6 +79,14 @@ export class ProductRepositoryImpl extends ProductRepository {
     params: SearchProductsApplicationParams,
   ): Promise<ProductResponse[]> {
     const query = this.productRepository.createQueryBuilder("product");
+
+    // Filtrar siempre por tenant
+    query.andWhere(
+      "product.tenantId = :tenantId",
+      {
+        tenantId: params.tenantId,
+      },
+    );
 
     // Buscar por nombre o SKU
     if (params.text) {
@@ -122,21 +131,31 @@ export class ProductRepositoryImpl extends ProductRepository {
     return rows.map(ProductMapper.toResponse);
   }
 
-  public async existsByName(name: ProductName): Promise<boolean> {
+  public async existsByName(
+    name: ProductName,
+    tenantId: string,
+  ): Promise<boolean> {
     const count = await this.productRepository
       .createQueryBuilder("product")
       .where("LOWER(product.name) = LOWER(:name)", {
         name: name.value,
+      })
+      .andWhere("product.tenantId = :tenantId", {
+        tenantId,
       })
       .getCount();
 
     return count > 0;
   }
 
-  public async findById(id: ProductId): Promise<Product | null> {
+  public async findById(
+    id: ProductId,
+    tenantId: string,
+  ): Promise<Product | null> {
     const row = await this.productRepository.findOne({
       where: {
         id: id.value,
+        tenantId,
       },
     });
 

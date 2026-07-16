@@ -1,5 +1,6 @@
 export interface ProductCreatedProps {
     productId: string;
+    tenantId: string;
     productCategoryId: string;
     productName: string;
     productDescription: string | undefined;

@@ -1,17 +1,21 @@
+import { ProductCategoryEntity } from "@/context/product-categories";
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { ManyToOne, JoinColumn } from "typeorm";
-import { ProductCategoryEntity } from "../../../../product-categories/infrastructure/persistence/models/product-category.entity";
 
 @Entity({ name: "product" })
 export class ProductEntity {
   @PrimaryColumn({ name: "product_id", type: "uuid" })
   id!: string;
+
+  @Column({ name: "tenant_id", type: "uuid" })
+  tenantId!: string;
 
   @Column({ name: "product_category_id", type: "uuid" })
   productCategoryId!: string;

@@ -48,6 +48,7 @@ export class ProductController {
 
   @Get()
   async search(
+    @Query("tenantId") tenantId: string,
     @Query("text") text?: string,
     @Query("productCategoryId") productCategoryId?: string,
     @Query("productStatus") productStatus?: string,
@@ -55,6 +56,7 @@ export class ProductController {
     @Query("limit") limit = "10",
   ) {
     const params: SearchProductsApplicationParams = {
+      tenantId,
       page: Number(page),
       limit: Number(limit),
     };

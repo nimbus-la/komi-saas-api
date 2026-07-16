@@ -10,6 +10,9 @@ import { CategoriesModule } from "../product-categories/categories.module";
 import { UpdateProductUseCase } from './application/use-cases/update-item/update-product.use-case';
 import { SearchProductsUseCase } from './application/use-cases/search-items/search-product.use-case';
 import { CreateProductUseCase } from './application';
+import { TenantModule } from '../tenants/tenant.module';
+import { TenantChecker } from './application/ports/tenant-checker';
+import { TenantCheckerAdapter } from '../inventory';
 
 @Module({
   imports: [
@@ -18,6 +21,7 @@ import { CreateProductUseCase } from './application';
       ProductCategoryEntity,
     ]),
     CategoriesModule,
+    TenantModule,
   ],
   controllers: [
     ProductController,
@@ -29,12 +33,9 @@ import { CreateProductUseCase } from './application';
       provide: ProductRepository,
       useClass: ProductRepositoryImpl,
     },
-
     {
-      provide: CreateProductUseCase,
-      useFactory: (repository: ProductRepository) =>
-        new CreateProductUseCase(repository),
-      inject: [ProductRepository],
+      provide: TenantChecker,
+      useClass: TenantCheckerAdapter,
     },
     {
       provide: UpdateProductUseCase,
@@ -48,6 +49,22 @@ import { CreateProductUseCase } from './application';
         new SearchProductsUseCase(repository),
       inject: [ProductRepository],
     },
+    {
+      provide: CreateProductUseCase,
+      useFactory: (
+        repository: ProductRepository,
+        tenantChecker: TenantChecker,
+      ) =>
+        new CreateProductUseCase(
+          repository,
+          tenantChecker,
+        ),
+      inject: [
+        ProductRepository,
+        TenantChecker,
+      ],
+    },
+
   ],
 })
 export class ProductsModule { }
