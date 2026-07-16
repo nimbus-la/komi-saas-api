@@ -1,4 +1,4 @@
-import { BranchRepository } from "../../domain";
+import { BranchRepository } from "../../../domain";
 
 export class SearchAllBranchUseCase {
     constructor(

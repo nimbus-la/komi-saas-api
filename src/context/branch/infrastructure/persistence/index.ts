@@ -1,0 +1,1 @@
+export * from './adapters/tenant-existence.adapter';

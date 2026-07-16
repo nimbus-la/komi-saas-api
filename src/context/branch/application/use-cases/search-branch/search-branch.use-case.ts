@@ -1,4 +1,4 @@
-import { BranchId, BranchRepository } from "../../domain";
+import { BranchId, BranchRepository } from "../../../domain";
 
 export class SearchBranchUseCase {
     constructor(

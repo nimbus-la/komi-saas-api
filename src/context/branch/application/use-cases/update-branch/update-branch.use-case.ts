@@ -1,4 +1,4 @@
-import { BranchAddress, BranchCity, BranchDepartment, BranchId, BranchName, BranchNameAlreadyExistsException, BranchPhone, BranchRepository } from "../../domain";
+import { BranchAddress, BranchCity, BranchDepartment, BranchId, BranchName, BranchNameAlreadyExistsException, BranchPhone, BranchRepository } from "../../../domain";
 
 export class UpdateBranchUseCase {
     constructor(
