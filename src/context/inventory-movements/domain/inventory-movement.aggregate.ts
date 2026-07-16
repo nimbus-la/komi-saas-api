@@ -18,6 +18,7 @@ export class InventoryMovement extends AggregateRoot<InventoryMovementId> {
     private readonly tenantId: string;
     private readonly inventoryItemId: string;
     private readonly branchId: string;
+    private readonly batchId: string | null;
     private readonly movementType: InventoryMovementType;
     private readonly quantity: Quantity;
     private readonly unitCost: Money | null;
@@ -32,6 +33,7 @@ export class InventoryMovement extends AggregateRoot<InventoryMovementId> {
         tenantId: string,
         inventoryItemId: string,
         branchId: string,
+        batchId: string | null,
         movementType: InventoryMovementType,
         quantity: Quantity,
         unitCost: Money | null,
@@ -44,6 +46,7 @@ export class InventoryMovement extends AggregateRoot<InventoryMovementId> {
         this.tenantId = tenantId;
         this.inventoryItemId = inventoryItemId;
         this.branchId = branchId;
+        this.batchId = batchId;
         this.movementType = movementType;
         this.quantity = quantity;
         this.unitCost = unitCost;
@@ -61,7 +64,7 @@ export class InventoryMovement extends AggregateRoot<InventoryMovementId> {
      *     auditoría pierde sentido si no se sabe por qué se hicieron.
      */
     public static create(params: InventoryMovementCreated) {
-        const { tenantId, inventoryItemId, branchId, movementType, quantity, unitCost, reason, occurredAt } = params;
+        const { tenantId, inventoryItemId, branchId, batchId, movementType, quantity, unitCost, reason, occurredAt } = params;
 
         if (quantity.isZero()) {
             throw new NonPositiveMovementQuantityException();
@@ -78,6 +81,7 @@ export class InventoryMovement extends AggregateRoot<InventoryMovementId> {
             tenantId,
             inventoryItemId,
             branchId,
+            batchId,
             movementType,
             quantity,
             unitCost ?? null,
@@ -94,6 +98,7 @@ export class InventoryMovement extends AggregateRoot<InventoryMovementId> {
             tenantId: this.tenantId,
             inventoryItemId: this.inventoryItemId,
             branchId: this.branchId,
+            batchId: this.batchId,
             movementType: this.movementType.value,
             quantity: this.quantity.getValue(),
             unitCostAmount: this.unitCost ? this.unitCost.getAmount() : null,
@@ -113,6 +118,7 @@ export class InventoryMovement extends AggregateRoot<InventoryMovementId> {
             p.tenantId,
             p.inventoryItemId,
             p.branchId,
+            p.batchId,
             InventoryMovementType.created(p.movementType),
             Quantity.of(p.quantity),
             p.unitCostAmount && p.unitCostCurrency ? Money.of(p.unitCostAmount, p.unitCostCurrency) : null,

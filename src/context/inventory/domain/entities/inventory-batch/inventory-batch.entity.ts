@@ -176,6 +176,18 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
 
 
 
+    public getId(): string {
+        return this.id.value;
+    };
+
+
+
+    public getUnitCost(): Money {
+        return this.unitCost;
+    };
+
+
+
     /**
      * Serializa el lote a un objeto plano (primitivas): tipos simples listos para
      * persistir o exponer. Los value objects se reducen a su valor (Quantity ->

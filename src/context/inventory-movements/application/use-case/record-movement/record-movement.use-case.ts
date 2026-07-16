@@ -11,7 +11,7 @@ export class RecordMovementUseCase {
 
 
     public async execute(params: RecordMovementParams): Promise<void> {
-        const { tenantId, inventoryItemId, branchId, movementType, quantity, unitCostAmount, unitCostCurrency, reason, occurredAt } = params;
+        const { tenantId, inventoryItemId, branchId, batchId, movementType, quantity, unitCostAmount, unitCostCurrency, reason, occurredAt } = params;
 
         const unitCost = unitCostAmount && unitCostCurrency
             ? Money.of(unitCostAmount, unitCostCurrency)
@@ -21,6 +21,7 @@ export class RecordMovementUseCase {
             tenantId,
             inventoryItemId,
             branchId,
+            batchId: batchId ?? null,
             movementType: InventoryMovementType.created(movementType),
             quantity: Quantity.of(quantity),
             unitCost,
