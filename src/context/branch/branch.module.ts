@@ -1,12 +1,12 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { BranchEntity } from "./infrastructure/persistence/branch.entity";
+import { BranchEntity } from "./infrastructure/persistence/models/branch.entity";
 import { BranchController } from "./infrastructure/http/branch.controller";
 import { BranchRepository } from "./domain";
-import { BranchService } from "./infrastructure/persistence/branch.services";
-import { CreateBranchUseCase, DeleteBranchUseCase, SearchAllBranchUseCase, SearchBranchesByTenantUseCase, SearchBranchUseCase, TenantExistencePort, UpdateBranchUseCase } from "./application";
+import { BranchService } from "./infrastructure/persistence/repositories/branch.repository";
+import { CreateBranchUseCase, DeleteBranchUseCase, SearchAllBranchUseCase, SearchBranchesByTenantUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "./application";
 import { TenantModule } from "../tenants/tenant.module";
-import { TenantExistenceAdapter } from "./infrastructure/persistence";
+import { TenantRepository } from "../tenants/domain";
 
 
 
@@ -27,23 +27,18 @@ import { TenantExistenceAdapter } from "./infrastructure/persistence";
         },
 
         {
-            provide: TenantExistencePort,
-            useClass: TenantExistenceAdapter,
-        },
-
-        {
             provide: CreateBranchUseCase,
             useFactory: (
                 repository: BranchRepository,
-                tenantExistence: TenantExistencePort,
+                tenantRepository: TenantRepository,
             ) =>
                 new CreateBranchUseCase(
                     repository,
-                    tenantExistence,
+                    tenantRepository,
                 ),
             inject: [
                 BranchRepository,
-                TenantExistencePort,
+                TenantRepository,
             ],
         },
 

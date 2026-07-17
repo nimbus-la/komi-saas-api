@@ -56,20 +56,13 @@ export class BranchController {
     };
 
 
-    @Patch(':id')
-    @ResponseMessage('Sucursal actualizada exitosamente.')
+    @Patch(":id")
     public async update(
-        @Param('id') id: string,
-        @Body() dto: UpdateBranchDto
-    ) {
-        await this.updateBranch.execute(id, {
-            name: dto.name,
-            address: dto.address,
-            phone: dto.phone,
-            city: dto.city,
-            department: dto.department
-        });
-    };
+        @Param("id") id: string,
+        @Body() dto: UpdateBranchDto,
+    ): Promise<void> {
+        await this.updateBranch.execute(id, dto);
+    }
 
 
     @Delete(':id')

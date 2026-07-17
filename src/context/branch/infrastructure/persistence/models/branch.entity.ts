@@ -1,5 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { TenantEntity } from "@/context/tenants/infrastructure/persistence/tenant.entity";
+import { Column, Entity, PrimaryColumn } from "typeorm";
 
 @Entity({ name: 'branches' })
 export class BranchEntity {
@@ -9,13 +8,6 @@ export class BranchEntity {
 
     @Column({ name: "tenant_id", type: "uuid" })
     tenantId!: string;
-
-    @ManyToOne(() => TenantEntity, (tenant) => tenant.branches, {
-        nullable: false,
-        onDelete: "RESTRICT",
-    })
-    @JoinColumn({ name: "tenant_id" })
-        tenant?: TenantEntity;
 
     @Column({ name: 'branch_name', type: 'varchar', length: 120 })
     name!: string;
@@ -35,9 +27,9 @@ export class BranchEntity {
     @Column({ name: 'branch_is_active', type: 'boolean', default: true })
     isActive!: boolean;
 
-    @CreateDateColumn({ name: 'branch_created_at', type: 'timestamptz' })
+    @Column({ name: 'branch_created_at', type: 'timestamptz' })
     createdAt!: Date;
 
-    @CreateDateColumn({ name: 'branch_updated_at', type: 'timestamptz' })
+    @Column({ name: 'branch_updated_at', type: 'timestamptz' })
     updatedAt!: Date;
 }

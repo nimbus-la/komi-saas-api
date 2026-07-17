@@ -1,4 +1,4 @@
-import { BranchId, BranchRepository } from "../../../domain";
+import { BranchId, BranchNotFoundException, BranchRepository } from "../../../domain";
 
 export class DeleteBranchUseCase {
     constructor(
@@ -11,7 +11,7 @@ export class DeleteBranchUseCase {
         );
 
         if (!branch) {
-            throw new Error (" Sucursal no encontrada. ")
+            throw new BranchNotFoundException(id)
         };
 
         branch.deactivate();

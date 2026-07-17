@@ -8,9 +8,10 @@ import {
     BranchName,
     BranchRepository,
     BranchResponse,
-} from "../../domain";
+} from "../../../domain";
 
-import { BranchEntity } from "./branch.entity";
+import { BranchEntity } from "../models/branch.entity";
+import { BranchMapper } from "../mappers/branch.mapper";
 
 @Injectable()
 export class BranchService implements BranchRepository {
@@ -32,6 +33,8 @@ export class BranchService implements BranchRepository {
             city: primitives.city,
             department: primitives.department,
             isActive: primitives.isActive,
+            createdAt: primitives.createdAt,
+            updatedAt: primitives.updatedAt,
         });
 
         await this.branchRepository.save(row);
@@ -85,6 +88,8 @@ export class BranchService implements BranchRepository {
             city: row.city,
             department: row.department,
             isActive: row.isActive,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
         });
     }
 
@@ -98,20 +103,10 @@ export class BranchService implements BranchRepository {
     }
 
     public async searchAll(): Promise<BranchResponse[]> {
+
         const rows = await this.branchRepository.find();
 
-        return rows.map((row) => ({
-            id: row.id,
-            tenantId: row.tenantId,
-            name: row.name,
-            address: row.address,
-            phone: row.phone,
-            city: row.city,
-            department: row.department,
-            created_at: row.createdAt,
-            updated_at: row.updatedAt,
-            isActive: row.isActive,
-        }));
+        return rows.map((row) => BranchMapper.toResponse(row));
     }
 
     public async update(branch: BranchAggregate): Promise<void> {
@@ -126,6 +121,7 @@ export class BranchService implements BranchRepository {
                 city: primitives.city,
                 department: primitives.department,
                 isActive: primitives.isActive,
+                updatedAt: new Date(),
             }
         );
     }
@@ -138,17 +134,6 @@ export class BranchService implements BranchRepository {
             },
         });
 
-        return rows.map((row) => ({
-            id: row.id,
-            tenantId: row.tenantId,
-            name: row.name,
-            address: row.address,
-            phone: row.phone,
-            city: row.city,
-            department: row.department,
-            created_at: row.createdAt,
-            updated_at: row.updatedAt,
-            isActive: row.isActive,
-        }));
+        return rows.map((row) => BranchMapper.toResponse(row))
     }
 }

@@ -1,13 +1,4 @@
-import { DomainException } from "@/shared";
-
-export class InvalidBranchAddressException extends DomainException {
-    constructor(reason: string) {
-        super({
-            code: '1010',
-            detail: `Dirección de la sucursal inválida: ${reason}.`
-        });
-    };
-};
+import { InvalidBranchAddressException } from "../exceptions/branch-exceptions";
 
 export class BranchAddress {
     private static readonly MIN_LENGTH = 5;

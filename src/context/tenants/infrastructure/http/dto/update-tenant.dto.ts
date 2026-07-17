@@ -19,8 +19,8 @@ export class UpdateTenantDto {
     slug?: string;
 
     @IsString()
-    @Matches(/^[0-9]+$/, {
-        message: 'El NIT debe contener solo números',
+    @Matches(/^[A-Za-z0-9./-]+$/, {
+        message: "El NIT solo puede contener letras, números, punto (.), guion (-) y barra (/)",
     })
     @IsOptional()
     nit?: string;

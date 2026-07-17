@@ -6,4 +6,6 @@ export interface TenantPrimitives {
     slug: string;
     nit: string;
     isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }

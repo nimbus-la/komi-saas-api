@@ -1,8 +1,9 @@
 import { InjectRepository } from "@nestjs/typeorm";
-import { TenantAggregate, TenantId, TenantName, TenantNit, TenantRepository, TenantResponse, TenantSlug } from "../../domain";
-import { TenantEntity } from "./tenant.entity";
+import { TenantAggregate, TenantId, TenantName, TenantNit, TenantRepository, TenantResponse, TenantSlug } from "../../../domain";
+import { TenantEntity } from "../models/tenant.entity";
 import { Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
+import { TenantMapper } from "../mappers/tenant-mapper";
 
 @Injectable()
 export class TenantService implements TenantRepository {
@@ -21,7 +22,9 @@ export class TenantService implements TenantRepository {
             description: primitives.description,
             slug: primitives.slug,
             nit: primitives.nit,
-            isActive: primitives.isActive
+            isActive: primitives.isActive,
+            createdAt: primitives.createdAt,
+            updatedAt: primitives.updatedAt,
         });
         
         await this.tenantRepository.save(row);
@@ -33,14 +36,6 @@ export class TenantService implements TenantRepository {
                 id: id.value
             },
         });
-       /* const row = await this.tenantRepository.findOne({
-    where: {
-        id: id.value,
-    },
-    relations: {
-        branches: true,
-    },
-});*/
 
         if(!row) {
             return null;
@@ -81,6 +76,8 @@ export class TenantService implements TenantRepository {
             slug: row.slug,
             nit: row.nit,
             isActive: row.isActive,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
         });
     }
 
@@ -105,6 +102,8 @@ export class TenantService implements TenantRepository {
             slug: row.slug,
             nit: row.nit,
             isActive: row.isActive,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
         });
     }
     
@@ -138,17 +137,7 @@ export class TenantService implements TenantRepository {
     public async searchAll(): Promise<TenantResponse[]> {
         const rows = await this.tenantRepository.find();
 
-        return rows.map((row) => ({
-            id: row.id,
-            accountId: row.accountId,
-            name: row.name,
-            description: row.description,
-            slug: row.slug,
-            nit: row.nit,
-            created_at: row.createdAt,
-            updated_at: row.updatedAt,
-            isActive: row.isActive,
-        }));
+        return rows.map((row) => TenantMapper.toResponse(row));
     }
 
     public async update(tenant: TenantAggregate): Promise<void> {
@@ -165,10 +154,6 @@ export class TenantService implements TenantRepository {
             }
         );
     };
-
-    /*public async delete(id: TenantId): Promise<void> {
-        throw new Error("metodo no implementado")
-    };*/
 
 
 };

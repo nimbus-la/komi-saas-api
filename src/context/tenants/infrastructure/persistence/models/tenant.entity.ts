@@ -1,5 +1,4 @@
-import { BranchEntity } from "@/context/branch/infrastructure/persistence/branch.entity";
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryColumn } from "typeorm";
+import { Column, Entity, PrimaryColumn } from "typeorm";
 
 @Entity({ name: 'tenants' })
 export class TenantEntity {
@@ -25,13 +24,10 @@ export class TenantEntity {
     @Column({ name: "tenant_is_active", type: "boolean", default: true })
     isActive!: boolean;
 
-    @OneToMany(() => BranchEntity, (branch) => branch.tenant)
-    branches?: BranchEntity[];
-
-    @CreateDateColumn({ name: 'tenant_created_at', type: 'timestamptz' })
+    @Column({ name: 'tenant_created_at', type: 'timestamptz' })
     createdAt!: Date;
 
-    @CreateDateColumn({ name: 'tenant_updated_at', type: 'timestamptz' })
+    @Column({ name: 'tenant_updated_at', type: 'timestamptz' })
     updatedAt!: Date;
 
 };

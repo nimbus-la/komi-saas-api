@@ -1,5 +1,5 @@
 import { DomainEvent } from "@/shared";
-import { BranchCreatedProps } from "./types";
+import { BranchCreatedProps } from "../types";
 
 export class BranchCreatedEvent extends DomainEvent {
     public readonly eventName = 'branch.created';

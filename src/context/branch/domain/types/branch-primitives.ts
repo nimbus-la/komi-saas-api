@@ -7,4 +7,6 @@ export interface BranchPrimitives {
     city: string;
     department: string;
     isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }

@@ -3,7 +3,7 @@ import { TenantController, TenantEntity } from "./infrastructure";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { CreateTenantUseCase, DeleteTenantUseCases, SearchAllTenantsUseCase, SearchTenantUseCase, UpdateTenantUseCase } from "./application";
 import { TenantRepository } from "./domain";
-import { TenantService } from "./infrastructure/persistence/tenant.services";
+import { TenantService } from "./infrastructure/persistence/repositories/tenant.repository";
 
 @Module({
     imports: [

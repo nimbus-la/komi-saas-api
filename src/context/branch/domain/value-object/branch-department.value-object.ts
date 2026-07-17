@@ -1,13 +1,5 @@
-import { DomainException } from "@/shared";
+import { InvalidBranchDepartmentException } from "../exceptions/branch-exceptions";
 
-export class InvalidBranchDepartmentException extends DomainException {
-    constructor(reason: string) {
-        super({
-            code: '1013',
-            detail: `Departamento de la sucursal inválido: ${reason}.`
-        });
-    };
-};
 
 export class BranchDepartment {
     private static readonly MIN_LENGTH = 2;

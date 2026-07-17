@@ -1,4 +1,5 @@
-import { CreateTenantApplicationParams, TenantAccountId, TenantAggregate, TenantDescription, TenantName, TenantNameAlreadyExistsException, TenantNit, TenantNitAlreadyExistsException, TenantRepository, TenantSlug, TenantSlugAlreadyExistsException } from "../../domain";
+import { TenantNameAlreadyExistsException, TenantNitAlreadyExistsException, TenantSlugAlreadyExistsException } from "@/context/tenants/domain/exceptions/tenant-exceptions";
+import { CreateTenantApplicationParams, TenantAccountId, TenantAggregate, TenantDescription, TenantName, TenantNit, TenantRepository, TenantSlug } from "../../../domain";
 
 
 export class CreateTenantUseCase {

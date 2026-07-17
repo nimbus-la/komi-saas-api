@@ -1,4 +1,5 @@
-import { TenantId, TenantRepository } from "../../domain";
+import { TenantNotFoundException } from "@/context/tenants/domain/exceptions/tenant-exceptions";
+import { TenantId, TenantRepository } from "../../../domain";
 
 export class DeleteTenantUseCases {
     constructor(
@@ -10,7 +11,7 @@ export class DeleteTenantUseCases {
             TenantId.create(id)
         );
          if(!tenant){
-            throw new Error("Tenant no encontrado")
+            throw new TenantNotFoundException(id)
          };
 
         tenant.desactivate();

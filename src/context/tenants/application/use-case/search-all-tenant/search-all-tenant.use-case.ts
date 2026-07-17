@@ -1,4 +1,4 @@
-import { TenantRepository } from "../../domain";
+import { TenantRepository } from "../../../domain";
 
 export class SearchAllTenantsUseCase {
     constructor(
