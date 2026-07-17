@@ -1,13 +1,5 @@
-import { DomainException } from "@/shared";
+import { InvalidBranchCityException } from "../exceptions/branch-exceptions";
 
-export class InvalidBranchCityException extends DomainException {
-    constructor(reason: string) {
-        super({
-            code: '1012',
-            detail: `Ciudad de la sucursal inválida: ${reason}.`
-        });
-    }
-}
 
 export class BranchCity {
     private static readonly MIN_LENGTH = 2;

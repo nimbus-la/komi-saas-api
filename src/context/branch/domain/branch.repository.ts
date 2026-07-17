@@ -1,4 +1,4 @@
-import { BranchAggregate } from "./branch.agreggate";
+import { BranchAggregate } from "./branch.aggregate";
 import { BranchResponse } from "./types";
 import { BranchId, BranchName } from "./value-object";
 
@@ -15,4 +15,6 @@ export abstract class BranchRepository {
     abstract searchAll(): Promise<BranchResponse[]>;
 
     abstract existsByName(name: BranchName): Promise<boolean>;
+
+    public abstract searchByTenantId(tenantId: string,): Promise<BranchResponse[]>;
 }

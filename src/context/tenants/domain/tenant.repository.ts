@@ -1,7 +1,6 @@
 import { TenantAggregate } from './tenant.aggregate';
 import { TenantResponse } from './types';
 import { TenantId, TenantName, TenantNit, TenantSlug } from './value-object';
-//import { TenantAccountId } from './value-object/tenant-account.id.value-object';//
 
 export abstract class TenantRepository {
    abstract save(tenant: TenantAggregate): Promise<void>;

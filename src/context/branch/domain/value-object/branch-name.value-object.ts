@@ -1,22 +1,5 @@
-import { DomainException } from "@/shared";
+import { InvalidBranchNameException } from "../exceptions/branch-exceptions";
 
-export class InvalidBranchNameException extends DomainException {
-    constructor(reason: string){
-        super({
-            code: '1009',
-            detail: `Nombre de tenant inválido: ${reason}.`
-        });
-    };
-};
-
-export class BranchNameAlreadyExistsException extends DomainException {
-    constructor(name: string) {
-        super({
-            code: '1206',
-            detail: `El nombre "${name}" ya está registrado.`
-        });
-    };
-};
 
 export class BranchName {
     private static readonly MIN_LENGTH = 2;

@@ -10,7 +10,9 @@ import { CatalogEntryResponse, ErrorCategory, ResponseStatus } from "@/utils";
 export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '0000': { status: ResponseStatus.Success, category: ErrorCategory.Validation, message: 'Operación exitosa.' },
     '0001': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'No se encontraron resultados.' },
-
+    '0002': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Sucursal no encontrada. ' },
+    '0003': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Tenant no encontrado ' },
+    
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Los datos enviados no son válidos.' },
     '1001': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La unidad de medida no es válida.' },
