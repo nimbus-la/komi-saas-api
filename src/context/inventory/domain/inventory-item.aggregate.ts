@@ -1,8 +1,8 @@
 import { AggregateRoot, Money, Quantity } from "@/shared";
 
-import { ConsumedBatchDetail, InventoryItemPrimitives } from "./types/domain.types";
+import { ConsumedBatchDetail, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { AmbiguousBranchScopeException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { AmbiguousBranchScopeException, BatchBranchMismatchException, BatchNotFoundException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -13,6 +13,7 @@ import { DEFAULT_CURRENCY } from "./common/constants.common";
 import { InventoryStock } from "./entities/inventory-stock/inventory-stock.entity";
 import { StockReceivedEvent } from "./events/stock-received.event";
 import { StockConsumedEvent } from "./events/stock-consumed.event";
+import { StockWastedEvent } from "./events/stock-wasted.event";
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
@@ -409,6 +410,123 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         // Caso 2: al menos uno no tiene vencimiento (no perecedero).
         // Ordenamos por fecha de recepción: el que entró primero sale primero (FIFO).
         return loteA.getReceivedAt().getTime() - loteB.getReceivedAt().getTime();
+    };
+
+
+
+    /**
+     * Registra una MERMA: producto perdido (vencido, dañado, derramado, robado).
+     * El dato registrado era CIERTO; la mercancía ya no está. El costo unitario de
+     * los lotes NO cambia: se perdió producto, no se corrigió un precio.
+     *
+     * Dos modos:
+     *   - Con batchId: merma un lote concreto (ej. un vencido que se bota).
+     *   - Sin batchId: se reparte por FEFO sobre los lotes ACTIVOS de la sucursal,
+     *     igual que un consumo ("se cayó medio kilo, no sé de qué lote era").
+     */
+    public registerWaste(params: RegisterWasteParams): void {
+        const reason = params.reason.trim();
+
+        if (reason.length === 0) {
+            throw new ReasonRequiredException('merma');
+        };
+
+        if (params.quantity.isZero()) {
+            throw new NonPositiveConsumptionException();
+        };
+
+        const occurredOn = params.occurredAt ?? new Date();
+        const wastedBatches: WastedBatchDetail[] = [];
+
+        if (params.batchId !== undefined) {
+            const batch = this.findBatch(params.batchId);
+
+            if (batch.getBranchId() !== params.branchId) {
+                throw new BatchBranchMismatchException(params.batchId, params.branchId);
+            };
+
+            batch.waste(params.quantity);
+
+            wastedBatches.push({
+                batchId: batch.getId(),
+                quantity: params.quantity.getValue(),
+                unitCostAmount: batch.getUnitCost().getAmount(),
+                unitCostCurrency: batch.getUnitCost().currency,
+            });
+        } else {
+            const available = this.currentStockForBranch(params.branchId, occurredOn);
+
+            if (params.quantity.isGreaterThan(available)) {
+                throw new InsufficientStockException(
+                    this.id.value, params.quantity.getValue(), available.getValue()
+                );
+            };
+
+            const ordered = this.activateBatchesOfBranch(params.branchId, occurredOn)
+                .sort(InventoryItem.compararPorFefo);
+
+            let pending = params.quantity;
+
+            for (const batch of ordered) {
+                if (pending.isZero()) break;
+
+                const take = pending.isGreaterThan(batch.getRemaining())
+                    ? batch.getRemaining()
+                    : pending;
+
+                batch.waste(take);
+
+                wastedBatches.push({
+                    batchId: batch.getId(),
+                    quantity: take.getValue(),
+                    unitCostAmount: batch.getUnitCost().getAmount(),
+                    unitCostCurrency: batch.getUnitCost().currency,
+                });
+
+                pending = pending.subtract(take);
+            };
+        };
+
+        this.registerEvent(
+            new StockWastedEvent({
+                itemId: this.id.value,
+                tenantId: this.tenantId,
+                branchId: params.branchId,
+                reason,
+                wastedBatches,
+                occurredOn,
+            })
+        );
+
+        this.touch();
+    };
+
+
+
+    /**
+     * Busca un lote propio por id. El batchId entra como PARÁMETRO, no como puerta
+     * de entrada: el lote sigue siendo entidad hija y solo se llega a él a través
+     * del root.
+     */
+    private findBatch(batchId: string): InventoryBatch {
+        const batch = this.batches.find(
+            (candidate: InventoryBatch) => candidate.getId() === batchId
+        );
+
+        if (batch === undefined) {
+            throw new BatchNotFoundException(batchId, this.id.value);
+        };
+
+        return batch;
+    };
+
+
+
+    /** Lotes utilizables de una sucursal: con existencias y sin vencer. */
+    private activateBatchesOfBranch(branchId: string, date: Date): InventoryBatch[] {
+        return this.batches.filter(
+            (batch: InventoryBatch) => batch.getBranchId() === branchId && batch.isActive(date)
+        );
     };
 
 

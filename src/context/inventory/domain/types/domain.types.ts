@@ -1,3 +1,5 @@
+import { Quantity } from "@/shared";
+
 export interface InventoryItemCreatedProps {
     itemId: string;
     tenantId: string;
@@ -78,4 +80,14 @@ export interface AdjustedBatchDetail {
     quantity: string;
     unitCostAmount: string;
     unitCostCurrency: string;
+};
+
+
+
+export interface RegisterWasteParams {
+    branchId: string;
+    quantity: Quantity;
+    reason: string;
+    batchId?: string;
+    occurredAt?: Date;
 };
