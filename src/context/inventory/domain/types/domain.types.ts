@@ -91,3 +91,12 @@ export interface RegisterWasteParams {
     batchId?: string;
     occurredAt?: Date;
 };
+
+
+
+export interface AdjustBatchParams {
+    batchId: string;
+    actualQuantity: Quantity;
+    reason: string;
+    occurredAt?: Date;
+}

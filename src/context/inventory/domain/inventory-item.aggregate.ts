@@ -1,8 +1,8 @@
 import { AggregateRoot, Money, Quantity } from "@/shared";
 
-import { ConsumedBatchDetail, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
+import { AdjustBatchParams, ConsumedBatchDetail, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { AmbiguousBranchScopeException, BatchBranchMismatchException, BatchNotFoundException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { AmbiguousBranchScopeException, BatchBranchMismatchException, BatchNotFoundException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -14,6 +14,7 @@ import { InventoryStock } from "./entities/inventory-stock/inventory-stock.entit
 import { StockReceivedEvent } from "./events/stock-received.event";
 import { StockConsumedEvent } from "./events/stock-consumed.event";
 import { StockWastedEvent } from "./events/stock-wasted.event";
+import { StockAdjustedEvent } from "./events/stock-adjusted.event";
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
@@ -495,6 +496,61 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
                 reason,
                 wastedBatches,
                 occurredOn,
+            })
+        );
+
+        this.touch();
+    };
+
+
+
+    /**
+     * AJUSTA un lote a su cantidad REAL. El usuario declara CUÁNTO HAY en ese lote
+     * y el sistema calcula la diferencia y su dirección. Puede subir o bajar: al
+     * elegir el lote, el usuario dice de qué entrada es el sobrante, y con eso
+     * queda determinado su costo.
+     *
+     * Caso de error de captura: si además el costo se digitó mal, no basta ajustar;
+     * hay que anular el lote (ajustar a cero) y volver a registrarlo con los datos
+     * correctos y su receivedAt original.
+     */
+    public adjustBatch(params: AdjustBatchParams): void {
+        const reason = params.reason.trim();
+
+        if (reason.length === 0) {
+            throw new ReasonRequiredException('ajuste');
+        };
+
+        const batch = this.findBatch(params.batchId);
+        const current = batch.getRemaining();
+
+        const isIncrease = params.actualQuantity.isGreaterThan(current);
+        const isDecrease = current.isGreaterThan(params.actualQuantity);
+
+        if (!isIncrease && !isDecrease) {
+            throw new NoAdjustmentDifferenceException(`el lote ${params.batchId}`);
+        };
+
+        const delta = isIncrease
+            ? params.actualQuantity.subtract(current)
+            : current.subtract(params.actualQuantity);
+
+        batch.adjustTo(params.actualQuantity);
+
+        this.registerEvent(
+            new StockAdjustedEvent({
+                itemId: this.id.value,
+                tenantId: this.tenantId,
+                branchId: batch.getBranchId(),
+                reason,
+                adjustedBatches: [{
+                    batchId: batch.getId(),
+                    direction: isIncrease ? 'IN' : 'OUT',
+                    quantity: delta.getValue(),
+                    unitCostAmount: batch.getUnitCost().getAmount(),
+                    unitCostCurrency: batch.getUnitCost().currency,
+                }],
+                occurredOn: params.occurredAt ?? new Date(),
             })
         );
 
