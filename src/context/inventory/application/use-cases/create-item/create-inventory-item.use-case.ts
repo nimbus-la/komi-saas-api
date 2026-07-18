@@ -1,15 +1,7 @@
 
 import { InventoryItem, InventoryItemName, InventoryItemNameAlreadyExistsException, InventoryItemRepository, InventoryItemSku, InventoryItemUnit, TenantNotFoundException } from "../../../domain";
+import { CreateInventoryItemParams } from "../../dtos/inventory-item.params";
 import { TenantChecker } from "../../ports/tenant-checker";
-
-
-export interface CreateInventoryItemParams {
-    tenantId: string;
-    name: string;
-    unitOfMeasure: string;
-    costCurrency?: string;
-    isPerishable: boolean;
-};
 
 
 export class CreateInventoryItemUseCase {

@@ -1,13 +1,7 @@
 import { EventPublisher, Quantity } from "@/shared";
+
 import { InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
-
-
-export interface ConsumeStockParams {
-    itemId: string;
-    branchId: string;
-    quantity: string;
-    consumedAt?: string;
-};
+import { ConsumeStockParams } from "../../dtos/inventory-item.params";
 
 
 export class ConsumeStockUseCase {

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { TenantChecker } from "@/context/inventory/application/ports/tenant-checker";
+import { TenantChecker } from "../../../application";
 import { TenantId, TenantRepository } from "@/context/tenants/domain";
 
 

@@ -1,6 +1,7 @@
-import { BranchId, BranchRepository } from "@/context/branch/domain";
-import { BranchChecker } from "@/context/inventory/application/ports/branch-checker";
 import { Injectable } from "@nestjs/common";
+
+import { BranchId, BranchRepository } from "@/context/branch/domain";
+import { BranchChecker } from "../../../application";
 
 @Injectable()
 export class BranchCheckerAdapter implements BranchChecker {
