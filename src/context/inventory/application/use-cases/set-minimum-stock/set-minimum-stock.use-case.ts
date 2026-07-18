@@ -1,12 +1,8 @@
 import { Quantity } from "@/shared";
+
 import { BranchNotFoundException, InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository, MinimumStockValueRequiredException } from "../../../domain";
 import { BranchChecker } from "../../ports/branch-checker";
-
-export interface SetMinimumStockParams {
-    itemId: string;
-    branchId?: string;        // ausente: mínimo GLOBAL; presente: override de la sucursal
-    minStock: string | null;  // null (solo global): limpia el mínimo global
-};
+import { SetMinimumStockParams } from "../../dtos/inventory-item.params";
 
 
 export class SetMinimumStockUseCase {

@@ -1,19 +1,7 @@
 import { EventPublisher, Money, Quantity } from "@/shared";
-import { BranchNotFoundException, InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
+import { BranchNotFoundException, InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository, InventoryBatchExpirationDate, DEFAULT_CURRENCY } from "../../../domain";
 import { BranchChecker } from "../../ports/branch-checker";
-import { DEFAULT_CURRENCY } from "@/context/inventory/domain/common/constants.common";
-import { InventoryBatchExpirationDate } from "@/context/inventory/domain/entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
-
-
-
-export interface ReceiveStockParams {
-    itemId: string;
-    branchId: string;
-    quantityReceived: string;
-    totalCostAmount: string;
-    expirationDate?: string | null;
-    receivedAt?: string;
-};
+import { ReceiveStockParams } from "../../dtos/inventory-item.params";
 
 
 export class ReceiveStockUseCase {

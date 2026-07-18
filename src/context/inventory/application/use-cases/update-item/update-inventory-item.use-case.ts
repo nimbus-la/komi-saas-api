@@ -1,13 +1,6 @@
 import { Money } from "@/shared";
 import { InventoryItemId, InventoryItemName, InventoryItemNameAlreadyExistsException, InventoryItemNotFoundException, InventoryItemRepository, InventoryItemUnit } from "../../../domain";
-
-export interface UpdateInventoryItemParams {
-    name?: string;
-    costAmount?: string;
-    costCurrency?: string;
-    unitOfMeasure?: string;
-    isPerishable?: boolean;
-};
+import { UpdateInventoryItemParams } from "../../dtos/inventory-item.params";
 
 export class UpdateInventoryItemUseCase {
     constructor(

@@ -1,7 +1,6 @@
-import { InventoryBatchPrimitives, InventoryItemPrimitives, InventoryStockPrimitives } from "@/context/inventory/domain/types/domain.types";
+import { InventoryBatchPrimitives, InventoryItemPrimitives, InventoryStockPrimitives, InventoryItem } from "../../../domain";
 import { InventoryBatchEntity } from "../models/inventory-batch.entity";
 import { InventoryItemEntity } from "../models/inventory-item.entity";
-import { InventoryItem } from "@/context/inventory/domain/inventory-item.aggregate";
 import { InventoryStockEntity } from "../models/inventory-stock.entity";
 
 /**

@@ -4,8 +4,7 @@ import { Injectable } from "@nestjs/common";
 import { Repository } from "typeorm";
 
 import { Paginated, Pagination } from "@/interfaces";
-import { InventoryBatchReadRepository } from "@/context/inventory/application/ports/inventory-batch-read.repository";
-import { InventoryBatchView } from "@/context/inventory/application";
+import { InventoryBatchReadRepository, InventoryBatchView } from "../../../application";
 import { InventoryBatchEntity } from "../models/inventory-batch.entity";
 
 @Injectable()
