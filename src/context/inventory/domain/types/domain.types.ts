@@ -56,3 +56,26 @@ export interface ConsumedBatchDetail {
     unitCostAmount: string;
     unitCostCurrency: string;
 };
+
+
+
+export interface WastedBatchDetail {
+    batchId: string;
+    quantity: string;
+    unitCostAmount: string;
+    unitCostCurrency: string;
+};
+
+
+
+export type AdjustmentDirection = 'IN' | 'OUT';
+
+
+
+export interface AdjustedBatchDetail {
+    batchId: string;
+    direction: AdjustmentDirection;
+    quantity: string;
+    unitCostAmount: string;
+    unitCostCurrency: string;
+};

@@ -52,6 +52,12 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1326': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar.' },
     '1330': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
     '1331': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Debe especificar una sucursal para esta operación.' },
+    '1332': { status: ResponseStatus.Error, category: ErrorCategory.NotFound,   message: 'El lote indicado no existe en el item.' },
+    '1333': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el motivo de la operación.' },
+    '1334': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No hay diferencia que ajustar.' },
+    '1335': { status: ResponseStatus.Error, category: ErrorCategory.Conflict,   message: 'El lote no pertenece a la sucursal indicada.' },
+    '1336': { status: ResponseStatus.Error, category: ErrorCategory.Conflict,   message: 'No hay lotes activos en la sucursal para ajustar.' },
+    '1337': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el lote del sobrante en items perecederos.' },
 
     '1500': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad del movimiento debe ser mayor a cero.' },
     '1501': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Este tipo de movimiento requiere un motivo.' },

@@ -192,3 +192,75 @@ export class MinimumStockValueRequiredException extends DomainException {
         });
     };
 };
+
+
+
+/** El lote indicado no pertenece al item (o está agotado y no se cargó). Código 1332. */
+export class BatchNotFoundException extends DomainException {
+    constructor(batchId: string, itemId: string) {
+        super({
+            code: '1332',
+            detail: `El lote ${batchId} no pertenece al item ${itemId} o ya está agotado.`
+        });
+    };
+};
+
+
+
+/** Merma, ajuste o conteo sin motivo. Código 1333. */
+export class ReasonRequiredException extends DomainException {
+    constructor(operation: string) {
+        super({
+            code: '1333',
+            detail: `La operación de ${operation} requiere un motivo.`
+        });
+    };
+};
+
+
+
+/** Ajuste/conteo cuya cantidad real coincide con la registrada. Código 1334. */
+export class NoAdjustmentDifferenceException extends DomainException {
+    constructor(reference: string) {
+        super({
+            code: '1334',
+            detail: `No hay diferencia que ajustar en ${reference}: la cantidad real coincide con la registrada.`
+        });
+    };
+};
+
+
+
+/** El lote indicado no pertenece a la sucursal de la operación. Código 1335. */
+export class BatchBranchMismatchException extends DomainException {
+    constructor(batchId: string, branchId: string) {
+        super({
+            code: '1335',
+            detail: `El lote ${batchId} no pertenece a la sucursal ${branchId}.`
+        });
+    };
+};
+
+
+
+/** Sobrante de conteo pero sin lotes activos a los que asignarlo. Código 1336. */
+export class NoBatchToAdjustException extends DomainException {
+    constructor(branchId: string) {
+        super({
+            code: '1336',
+            detail: `La sucursal ${branchId} no tiene lotes activos: registre una entrada en vez de un conteo.`
+        });
+    };
+};
+
+
+
+/** Conteo hacia arriba de un perecedero sin indicar el lote. Código 1337. */
+export class BatchRequiredForPerishableException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1337',
+            detail: `El item ${itemId} es perecedero: indique a qué lote pertenece el sobrante, o regístrelo como una entrada nueva con su propia fecha de vencimiento.`
+        });
+    };
+};
