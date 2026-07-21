@@ -5,19 +5,25 @@ import { ProductController } from './infrastructure/http/product.controller';
 import { ProductEntity } from './infrastructure/persistence/models/product.entity';
 import { ProductRepositoryImpl, ProductService } from './infrastructure/persistence/repositories/product.repository.impl';
 import { ProductRepository } from './domain';
-import { ProductCategoryEntity } from '../product-categories/domain/product-category.entity';
+import { ProductCategoryEntity } from '../product-categories/infrastructure/persistence/models/product-category.entity';
 import { CategoriesModule } from "../product-categories/categories.module";
 import { UpdateProductUseCase } from './application/use-cases/update-item/update-product.use-case';
 import { SearchProductsUseCase } from './application/use-cases/search-items/search-product.use-case';
 import { CreateProductUseCase } from './application';
+import { TenantModule } from '../tenants/tenant.module';
+import { TenantChecker } from './application/ports/tenant-checker';
+import { TenantCheckerAdapter } from '../inventory';
+import { RecipeIngredientEntity } from "./infrastructure/persistence/models/recipe-ingredient.entity";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       ProductEntity,
       ProductCategoryEntity,
+      RecipeIngredientEntity,
     ]),
     CategoriesModule,
+    TenantModule,
   ],
   controllers: [
     ProductController,
@@ -29,12 +35,9 @@ import { CreateProductUseCase } from './application';
       provide: ProductRepository,
       useClass: ProductRepositoryImpl,
     },
-
     {
-      provide: CreateProductUseCase,
-      useFactory: (repository: ProductRepository) =>
-        new CreateProductUseCase(repository),
-      inject: [ProductRepository],
+      provide: TenantChecker,
+      useClass: TenantCheckerAdapter,
     },
     {
       provide: UpdateProductUseCase,
@@ -48,6 +51,22 @@ import { CreateProductUseCase } from './application';
         new SearchProductsUseCase(repository),
       inject: [ProductRepository],
     },
+    {
+      provide: CreateProductUseCase,
+      useFactory: (
+        repository: ProductRepository,
+        tenantChecker: TenantChecker,
+      ) =>
+        new CreateProductUseCase(
+          repository,
+          tenantChecker,
+        ),
+      inject: [
+        ProductRepository,
+        TenantChecker,
+      ],
+    },
+
   ],
 })
 export class ProductsModule { }

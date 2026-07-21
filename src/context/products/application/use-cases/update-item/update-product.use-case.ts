@@ -19,6 +19,7 @@ export class UpdateProductUseCase {
 
         const product = await this.repository.findById(
             ProductId.create(params.id),
+            params.tenantId,
         );
 
         if (!product) {

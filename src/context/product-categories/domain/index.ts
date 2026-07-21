@@ -1,3 +1,3 @@
 export * from "./product-category.aggregate";
 export * from "./product-category.repository";
-export * from "./product-category-not-found.exception";
+export * from "./exceptions/product-category.exception";
