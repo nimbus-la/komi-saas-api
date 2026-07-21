@@ -1,13 +1,9 @@
 import {
   Column,
   Entity,
-  JoinColumn,
-  ManyToOne,
   PrimaryColumn,
 } from "typeorm";
 
-import { ProductEntity } from "./product.entity";
-import { InventoryItemEntity } from "@/context/inventory";
 
 @Entity({ name: "recipe_ingredients" })
 export class RecipeIngredientEntity {
@@ -44,26 +40,4 @@ export class RecipeIngredientEntity {
   })
   isOptional!: boolean;
 
-  @ManyToOne(
-    () => ProductEntity,
-    (product) => product.ingredients,
-    {
-      onDelete: "CASCADE",
-    },
-  )
-  @JoinColumn({
-    name: "product_id",
-  })
-  product!: ProductEntity;
-
-  @ManyToOne(
-    () => InventoryItemEntity,
-    {
-      onDelete: "RESTRICT",
-    },
-  )
-  @JoinColumn({
-    name: "inventory_item_id",
-  })
-  inventoryItem!: InventoryItemEntity;
 }

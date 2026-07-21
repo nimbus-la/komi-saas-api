@@ -1,13 +1,8 @@
-import { ProductCategoryEntity } from "@/context/product-categories";
-import { RecipeIngredientEntity } from "./recipe-ingredient.entity";
 
 import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -50,17 +45,4 @@ export class ProductEntity {
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date;
 
-  @ManyToOne(() => ProductCategoryEntity)
-  @JoinColumn({ name: "product_category_id" })
-  category!: ProductCategoryEntity;
-
-  @OneToMany(
-    () => RecipeIngredientEntity,
-    (ingredient) => ingredient.product,
-    {
-      cascade: ["insert", "update"],
-      eager: false,
-    },
-  )
-  ingredients!: RecipeIngredientEntity[];
 }

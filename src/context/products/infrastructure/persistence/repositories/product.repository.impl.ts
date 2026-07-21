@@ -275,9 +275,7 @@ export class ProductRepositoryImpl extends ProductRepository {
         id: id.value,
         tenantId,
       },
-      relations: {
-        ingredients: true,
-      },
+     
     });
 
     if (!row) {

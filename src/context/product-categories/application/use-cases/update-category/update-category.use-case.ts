@@ -37,10 +37,14 @@ export class UpdateCategoryUseCase {
         });
 
         if (params.estado !== undefined) {
-            if (params.estado) {
-                category.activate();
-            } else {
-                category.deactivate();
+            const currentState = category.toPrimitives().isActive;
+
+            if (params.estado !== currentState) {
+                if (params.estado) {
+                    category.activate();
+                } else {
+                    category.deactivate();
+                }
             }
         }
 

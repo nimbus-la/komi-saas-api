@@ -1,6 +1,5 @@
 import { ProductResponse } from "@/context/products/domain/types/product.response";
 import { ProductEntity } from "../models/product.entity";
-import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
 
 import { Product } from "@/context/products/domain";
 
@@ -21,15 +20,7 @@ export class ProductMapper {
             productStatus: row.isActive,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
-
-            ingredients: (row.ingredients ?? []).map(
-                (ingredient) => ({
-                    id: ingredient.id,
-                    inventoryItemId: ingredient.inventoryItemId,
-                    quantity: ingredient.quantity,
-                    isOptional: ingredient.isOptional,
-                }),
-            ),
+            ingredients: [],
         };
     }
 
@@ -47,15 +38,7 @@ export class ProductMapper {
             costCurrency: "COP",
             profitMargin: Number(row.profitMargin),
             productStatus: row.isActive,
-
-            ingredients: (row.ingredients ?? []).map(
-                (ingredient) => ({
-                    id: ingredient.id,
-                    inventoryItemId: ingredient.inventoryItemId,
-                    quantity: ingredient.quantity,
-                    isOptional: ingredient.isOptional,
-                }),
-            ),
+            ingredients: [],
         });
 
     }
@@ -75,21 +58,6 @@ export class ProductMapper {
             basePrice: primitives.productBasePrice,
             profitMargin: primitives.profitMargin.toString(),
             isActive: primitives.productStatus,
-
-            ingredients: primitives.ingredients.map(
-                (ingredient) => {
-                    const entity = new RecipeIngredientEntity();
-
-                    entity.id = ingredient.id;
-                    entity.productId = primitives.id;
-                    entity.inventoryItemId =
-                        ingredient.inventoryItemId;
-                    entity.quantity = ingredient.quantity;
-                    entity.isOptional = ingredient.isOptional;
-
-                    return entity;
-                },
-            ),
         };
     }
 }
