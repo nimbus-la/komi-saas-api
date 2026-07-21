@@ -1,22 +1,4 @@
-import { DomainException } from "@/shared";
-
-export class InvalidTenantSlugException extends DomainException {
-    constructor(reason: string) {
-        super({
-            code: '1008',
-            detail: `Slug de tenant inválido: ${reason}.`
-        });
-    };
-};
-
-export class TenantSlugAlreadyExistsException extends DomainException { 
-    constructor(slug: string) {
-        super({
-            code: '1203',
-            detail: `El slug "${slug}" ya esta registrado.`
-        });
-    };
-};
+import { InvalidTenantSlugException } from "../exceptions/tenant-exceptions";
 
 export class TenantSlug {
     private static readonly MIN_LENGTH = 3;

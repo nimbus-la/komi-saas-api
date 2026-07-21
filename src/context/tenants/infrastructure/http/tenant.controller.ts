@@ -48,14 +48,9 @@ export class TenantController {
     public async update(
         @Param('id') id:string,
         @Body()dto: UpdateTenantDto,
-    ) {
-        await this.updateTenant.execute(id, {
-            name: dto.name,
-            description: dto.description,
-            slug: dto.slug,
-            nit: dto.nit
-        })
-    };
+    ) : Promise<void> {
+        await this.updateTenant.execute(id, dto);
+    }
 
     @Delete(':id')
     @ResponseMessage('Tenant desactivado exitosamente.')

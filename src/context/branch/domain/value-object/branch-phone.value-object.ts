@@ -1,13 +1,5 @@
-import { DomainException } from "@/shared";
+import { InvalidBranchPhoneException } from "../exceptions/branch-exceptions";
 
-export class InvalidBranchPhoneException extends DomainException {
-    constructor(reason: string){
-          super({
-            code: '1011',
-            detail: `Teléfono de la sucursal inválido: ${reason}.`
-        });
-    };
-};
 
 export class BranchPhone {
     private static readonly MIN_LENGTH = 7;

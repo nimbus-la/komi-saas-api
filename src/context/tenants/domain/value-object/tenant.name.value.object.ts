@@ -1,22 +1,5 @@
-import { DomainException} from "@/shared";
+import { InvalidTenantNameException } from "../exceptions/tenant-exceptions";
 
-export class InvalidTenantNameException extends DomainException {     
-    constructor(reason: string) {
-        super({
-            code: '1005',
-            detail: `Nombre de tenant inválido: ${reason}.`
-        });
-    };
-};
-
-export class TenantNameAlreadyExistsException extends DomainException {
-    constructor(name: string) {
-        super({
-            code: '1204',
-            detail: `El nombre "${name}" ya esta registrado.`
-        });
-    };
-};
 
 export class TenantName {
     private static readonly MIN_LENGTH = 2;

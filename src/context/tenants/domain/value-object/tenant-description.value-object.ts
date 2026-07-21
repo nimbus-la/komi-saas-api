@@ -1,13 +1,5 @@
-import { DomainException } from "@/shared";
+import { InvalidTenantDescriptionException } from "../exceptions/tenant-exceptions";
 
-export class InvalidTenantDescriptionException extends DomainException {
-    constructor(reason: string) {
-        super({
-            code: '1007',
-            detail: `Descripción de tenant inválida: ${reason}.`
-        });
-    };
-};  
 
 export class TenantDescription {
     private static readonly MAX_LENGTH = 255

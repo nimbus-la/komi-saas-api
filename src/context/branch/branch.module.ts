@@ -1,12 +1,12 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { BranchEntity } from "./infrastructure/persistence/branch.entity";
+import { BranchEntity } from "./infrastructure/persistence/models/branch.entity";
 import { BranchController } from "./infrastructure/http/branch.controller";
 import { BranchRepository } from "./domain";
-import { BranchService } from "./infrastructure/persistence/branch.services";
-import { CreateBranchUseCase, DeleteBranchUseCase, SearchAllBranchUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "./application";
-import { TenantRepository } from "../tenants/domain";
+import { BranchService } from "./infrastructure/persistence/repositories/branch.repository";
+import { CreateBranchUseCase, DeleteBranchUseCase, SearchAllBranchUseCase, SearchBranchesByTenantUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "./application";
 import { TenantModule } from "../tenants/tenant.module";
+import { TenantRepository } from "../tenants/domain";
 
 
 
@@ -30,15 +30,15 @@ import { TenantModule } from "../tenants/tenant.module";
             provide: CreateBranchUseCase,
             useFactory: (
                 repository: BranchRepository,
-                tenantRepository: TenantRepository
+                tenantRepository: TenantRepository,
             ) =>
                 new CreateBranchUseCase(
                     repository,
-                    tenantRepository
+                    tenantRepository,
                 ),
             inject: [
                 BranchRepository,
-                TenantRepository
+                TenantRepository,
             ],
         },
 
@@ -67,6 +67,13 @@ import { TenantModule } from "../tenants/tenant.module";
             provide: DeleteBranchUseCase,
             useFactory: (repository: BranchRepository) =>
                 new DeleteBranchUseCase(repository),
+            inject: [BranchRepository],
+        },
+
+        {
+            provide: SearchBranchesByTenantUseCase,
+            useFactory: (repository: BranchRepository) =>
+                new SearchBranchesByTenantUseCase(repository),
             inject: [BranchRepository],
         },
     ],

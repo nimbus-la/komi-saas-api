@@ -1,7 +1,7 @@
 import { AggregateRoot } from "@/shared";
 import { TenantAccountId, TenantDescription, TenantId, TenantName, TenantNit, TenantSlug} from "./value-object";
 import { TenantPrimitives } from "./types";
-import { TenantCreatedEvent } from "./tenant-created.event";
+import { TenantCreatedEvent } from "./events/tenant-created.event";
 
 export class TenantAggregate extends AggregateRoot<TenantId> {
     private readonly accountId: TenantAccountId;
@@ -10,6 +10,8 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
     private slug: TenantSlug;
     private nit: TenantNit;
     private isActive: boolean;
+    private createdAt: Date;
+    private updatedAt: Date;
 
 
 
@@ -20,7 +22,9 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
         description: TenantDescription,
         slug: TenantSlug,
         nit: TenantNit,
-        isActive: boolean
+        isActive: boolean,
+        createdAt: Date,
+        updatedAt: Date,
     ) {
         super(id);
 
@@ -30,7 +34,13 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
         this.slug = slug;
         this.nit = nit;
         this.isActive = isActive;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     };
+
+    private touch(): void {
+        this.updatedAt = new Date();
+    }
 
     public static create(params: {
         accountId: TenantAccountId;
@@ -38,7 +48,10 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
         description: TenantDescription;
         slug: TenantSlug;
         nit: TenantNit;
+        createdAt?: Date;
     }): TenantAggregate {
+        const now = new Date();
+
         const tenant = new TenantAggregate(
             TenantId.generate(),
             params.accountId,
@@ -46,7 +59,9 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
             params.description,
             params.slug,
             params.nit,
-            true
+            true,
+            now,
+            now
         ); 
 
         tenant.registerEvent(
@@ -72,6 +87,8 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
             slug: this.slug.value,
             nit: this.nit.value,
             isActive: this.isActive,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
         }
 
     };
@@ -84,7 +101,9 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
             TenantDescription.create(primitives.description),
             TenantSlug.create(primitives.slug),
             TenantNit.create(primitives.nit),
-            primitives.isActive
+            primitives.isActive,
+            primitives.createdAt,
+            primitives.updatedAt,
         );
 
     };
@@ -110,6 +129,8 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
         if (params.nit) {
             this.nit = params.nit;
         }
+
+        this.touch();
     }
     
     public desactivate(): void {
