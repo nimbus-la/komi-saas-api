@@ -1,3 +1,5 @@
+import { RecipeIngredientPrimitives } from "../recipe/recipe-ingredient-primitives";
+
 export interface ProductPrimitives {
     id: string;
     tenantId: string;
@@ -10,4 +12,6 @@ export interface ProductPrimitives {
     costCurrency: string;
     profitMargin: number;
     productStatus: boolean;
+
+    ingredients: RecipeIngredientPrimitives[];
 }

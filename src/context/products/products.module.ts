@@ -13,12 +13,14 @@ import { CreateProductUseCase } from './application';
 import { TenantModule } from '../tenants/tenant.module';
 import { TenantChecker } from './application/ports/tenant-checker';
 import { TenantCheckerAdapter } from '../inventory';
+import { RecipeIngredientEntity } from "./infrastructure/persistence/models/recipe-ingredient.entity";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       ProductEntity,
       ProductCategoryEntity,
+      RecipeIngredientEntity,
     ]),
     CategoriesModule,
     TenantModule,

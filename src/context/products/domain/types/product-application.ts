@@ -6,6 +6,13 @@ export interface CreateProductApplicationParams {
     productImgUrl: string | undefined;
     productBasePrice: string;
     profitMargin: number;
+    recipe?: CreateProductRecipeIngredientParams[];
+
+}
+export interface CreateProductRecipeIngredientParams {
+    inventoryItemId: string;
+    quantity: string;
+    isOptional: boolean;
 }
 export interface UpdateProductApplicationParams {
     id: string;
