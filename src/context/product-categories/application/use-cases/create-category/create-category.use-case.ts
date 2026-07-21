@@ -1,11 +1,11 @@
-import { randomUUID } from "crypto";
-
 import {
     ProductCategory,
     ProductCategoryRepository,
 } from "../../../domain";
+import { CategoryName } from "@/context/product-categories/domain/exceptions/InvalidCategoryNameException";
 
 export interface CreateCategoryApplicationParams {
+    tenantId: string;
     name: string;
     description?: string | undefined;
     estado?: boolean | undefined;
@@ -21,17 +21,16 @@ export class CreateCategoryUseCase {
         params: CreateCategoryApplicationParams,
     ): Promise<void> {
 
-        const exists = await this.repository.existsByName(params.name);
+        const exists = await this.repository.existsByName(params.name, params.tenantId);
 
         if (exists) {
             throw new Error("La categoría ya existe");
         }
 
         const category = ProductCategory.create({
-            id: randomUUID(),
-            name: params.name,
+            tenantId: params.tenantId,
+            name: CategoryName.create(params.name),
             description: params.description,
-            estado: params.estado ?? true,
         });
 
         await this.repository.save(category);

@@ -15,6 +15,7 @@ export class CategoryService {
 
     async create(dto: CreateCategoryDto) {
         return this.createCategoryUseCase.execute({
+            tenantId: dto.tenantId,
             name: dto.name,
             description: dto.description,
             estado: dto.estado,
@@ -23,7 +24,12 @@ export class CategoryService {
     async update(id: string, dto: UpdateCategoryDto) {
         await this.updateCategoryUseCase.execute(id, dto);
     }
-    async search(params: { estado?: boolean }) {
+    async search(params: {
+        tenantId: string;
+        text?: string;
+        id?: string;
+        estado?: boolean;
+    }) {
         return this.searchCategoriesUseCase.execute(params);
     }
 }

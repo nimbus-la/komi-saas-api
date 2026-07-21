@@ -47,7 +47,7 @@ export class ProductEntity {
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date;
 
-  @ManyToOne(() => ProductCategoryEntity, (category) => category.products)
+  @ManyToOne(() => ProductCategoryEntity)
   @JoinColumn({ name: "product_category_id" })
   category!: ProductCategoryEntity;
 }

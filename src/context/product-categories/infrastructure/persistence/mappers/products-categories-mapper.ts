@@ -3,20 +3,24 @@ import { ProductCategoryEntity } from "@/context/product-categories/infrastructu
 
 export class ProductCategoryMapper {
     static toEntity(category: ProductCategory): ProductCategoryEntity {
+        const primitives = category.toPrimitives();
+
         return {
-            id: category.id,
-            name: category.name,
-            description: category.description ?? null,
-            estado: category.isActive,
+            id: primitives.id,
+            tenantId: primitives.tenantId,
+            name: primitives.name,
+            description: primitives.description ?? null,
+            estado: primitives.isActive,
         } as ProductCategoryEntity;
     }
 
     static toDomain(entity: ProductCategoryEntity): ProductCategory {
-        return new ProductCategory(
-            entity.id,
-            entity.name,
-            entity.description ?? undefined,
-            entity.estado,
-        );
+        return ProductCategory.fromPrimitives({
+            id: entity.id,
+            tenantId: entity.tenantId,
+            name: entity.name,
+            description: entity.description ?? undefined,
+            isActive: entity.estado,
+        });
     }
 }

@@ -41,15 +41,19 @@ export class CategoryController {
 
     @Get()
     async search(
+        @Query("tenantId") tenantId: string,
         @Query("text") text?: string,
         @Query("id") id?: string,
         @Query("estado") estado?: string,
     ) {
         const params: {
+            tenantId: string;
             text?: string;
             id?: string;
             estado?: boolean;
-        } = {};
+        } = {
+            tenantId,
+        };
 
         if (text) {
             params.text = text;

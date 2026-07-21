@@ -7,9 +7,14 @@ export abstract class ProductCategoryRepository {
 
     abstract findById(id: string): Promise<ProductCategory | null>;
 
-    abstract existsByName(name: string): Promise<boolean>;
+    abstract existsByName(name: string, tenantId: string): Promise<boolean>;
 
     abstract update(category: ProductCategory): Promise<void>;
 
-    abstract search(params: { estado?: boolean }): Promise<ProductCategory[]>;
+    abstract search(params: {
+        tenantId: string;
+        text?: string;
+        id?: string;
+        estado?: boolean;
+    }): Promise<ProductCategory[]>;
 }

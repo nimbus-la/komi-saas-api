@@ -7,7 +7,12 @@ export class SearchCategoriesUseCase {
         private readonly repository: ProductCategoryRepository,
     ) { }
 
-    async execute(params: { estado?: boolean }) {
+    async execute(params: {
+        tenantId: string;
+        text?: string;
+        id?: string;
+        estado?: boolean;
+    }) {
         return this.repository.search(params);
     }
 }

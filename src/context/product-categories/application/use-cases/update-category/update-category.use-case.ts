@@ -4,6 +4,7 @@ import {
     ProductCategoryRepository,
     ProductCategoryNotFoundException,
 } from "../../../domain";
+import { CategoryName } from "@/context/product-categories/domain/exceptions/InvalidCategoryNameException";
 
 export interface UpdateCategoryApplicationParams {
     name?: string;
@@ -28,16 +29,19 @@ export class UpdateCategoryUseCase {
             throw new ProductCategoryNotFoundException(id);
         }
 
-        if (params.name !== undefined) {
-            category.name = params.name;
-        }
-
-        if (params.description !== undefined) {
-            category.description = params.description;
-        }
+        category.update({
+            name: params.name
+                ? CategoryName.create(params.name)
+                : CategoryName.create(category.toPrimitives().name),
+            description: params.description ?? category.toPrimitives().description,
+        });
 
         if (params.estado !== undefined) {
-            category.isActive = params.estado;
+            if (params.estado) {
+                category.activate();
+            } else {
+                category.deactivate();
+            }
         }
 
         await this.repository.update(category);

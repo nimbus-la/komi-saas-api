@@ -1,9 +1,7 @@
-import { ProductEntity } from "@/context/products";
 import {
     Column,
     CreateDateColumn,
     Entity,
-    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from "typeorm";
@@ -13,6 +11,9 @@ export class ProductCategoryEntity {
 
     @PrimaryGeneratedColumn("uuid")
     id!: string;
+
+    @Column({ name: "tenant_id", type: "uuid" })
+    tenantId!: string;
 
     @Column({ type: "varchar", length: 150 })
     name!: string;
@@ -28,7 +29,4 @@ export class ProductCategoryEntity {
 
     @UpdateDateColumn({ name: "updated_at" })
     updatedAt!: Date;
-
-    @OneToMany(() => ProductEntity, (product) => product.category)
-    products!: ProductEntity[];
 }

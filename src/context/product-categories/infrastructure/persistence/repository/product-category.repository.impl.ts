@@ -34,19 +34,28 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
         return row ? ProductCategoryMapper.toDomain(row) : null;
     }
 
-    async existsByName(name: string): Promise<boolean> {
+    async existsByName(
+        name: string,
+        tenantId: string,
+    ): Promise<boolean> {
         const count = await this.categoryRepository.count({
-            where: { name },
+            where: {
+                name,
+                tenantId,
+            },
         });
         return count > 0;
     }
 
     async update(category: ProductCategory): Promise<void> {
         const entity = ProductCategoryMapper.toEntity(category);
-        await this.categoryRepository.update(category.id, entity);
+
+        await this.categoryRepository.update(entity.id, entity);
     }
 
     async search(params: {
+        tenantId: string;
+
         text?: string;
         id?: string;
         estado?: boolean;
@@ -55,7 +64,10 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
     }): Promise<ProductCategory[]> {
 
         const query = this.categoryRepository
-            .createQueryBuilder("category");
+            .createQueryBuilder("category")
+            .where("category.tenantId = :tenantId", {
+                tenantId: params.tenantId,
+            });
 
 
         // ID
