@@ -1,11 +1,13 @@
-import { AggregateRoot, Money } from "@/shared";
+import { AggregateRoot, Money, Quantity } from "@/shared";
 
 import { ProductCreatedEvent } from "./events/product-created.event";
 import { ProductId } from "./value-object/product-id.value-object";
 import { ProductName } from "./value-object/product-name.value-object";
 import { ProductSku } from "./value-object/product-sku.value-object";
 import { ProductPrimitives } from "./types/product-primitives";
-
+import { DuplicateIngredientException } from "./recipe/exceptions/duplicate-ingredient.exception";
+import { IngredientNotInRecipeException } from "./recipe/exceptions/ingredient-not-in-recipe.exception";
+import { RecipeIngredient } from "./recipe/recipe-ingredient.entity";
 
 export class Product extends AggregateRoot<ProductId> {
     private tenantId: string;
@@ -18,6 +20,7 @@ export class Product extends AggregateRoot<ProductId> {
     private productBasePrice: Money;
     private profitMargin: number;
     private productStatus: boolean;
+    private ingredients: RecipeIngredient[];
 
     private constructor(
         id: ProductId,
@@ -30,6 +33,7 @@ export class Product extends AggregateRoot<ProductId> {
         productBasePrice: Money,
         profitMargin: number,
         productStatus: boolean,
+        ingredients: RecipeIngredient[],
     ) {
         super(id);
         this.tenantId = tenantId;
@@ -41,6 +45,7 @@ export class Product extends AggregateRoot<ProductId> {
         this.productBasePrice = productBasePrice;
         this.profitMargin = profitMargin;
         this.productStatus = productStatus;
+        this.ingredients = ingredients;
     }
 
     public static create(params: {
@@ -65,6 +70,7 @@ export class Product extends AggregateRoot<ProductId> {
             params.productBasePrice,
             params.profitMargin,
             true,
+            [],
         );
 
         product.registerEvent(
@@ -99,6 +105,9 @@ export class Product extends AggregateRoot<ProductId> {
             costCurrency: this.productBasePrice.currency,
             profitMargin: this.profitMargin,
             productStatus: this.productStatus,
+            ingredients: this.ingredients.map(
+                (ingredient) => ingredient.toPrimitives(),
+            ),
         };
     }
 
@@ -116,6 +125,9 @@ export class Product extends AggregateRoot<ProductId> {
             Money.of(primitives.productBasePrice, primitives.costCurrency),
             primitives.profitMargin,
             primitives.productStatus,
+            primitives.ingredients.map(
+                (ingredient) => RecipeIngredient.fromPrimitives(ingredient),
+            ),
         );
     }
 
@@ -150,5 +162,82 @@ export class Product extends AggregateRoot<ProductId> {
         this.productBasePrice = params.productBasePrice;
         this.profitMargin = params.profitMargin;
         this.productStatus = params.productStatus;
+    }
+    public addIngredient(params: {
+        inventoryItemId: string;
+        quantity: Quantity;
+        isOptional: boolean;
+    }): void {
+        const exists = this.ingredients.some(
+            (ingredient) =>
+                ingredient.getInventoryItemId() === params.inventoryItemId,
+        );
+
+        if (exists) {
+            throw new DuplicateIngredientException(params.inventoryItemId);
+        }
+
+        const ingredient = RecipeIngredient.create(params);
+
+        this.ingredients.push(ingredient);
+    }
+    public changeIngredient(
+        inventoryItemId: string,
+        params: {
+            quantity?: Quantity;
+            isOptional?: boolean;
+        },
+    ): void {
+        const ingredient = this.ingredients.find(
+            (item) =>
+                item.getInventoryItemId() === inventoryItemId,
+        );
+
+        if (!ingredient) {
+            throw new IngredientNotInRecipeException(inventoryItemId);
+        }
+
+        ingredient.change(params);
+    }
+    public removeIngredient(
+        inventoryItemId: string,
+    ): void {
+        const index = this.ingredients.findIndex(
+            (ingredient) =>
+                ingredient.getInventoryItemId() === inventoryItemId,
+        );
+
+        if (index === -1) {
+            throw new IngredientNotInRecipeException(inventoryItemId);
+        }
+
+        this.ingredients.splice(index, 1);
+    }
+    public getIngredients(): RecipeIngredient[] {
+        return [...this.ingredients];
+    }
+    public replaceRecipe(
+        ingredients: Array<{
+            inventoryItemId: string;
+            quantity: Quantity;
+            isOptional: boolean;
+        }>,
+    ): void {
+        const inventoryItemIds = new Set<string>();
+
+        for (const ingredient of ingredients) {
+            if (inventoryItemIds.has(ingredient.inventoryItemId)) {
+                throw new DuplicateIngredientException(
+                    ingredient.inventoryItemId,
+                );
+            }
+
+            inventoryItemIds.add(ingredient.inventoryItemId);
+        }
+
+        this.ingredients = ingredients.map(
+            (ingredient) =>
+                RecipeIngredient.create(ingredient),
+        );
     }
 }

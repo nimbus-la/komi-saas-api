@@ -1,9 +1,11 @@
-import { Money } from "@/shared";
+import { Money, Quantity } from "@/shared";
+
 import {
     Product,
     ProductNameAlreadyExistsException,
     ProductRepository,
 } from "@/context/products/domain";
+
 import { CreateProductApplicationParams } from "@/context/products/domain/types/product-application";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
 import { ProductSku } from "@/context/products/domain/value-object/product-sku.value-object";
@@ -29,9 +31,11 @@ export class CreateProductUseCase {
         }
 
         // 2. Crear el Value Object del nombre
-        const productName = ProductName.create(params.productName);
+        const productName = ProductName.create(
+            params.productName,
+        );
 
-        // 3. Validar que no exista otro producto con ese nombre en el tenant
+        // 3. Validar que no exista otro producto
         if (
             await this.repository.existsByName(
                 productName,
@@ -44,20 +48,43 @@ export class CreateProductUseCase {
         }
 
         // 4. Obtener el siguiente SKU
-        const sequence = await this.repository.nextSkuSequence();
+        const sequence =
+            await this.repository.nextSkuSequence();
 
         // 5. Crear el producto
         const product = Product.create({
             tenantId: params.tenantId,
             productCategoryId: params.productCategoryId,
             productName,
-            productDescription: params.productDescription,
-            productSku: ProductSku.fromNumber(sequence),
-            productImgUrl: params.productImgUrl,
-            productBasePrice: Money.of(params.productBasePrice),
-            profitMargin: params.profitMargin,
+            productDescription:
+                params.productDescription,
+            productSku:
+                ProductSku.fromNumber(sequence),
+            productImgUrl:
+                params.productImgUrl,
+            productBasePrice:
+                Money.of(params.productBasePrice),
+            profitMargin:
+                params.profitMargin,
         });
 
+        // 6. Agregar los ingredientes de la receta
+        for (const ingredient of params.recipe ?? []) {
+            product.addIngredient({
+                inventoryItemId:
+                    ingredient.inventoryItemId,
+
+                quantity:
+                    Quantity.of(
+                        ingredient.quantity,
+                    ),
+
+                isOptional:
+                    ingredient.isOptional,
+            });
+        }
+
+        // 7. Guardar producto y receta
         await this.repository.save(product);
 
         return product;

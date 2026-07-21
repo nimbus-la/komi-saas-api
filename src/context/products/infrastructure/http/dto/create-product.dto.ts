@@ -1,4 +1,7 @@
+import { Type } from "class-transformer";
+
 import {
+  IsArray,
   IsBoolean,
   IsNumber,
   IsOptional,
@@ -6,7 +9,10 @@ import {
   IsUUID,
   Min,
   MinLength,
+  ValidateNested,
 } from "class-validator";
+
+import { CreateRecipeIngredientDto } from "./create-recipe-ingredient.dto";
 
 export class CreateProductDto {
 
@@ -24,7 +30,6 @@ export class CreateProductDto {
   @IsOptional()
   productDescription: string | undefined;
 
-
   @IsString()
   @IsOptional()
   productImgUrl: string | undefined;
@@ -38,4 +43,9 @@ export class CreateProductDto {
   @IsNumber()
   @Min(0)
   profitMargin!: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateRecipeIngredientDto)
+  recipe!: CreateRecipeIngredientDto[];
 }
