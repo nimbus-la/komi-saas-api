@@ -1,5 +1,5 @@
 export interface CreateTenantApplicationParams {
-    accountId: string;
+    //accountId: string;
     name: string;
     description: string;
     slug: string;

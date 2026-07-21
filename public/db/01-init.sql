@@ -36,6 +36,16 @@ CREATE TABLE IF NOT EXISTS branches (
         ON DELETE RESTRICT
 );
 
+-- ============================================
+-- TABLA DE ROLES
+-- ============================================
+CREATE TABLE roles (
+    role_id UUID PRIMARY KEY,
+    role_code VARCHAR(20) NOT NULL UNIQUE,
+    role_name VARCHAR(50) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
 
 -- --------------------------------------------------------------------------
 -- Secuencia para el consecutivo del SKU (INV-0001, INV-0002, ...)

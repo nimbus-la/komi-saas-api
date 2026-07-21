@@ -1,8 +1,8 @@
-import { IsString, IsUUID, Matches, MaxLength, MinLength } from "class-validator";
+import { IsString, Matches, MaxLength, MinLength } from "class-validator";
 
 export class CreateTenantDto {
-    @IsUUID()
-    accountId!: string;
+   // @IsUUID()
+   // accountId!: string;
 
     @IsString()
     @MinLength(2)

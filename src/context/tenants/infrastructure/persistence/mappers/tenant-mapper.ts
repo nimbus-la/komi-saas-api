@@ -6,7 +6,7 @@ export class TenantMapper {
     public static toResponse(entity: TenantEntity): TenantResponse {
         return {
             id: entity.id,
-            accountId: entity.accountId,
+            //accountId: entity.accountId,
             name: entity.name,
             description: entity.description,
             slug: entity.slug,
@@ -20,7 +20,7 @@ export class TenantMapper {
     public static toAggregate(entity: TenantEntity): TenantAggregate {
         return TenantAggregate.fromPrimitives({
             id: entity.id,
-            accountId: entity.accountId,
+            //accountId: entity.accountId,
             name: entity.name,
             description: entity.description,
             slug: entity.slug,

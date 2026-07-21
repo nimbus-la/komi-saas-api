@@ -52,6 +52,7 @@ export class BranchController {
     public async findOne(
         @Param('id') id: string
     ) {
+        console.log("ID recibido:", id);
         return await this.searchBranchById.execute(id);
     };
 

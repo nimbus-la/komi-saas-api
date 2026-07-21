@@ -1,6 +1,6 @@
 export interface TenantPrimitives {
     id: string;
-    accountId: string;
+    //accountId: string;
     name: string;
     description: string;
     slug: string;

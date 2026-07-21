@@ -1,6 +1,6 @@
 export interface TenantCreatedProps {
     tenantId: string;
-    accountId: string;
+   // accountId: string;
     name: string;
     description: string;
     slug: string;

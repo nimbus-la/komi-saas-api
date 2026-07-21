@@ -12,7 +12,9 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '0001': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'No se encontraron resultados.' },
     '0002': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Sucursal no encontrada. ' },
     '0003': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Tenant no encontrado ' },
-    
+    '0004': { status: ResponseStatus.Success, category: ErrorCategory.Validation, message: 'Rol creado exitosamente.' },
+    '0005': { status: ResponseStatus.Success, category: ErrorCategory.Validation, message: 'Rol actualizado exitosamente.' },
+
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Los datos enviados no son válidos.' },
     '1001': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La unidad de medida no es válida.' },
@@ -28,7 +30,8 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1011': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El teléfono de la sucursal no es válido.' },
     '1012': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La ciudad de la sucursal no es válida.' },
     '1013': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El departamento de la sucursal no es válido.' },
-
+    '1014': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El código del rol no es válido.' },
+    '1015': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del rol no es válido.' },
 
     '1200': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre del item ya se encuentra registrado.' },
     '1201': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El item de inventario no existe.' },
@@ -38,6 +41,9 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1205': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El tenant indicado no existe.' },
     '1206': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre de la sucursal ya se encuentra registrado.' },
     '1207': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
+    '1208': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El nombre del rol ya se encuentra registrado.' },
+    '1209': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El código del rol ya se encuentra registrado.' },
+    '1210': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El rol indicado no existe.' },
 
     // 13xx / reglas de lote y stock
     '1300': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La fecha de vencimiento no es válida.' },
