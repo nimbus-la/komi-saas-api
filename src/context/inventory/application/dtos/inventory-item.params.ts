@@ -43,3 +43,35 @@ export interface UpdateInventoryItemParams {
     unitOfMeasure?: string;
     isPerishable?: boolean;
 };
+
+
+
+export interface RegisterWasteParams {
+    itemId: string;
+    branchId: string;
+    quantity: string;
+    reason: string;
+    batchId?: string;
+    occurredAt?: string;
+};
+
+
+
+export interface AdjustBatchParams {
+    itemId: string;
+    batchId: string;
+    actualQuantity: string;
+    reason: string;
+    occurredAt?: string;
+};
+
+
+
+export interface CountStockParams {
+    itemId: string;
+    branchId: string;
+    actualTotal: string;
+    reason: string;
+    surplusBatchId?: string;
+    occurredAt?: string;
+};

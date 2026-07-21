@@ -92,7 +92,6 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         const query = this.batches.createQueryBuilder('b')
             .where('b.inventoryItemId IN (:...itemIds)', { itemIds })
             .andWhere('b.quantityRemaining > 0')
-            .andWhere('(b.expirationDate IS NULL OR b.expirationDate > :now)', { now: new Date() });
 
         if (branchId !== undefined) {
             query.andWhere('b.branchId = :branchId', { branchId });

@@ -7,6 +7,12 @@ import { ReceiveStockDto } from "./dtos/receive-stock.dto";
 import { ConsumeStockDto } from "./dtos/consume-stock.dto";
 import { UpdateItemDto } from "./dtos/update-item.dto";
 import { SetMinimumStockDto } from "./dtos/set-minimum-stock.dto";
+import { RegisterWasteUseCase } from "../../application/use-cases/register-waste/register-waste.use-case";
+import { AdjustBatchUseCase } from "../../application/use-cases/adjust-batch/adjust-batch.use-case";
+import { CountStockUseCase } from "../../application/use-cases/count-stock/count-stock.use-case";
+import { RegisterWasteDto } from "./dtos/register-waste.dto";
+import { AdjustBatchDto } from "./dtos/adjust-batch.dto";
+import { CountStockDto } from "./dtos/count-stock.dto";
 
 
 @UseInterceptors(ResponseInterceptor)
@@ -22,6 +28,9 @@ export class InventoryItemController {
         private readonly searchItemBatches: SearchItemBatchesUseCase,
         private readonly updateItem: UpdateInventoryItemUseCase,
         private readonly setMinimumStock: SetMinimumStockUseCase,
+        private readonly registerWaste: RegisterWasteUseCase,
+        private readonly adjustBatch: AdjustBatchUseCase,
+        private readonly countStock: CountStockUseCase,
     ) { };
 
 
@@ -76,6 +85,50 @@ export class InventoryItemController {
             branchId: dto.branchId,
             quantity: dto.quantity,
             ...(dto.consumedAt ? { consumedAt: dto.consumedAt } : {}),
+        });
+    };
+
+
+
+    /** Merma: producto perdido. Con batchId va a ese lote; sin él, FEFO. */
+    @Post('waste/:id')
+    public async waste(@Param('id') id: string, @Body() dto: RegisterWasteDto): Promise<void> {
+        await this.registerWaste.execute({
+            itemId: id,
+            branchId: dto.branchId,
+            quantity: dto.quantity,
+            reason: dto.reason,
+            ...(dto.batchId ? { batchId: dto.batchId } : {}),
+            ...(dto.occurredAt ? { occurredAt: dto.occurredAt } : {}),
+        });
+    };
+
+
+
+    /** Ajuste de un lote concreto (corrección de captura). */
+    @Post('adjust/:id')
+    public async adjust(@Param('id') id: string, @Body() dto: AdjustBatchDto): Promise<void> {
+        await this.adjustBatch.execute({
+            itemId: id,
+            batchId: dto.batchId,
+            actualQuantity: dto.actualQuantity,
+            reason: dto.reason,
+            ...(dto.occurredAt ? { occurredAt: dto.occurredAt } : {}),
+        });
+    };
+
+
+
+    /** Conteo físico: cuadra el total del item en una sucursal. */
+    @Post('count/:id')
+    public async count(@Param('id') id: string, @Body() dto: CountStockDto): Promise<void> {
+        await this.countStock.execute({
+            itemId: id,
+            branchId: dto.branchId,
+            actualTotal: dto.actualTotal,
+            reason: dto.reason,
+            ...(dto.surplusBatchId ? { surplusBatchId: dto.surplusBatchId } : {}),
+            ...(dto.occurredAt ? { occurredAt: dto.occurredAt } : {}),
         });
     };
 
