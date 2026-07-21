@@ -1,8 +1,8 @@
 import { AggregateRoot, Money, Quantity } from "@/shared";
 
-import { AdjustBatchParams, ConsumedBatchDetail, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
+import { AdjustBatchParams, AdjustedBatchDetail, ConsumedBatchDetail, CountStockParams, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { AmbiguousBranchScopeException, BatchBranchMismatchException, BatchNotFoundException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { AmbiguousBranchScopeException, BatchBranchMismatchException, BatchNotFoundException, BatchRequiredForPerishableException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NoBatchToAdjustException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -560,6 +560,89 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
 
     /**
+     * CONTEO FÍSICO: el usuario declara cuánto hay EN TOTAL del item en una sede.
+     * El sistema resuelve los lotes:
+     *   - Faltante: se reparte por FEFO (no inventa nada, solo saca).
+     *   - Sobrante: hay que decidir a qué lote pertenece (define costo y
+     *     vencimiento). Con surplusBatchId va a ese; sin él y NO perecedero, al
+     *     lote activo más reciente; sin él y PERECEDERO, se rechaza.
+     */
+    public countStock(params: CountStockParams): void {
+        const reason = params.reason.trim();
+
+        if (reason.length === 0) {
+            throw new ReasonRequiredException('conteo');
+        };
+
+        const occurredOn = params.occurredAt ?? new Date();
+        const current = this.currentStockForBranch(params.branchId, occurredOn);
+
+        const isIncrease = params.actualTotal.isGreaterThan(current);
+        const isDecrease = current.isGreaterThan(params.actualTotal);
+
+        if (!isIncrease && !isDecrease) {
+            throw new NoAdjustmentDifferenceException(`la sucursal ${params.branchId}`);
+        };
+
+        const active = this.activateBatchesOfBranch(params.branchId, occurredOn);
+        const adjustedBatches: AdjustedBatchDetail[] = [];
+
+        if (isIncrease) {
+            const target = this.resolveSurplusBatch(active, params.branchId, params.surplusBatchId);
+            const delta = params.actualTotal.subtract(current);
+
+            target.adjustTo(target.getRemaining().add(delta));
+
+            adjustedBatches.push({
+                batchId: target.getId(),
+                direction: 'IN',
+                quantity: delta.getValue(),
+                unitCostAmount: target.getUnitCost().getAmount(),
+                unitCostCurrency: target.getUnitCost().currency,
+            });
+
+        } else {
+            let pending = current.subtract(params.actualTotal);
+            const ordered = [...active].sort(InventoryItem.compararPorFefo);
+
+            for (const batch of ordered) {
+                if (pending.isZero()) break;
+
+                const take = pending.isGreaterThan(batch.getRemaining())
+                    ? batch.getRemaining()
+                    : pending;
+
+                batch.adjustTo(batch.getRemaining().subtract(take));
+
+                adjustedBatches.push({
+                    batchId: batch.getId(),
+                    direction: 'OUT',
+                    quantity: take.getValue(),
+                    unitCostAmount: batch.getUnitCost().getAmount(),
+                    unitCostCurrency: batch.getUnitCost().currency,
+                });
+
+                pending = pending.subtract(take);
+            };
+        };
+
+        this.registerEvent(
+            new StockAdjustedEvent({
+                itemId: this.id.value,
+                tenantId: this.tenantId,
+                branchId: params.branchId,
+                reason,
+                adjustedBatches,
+                occurredOn,
+            })
+        );
+
+        this.touch();
+    };
+
+
+
+    /**
      * Busca un lote propio por id. El batchId entra como PARÁMETRO, no como puerta
      * de entrada: el lote sigue siendo entidad hija y solo se llega a él a través
      * del root.
@@ -583,6 +666,43 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         return this.batches.filter(
             (batch: InventoryBatch) => batch.getBranchId() === branchId && batch.isActive(date)
         );
+    };
+
+
+
+    /**
+     * Decide a qué lote se le carga un sobrante de conteo. Aísla la regla más
+     * delicada: en un perecedero, elegir el lote equivocado es asignar una
+     * caducidad equivocada.
+     */
+    private resolveSurplusBatch(
+        active: InventoryBatch[],
+        branchId: string,
+        surplusBatchId?: string,
+    ): InventoryBatch {
+        if (surplusBatchId !== undefined) {
+            const declared = this.findBatch(surplusBatchId);
+
+            if (declared.getBranchId() !== branchId) {
+                throw new BatchBranchMismatchException(surplusBatchId, branchId);
+            };
+
+            return declared;
+        };
+
+        if (this.isPerishable) {
+            throw new BatchRequiredForPerishableException(this.id.value);
+        };
+
+        const newest = [...active].sort(
+            (firstLote, secondLote) => secondLote.getReceivedAt().getTime() - firstLote.getReceivedAt().getTime()
+        )[0];
+
+        if (newest === undefined) {
+            throw new NoBatchToAdjustException(branchId);
+        };
+
+        return newest;
     };
 
 

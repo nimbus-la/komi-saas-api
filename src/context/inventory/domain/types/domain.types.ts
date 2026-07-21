@@ -99,4 +99,14 @@ export interface AdjustBatchParams {
     actualQuantity: Quantity;
     reason: string;
     occurredAt?: Date;
-}
+};
+
+
+
+export interface CountStockParams {
+    branchId: string;
+    actualTotal: Quantity;
+    reason: string;
+    surplusBatchId?: string;
+    occurredAt?: Date;
+};
