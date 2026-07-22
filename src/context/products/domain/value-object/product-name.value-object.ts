@@ -1,4 +1,4 @@
-import { InvalidProductNameException } from "../exceptions/product-not-found.exception";
+import { InvalidProductNameException } from "../exceptions/product-exception";
 
 export class ProductName {
     private static readonly MIN_LENGTH = 2;

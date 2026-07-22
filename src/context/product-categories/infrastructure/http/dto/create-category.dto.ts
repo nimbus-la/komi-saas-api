@@ -3,10 +3,15 @@ import {
     IsNotEmpty,
     IsOptional,
     IsString,
+    IsUUID,
     MaxLength,
 } from "class-validator";
 
 export class CreateCategoryDto {
+
+    @IsUUID()
+    tenantId!: string;
+
     @IsString()
     @IsNotEmpty()
     @MaxLength(150)

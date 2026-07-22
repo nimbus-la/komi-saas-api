@@ -22,10 +22,13 @@ export class ProductController {
     const product = await this.service.create(dto);
 
     return {
-      statusCode: 201,
-      message: "Producto creado con éxito",
+      status: "SUCCESS",
+      code: "0000",
+      statusCode: 200,
+      message: "Producto creado exitosamente.",
       data: product,
     };
+
   }
 
   @Patch(":id")
@@ -36,6 +39,8 @@ export class ProductController {
     await this.service.update(id, dto);
 
     return {
+      status: "SUCCESS",
+      code: "0000",
       statusCode: 200,
       message: "Producto actualizado con éxito",
     };
@@ -43,6 +48,7 @@ export class ProductController {
 
   @Get()
   async search(
+    @Query("tenantId") tenantId: string,
     @Query("text") text?: string,
     @Query("productCategoryId") productCategoryId?: string,
     @Query("productStatus") productStatus?: string,
@@ -50,6 +56,7 @@ export class ProductController {
     @Query("limit") limit = "10",
   ) {
     const params: SearchProductsApplicationParams = {
+      tenantId,
       page: Number(page),
       limit: Number(limit),
     };
@@ -69,6 +76,8 @@ export class ProductController {
     const products = await this.service.search(params);
 
     return {
+      status: "SUCCESS",
+      code: "0000",
       statusCode: 200,
       message: "Productos obtenidos con éxito",
       data: products,

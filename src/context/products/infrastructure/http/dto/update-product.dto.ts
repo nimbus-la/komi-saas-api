@@ -12,6 +12,9 @@ export class UpdateProductDto {
   @IsUUID()
   productCategoryId!: string;
 
+  @IsUUID()
+  tenantId!: string;
+
   @IsString()
   @MinLength(2)
   productName!: string;

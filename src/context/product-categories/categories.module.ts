@@ -1,14 +1,14 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { ProductCategoryEntity } from "./domain/product-category.entity";
+import { ProductCategoryEntity } from "./infrastructure/persistence/models/product-category.entity";
 import { CategoryController } from "./infrastructure/http/category.controller";
-import { CategoryService } from "./infrastructure/persistence/category.service";
 import { ProductCategoryRepository } from "./domain/product-category.repository";
-import { ProductCategoryRepositoryImpl } from "./infrastructure/persistence/product-category.repository.impl";
-import { CreateCategoryUseCase } from "./application/create-category/create-category.use-case";
-import { UpdateCategoryUseCase } from "./application/update-category/update-category.use-case";
-import { SearchCategoriesUseCase } from "./application/search-categories/search-categories.use-case";
+import { CreateCategoryUseCase } from "./application/use-cases/create-category/create-category.use-case";
+import { UpdateCategoryUseCase } from "./application/use-cases/update-category/update-category.use-case";
+import { SearchCategoriesUseCase } from "./application/use-cases/search-categories/search-categories.use-case";
+import { ProductCategoryRepositoryImpl } from "./infrastructure";
+import { CategoryService } from "./infrastructure/persistence/services/category.service";
 
 @Module({
     imports: [
