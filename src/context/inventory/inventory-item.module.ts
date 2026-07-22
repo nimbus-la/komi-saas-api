@@ -8,6 +8,8 @@ import { BranchChecker, ConsumeStockUseCase, CreateInventoryItemUseCase, FindInv
 import { BranchCheckerAdapter, InventoryBatchEntity, InventoryItemController, InventoryItemEntity, InventoryStockEntity, TenantCheckerAdapter, TypeOrmInventoryBatchReadRepository, TypeOrmInventoryItemRepository } from "./infrastructure";
 import { EventPublisher } from "@/shared";
 import { EventEmitterPublisher } from "@/infrastructure";
+import { RegisterWasteUseCase } from "./application/use-cases/register-waste/register-waste.use-case";
+import { CountStockUseCase } from "./application/use-cases/count-stock/count-stock.use-case";
 
 
 @Module({
@@ -65,6 +67,16 @@ import { EventEmitterPublisher } from "@/infrastructure";
             provide: SetMinimumStockUseCase,
             useFactory: (r: InventoryItemRepository, b: BranchChecker) => new SetMinimumStockUseCase(r, b),
             inject: [InventoryItemRepository, BranchChecker],
+        },
+        {
+            provide: RegisterWasteUseCase,
+            useFactory: (r: InventoryItemRepository, e: EventPublisher) => new RegisterWasteUseCase(r, e),
+            inject: [InventoryItemRepository, EventPublisher],
+        },
+        {
+            provide: CountStockUseCase,
+            useFactory: (r: InventoryItemRepository, e: EventPublisher) => new CountStockUseCase(r, e),
+            inject: [InventoryItemRepository, EventPublisher],
         },
     ],
 })
