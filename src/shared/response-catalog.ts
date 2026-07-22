@@ -32,6 +32,13 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1013': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El departamento de la sucursal no es válido.' },
     '1014': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El código del rol no es válido.' },
     '1015': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del rol no es válido.' },
+    '1016': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de usuario no es válido.' },
+    '1017': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El correo electrónico no es válido.' },
+    '1018': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La contraseña no es válida.' },
+    '1019': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El apellido del usuario no es válido.' },
+    '1020': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La fecha de nacimiento no es válida.' },
+    '1021': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El sexo del usuario no es válido.' },
+    '1022': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El teléfono del usuario no es válido.' },
 
     '1200': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre del item ya se encuentra registrado.' },
     '1201': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El item de inventario no existe.' },
@@ -44,6 +51,11 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1208': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El nombre del rol ya se encuentra registrado.' },
     '1209': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El código del rol ya se encuentra registrado.' },
     '1210': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El rol indicado no existe.' },
+    '1211': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El nombre de usuario ya se encuentra registrado.' },
+    '1212': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El correo electrónico ya se encuentra registrado.' },
+    '1213': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra activo.' },
+    '1214': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra inactivo.' },
+    '1215': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra inactivo.' },
 
     // 13xx / reglas de lote y stock
     '1300': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La fecha de vencimiento no es válida.' },

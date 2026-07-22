@@ -47,6 +47,41 @@ CREATE TABLE roles (
     updated_at TIMESTAMP NOT NULL
 );
 
+-- ============================================
+-- TABLA DE USERS
+-- ============================================
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY,
+    branch_id UUID NOT NULL,
+    rol_id UUID NOT NULL,
+    user_name VARCHAR(50) NOT NULL,
+    user_email VARCHAR(120) NOT NULL,
+    user_password VARCHAR(100) NOT NULL,
+    user_full_name VARCHAR(120) NOT NULL,
+    user_last_name VARCHAR(120) NOT NULL,
+    user_age DATE NOT NULL,
+    user_sex VARCHAR(20) NOT NULL,
+    user_phone VARCHAR(20) NOT NULL,
+    user_is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    user_created_at TIMESTAMPTZ NOT NULL,
+    user_updated_at TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT fk_users_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(branch_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_users_rol
+        FOREIGN KEY (rol_id)
+        REFERENCES roles(rol_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT uq_users_username UNIQUE (user_name),
+    CONSTRAINT uq_users_email UNIQUE (user_email)
+);
+
 -- --------------------------------------------------------------------------
 -- Secuencia para el consecutivo del SKU (INV-0001, INV-0002, ...)
 -- --------------------------------------------------------------------------

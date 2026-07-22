@@ -7,7 +7,8 @@ import { ProductsModule } from './context/products/products.module';
 import { InventoryModule } from './context/inventory/inventory-item.module';
 import { RecipeItemModule } from './context/recipes/items/recipe-item.module';
 import { InventoryMovementModule } from './context/inventory-movements';
-import { RolModule } from './context/rol/infrastructure/rol.module';
+import { RolModule } from './context/rol/rol.module';
+import { UserModule } from './context/user/user.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RolModule } from './context/rol/infrastructure/rol.module';
     ProductsModule,
     RecipeItemModule,
     RolModule,
+    UserModule,
   ],
 })
 

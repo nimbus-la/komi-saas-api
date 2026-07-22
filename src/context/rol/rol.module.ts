@@ -1,9 +1,9 @@
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { CreateRolUseCase, SearchAllRolUseCase, SearchRolUseCase, UpdateRolUseCase } from "../application";
-import { RolRepository } from "../domain/rol.respository";
-import { RolController } from "./http/rol.controller";
-import { RolService } from "./persistence/repository/rol-repository";
-import { RolEntity } from "./persistence/models/rol.entity";
+import { CreateRolUseCase, SearchAllRolUseCase, SearchRolUseCase, UpdateRolUseCase } from "./application";
+import { RolRepository } from "./domain/rol.respository";
+import { RolController } from "./infrastructure/http/rol.controller";
+import { RolService } from "./infrastructure/persistence/repository/rol-repository";
+import { RolEntity } from "./infrastructure/persistence/models/rol.entity";
 import { Module } from "@nestjs/common";
 
 @Module({
