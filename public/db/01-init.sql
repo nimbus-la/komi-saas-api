@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS inventory_batchs (
     CONSTRAINT fk_inventory_batchs_item
         FOREIGN KEY (inventory_item_id)
         REFERENCES inventory_items (inventory_item_id)
-        ON DELETE RESTRICT
+        ON DELETE RESTRICT,
 
     CONSTRAINT fk_inventory_batchs_branch
         FOREIGN KEY (branch_id)
@@ -209,23 +209,38 @@ CREATE INDEX IF NOT EXISTS idx_inventory_movements_occurred
 CREATE INDEX IF NOT EXISTS idx_inventory_movements_tenant
     ON inventory_movements (tenant_id);
 
-
-
-CREATE SEQUENCE IF NOT EXISTS product_sku_seq START 1;
+-- ============================================
+-- SECUENCIA PARA SKU DE PRODUCTOS
+-- ============================================
+CREATE SEQUENCE IF NOT EXISTS product_sku_seq
+    START WITH 1
+    INCREMENT BY 1;
 
 
 -- ============================================
 -- TABLA DE CATEGORÍAS
 -- ============================================
 CREATE TABLE IF NOT EXISTS product_category (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
+
+    tenant_id UUID NOT NULL
+        REFERENCES tenants(tenant_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
     name VARCHAR(150) NOT NULL,
     description TEXT,
     estado BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS idx_product_category_tenant
+    ON product_category (tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_product_category_name
+    ON product_category (name);
 
 
 -- ============================================
@@ -233,7 +248,17 @@ CREATE TABLE IF NOT EXISTS product_category (
 -- ============================================
 CREATE TABLE IF NOT EXISTS product (
     product_id UUID PRIMARY KEY,
-    product_category_id UUID NOT NULL,
+
+    tenant_id UUID NOT NULL
+        REFERENCES tenants(tenant_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    product_category_id UUID NOT NULL
+        REFERENCES product_category(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
     product_name VARCHAR(120) NOT NULL,
     product_description TEXT,
     product_base_price NUMERIC(12,2) NOT NULL,
@@ -241,47 +266,46 @@ CREATE TABLE IF NOT EXISTS product (
     product_status BOOLEAN NOT NULL DEFAULT TRUE,
     product_img_url TEXT,
     product_sku_seq VARCHAR(50) NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    
-    CONSTRAINT fk_product_category
-        FOREIGN KEY (product_category_id)
-        REFERENCES product_category(id)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT
-);
-
--- --------------------------------------------------------------------------
--- Tabla: recipe_items
---   FK: product_id -> product(product_id)
---   FK: inventory_item_id -> inventory_items(inventory_item_id)
--- --------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS recipe_items (
-    recipe_item_id UUID PRIMARY KEY,
-
-    product_id UUID NOT NULL,
-    inventory_item_id UUID NOT NULL,
-
-    quantity NUMERIC(14, 3) NOT NULL,
-    unit VARCHAR(20) NOT NULL,
-
-    line_cost NUMERIC(12, 2) NOT NULL,
-    is_optional BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-    -- 🔗 FK hacia PRODUCTOS
-    CONSTRAINT fk_recipe_items_product
-        FOREIGN KEY (product_id)
-        REFERENCES product (product_id)
+CREATE INDEX IF NOT EXISTS idx_product_tenant
+    ON product (tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_product_category
+    ON product (product_category_id);
+
+CREATE INDEX IF NOT EXISTS idx_product_name
+    ON product (product_name);
+
+
+-- ============================================
+-- TABLA DE INGREDIENTES DE RECETA
+-- ============================================
+CREATE TABLE IF NOT EXISTS recipe_ingredients (
+    recipe_ingredient_id UUID PRIMARY KEY,
+
+    product_id UUID NOT NULL
+        REFERENCES product(product_id)
         ON UPDATE CASCADE
         ON DELETE CASCADE,
 
-    -- 🔗 FK hacia INVENTARIO
-    CONSTRAINT fk_recipe_items_inventory
-        FOREIGN KEY (inventory_item_id)
-        REFERENCES inventory_items (inventory_item_id)
+    inventory_item_id UUID NOT NULL
+        REFERENCES inventory_items(inventory_item_id)
         ON UPDATE CASCADE
-        ON DELETE RESTRICT
+        ON DELETE RESTRICT,
+
+    quantity NUMERIC(14,3) NOT NULL,
+    is_optional BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_product
+    ON recipe_ingredients (product_id);
+
+CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_inventory_item
+    ON recipe_ingredients (inventory_item_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_recipe_ingredients_product_inventory
+    ON recipe_ingredients (product_id, inventory_item_id);

@@ -1,38 +1,90 @@
-import { Money } from "@/shared";
-import { Product, ProductNameAlreadyExistsException, ProductRepository } from "@/context/products/domain";
+import { Money, Quantity } from "@/shared";
+
+import {
+    Product,
+    ProductNameAlreadyExistsException,
+    ProductRepository,
+} from "@/context/products/domain";
+
 import { CreateProductApplicationParams } from "@/context/products/domain/types/product-application";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
 import { ProductSku } from "@/context/products/domain/value-object/product-sku.value-object";
+import { TenantChecker } from "../../ports/tenant-checker";
 
 export class CreateProductUseCase {
     constructor(
         private readonly repository: ProductRepository,
+        private readonly tenantChecker: TenantChecker,
     ) { }
 
     public async execute(
         params: CreateProductApplicationParams,
     ): Promise<Product> {
 
-        const productName = ProductName.create(params.productName);
+        // 1. Validar que el tenant exista
+        const tenantExists = await this.tenantChecker.exists(
+            params.tenantId,
+        );
 
-        if (await this.repository.existsByName(productName)) {
+        if (!tenantExists) {
+            throw new Error("Tenant no encontrado");
+        }
+
+        // 2. Crear el Value Object del nombre
+        const productName = ProductName.create(
+            params.productName,
+        );
+
+        // 3. Validar que no exista otro producto
+        if (
+            await this.repository.existsByName(
+                productName,
+                params.tenantId,
+            )
+        ) {
             throw new ProductNameAlreadyExistsException(
                 productName.value,
             );
         }
 
-        const sequence = await this.repository.nextSkuSequence();
+        // 4. Obtener el siguiente SKU
+        const sequence =
+            await this.repository.nextSkuSequence();
 
+        // 5. Crear el producto
         const product = Product.create({
+            tenantId: params.tenantId,
             productCategoryId: params.productCategoryId,
             productName,
-            productDescription: params.productDescription,
-            productSku: ProductSku.fromNumber(sequence),
-            productImgUrl: params.productImgUrl,
-            productBasePrice: Money.of(params.productBasePrice),
-            profitMargin: params.profitMargin,
+            productDescription:
+                params.productDescription,
+            productSku:
+                ProductSku.fromNumber(sequence),
+            productImgUrl:
+                params.productImgUrl,
+            productBasePrice:
+                Money.of(params.productBasePrice),
+            profitMargin:
+                params.profitMargin,
         });
 
+        // 6. Agregar los ingredientes de la receta
+        for (const ingredient of params.recipe ?? []) {
+            product.addIngredient({
+                inventoryItemId:
+                    ingredient.inventoryItemId,
+
+                quantity:
+                    Quantity.of(
+                        ingredient.quantity,
+                    ),
+
+                isOptional:
+                    ingredient.isOptional,
+            });
+        }
+
+        // 7. Guardar producto y receta
         await this.repository.save(product);
 
         return product;
