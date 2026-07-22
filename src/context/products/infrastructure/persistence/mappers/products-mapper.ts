@@ -5,7 +5,10 @@ import { Product } from "@/context/products/domain";
 
 export class ProductMapper {
 
-    static toResponse(row: ProductEntity): ProductResponse {
+    static toResponse(
+        row: ProductEntity,
+        ingredients: ProductResponse["ingredients"] = [],
+    ): ProductResponse {
         return {
             id: row.id,
             tenantId: row.tenantId,
@@ -20,11 +23,14 @@ export class ProductMapper {
             productStatus: row.isActive,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
-            ingredients: [],
+            ingredients,
         };
     }
 
-    static toDomain(row: ProductEntity): Product {
+    static toDomain(
+        row: ProductEntity,
+        ingredients = [],
+    ): Product {
 
         return Product.fromPrimitives({
             id: row.id,
@@ -38,7 +44,7 @@ export class ProductMapper {
             costCurrency: "COP",
             profitMargin: Number(row.profitMargin),
             productStatus: row.isActive,
-            ingredients: [],
+            ingredients,
         });
 
     }

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, In, Repository } from "typeorm";
 
 import {
   Product,
@@ -193,11 +193,8 @@ export class ProductRepositoryImpl extends ProductRepository {
     params: SearchProductsApplicationParams,
   ): Promise<ProductResponse[]> {
     const query = this.productRepository
-      .createQueryBuilder("product")
-      .leftJoinAndSelect(
-        "product.ingredients",
-        "ingredient",
-      );
+      .createQueryBuilder("product");
+
     // Filtrar siempre por tenant
     query.andWhere(
       "product.tenantId = :tenantId",
@@ -246,7 +243,43 @@ export class ProductRepositoryImpl extends ProductRepository {
 
     const rows = await query.getMany();
 
-    return rows.map(ProductMapper.toResponse);
+    const recipeIngredientRepository =
+      this.dataSource.getRepository(RecipeIngredientEntity);
+
+    const recipeIngredients =
+      await recipeIngredientRepository.find({
+        where: {
+          productId: In(rows.map((row) => row.id)),
+        },
+      });
+
+    const ingredientsByProduct = new Map<
+      string,
+      RecipeIngredientEntity[]
+    >();
+
+    for (const ingredient of recipeIngredients) {
+      const list =
+        ingredientsByProduct.get(ingredient.productId) ?? [];
+
+      list.push(ingredient);
+
+      ingredientsByProduct.set(
+        ingredient.productId,
+        list,
+      );
+    }
+
+    return rows.map((row) => ({
+      ...ProductMapper.toResponse(row),
+      ingredients:
+        ingredientsByProduct.get(row.id)?.map((ingredient) => ({
+          id: ingredient.id,
+          inventoryItemId: ingredient.inventoryItemId,
+          quantity: ingredient.quantity,
+          isOptional: ingredient.isOptional,
+        })) ?? [],
+    }));
   }
 
   public async existsByName(
@@ -275,7 +308,7 @@ export class ProductRepositoryImpl extends ProductRepository {
         id: id.value,
         tenantId,
       },
-     
+
     });
 
     if (!row) {

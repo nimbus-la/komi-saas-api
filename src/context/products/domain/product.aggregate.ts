@@ -8,6 +8,7 @@ import { ProductPrimitives } from "./types/product-primitives";
 import { DuplicateIngredientException } from "./recipe/exceptions/duplicate-ingredient.exception";
 import { IngredientNotInRecipeException } from "./recipe/exceptions/ingredient-not-in-recipe.exception";
 import { RecipeIngredient } from "./recipe/recipe-ingredient.entity";
+import { RecipeParams } from "./types/product-application";
 
 export class Product extends AggregateRoot<ProductId> {
     private tenantId: string;
@@ -154,6 +155,7 @@ export class Product extends AggregateRoot<ProductId> {
         productBasePrice: Money;
         profitMargin: number;
         productStatus: boolean;
+        recipe?: RecipeParams[];
     }): void {
         this.productCategoryId = params.productCategoryId;
         this.productName = params.productName;
@@ -162,6 +164,7 @@ export class Product extends AggregateRoot<ProductId> {
         this.productBasePrice = params.productBasePrice;
         this.profitMargin = params.profitMargin;
         this.productStatus = params.productStatus;
+
     }
     public addIngredient(params: {
         inventoryItemId: string;

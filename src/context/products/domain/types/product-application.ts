@@ -19,11 +19,17 @@ export interface UpdateProductApplicationParams {
     tenantId: string;
     productCategoryId: string;
     productName: string;
-    productDescription: string | undefined;
-    productImgUrl: string | undefined;
+    productDescription?: string | undefined;
+    productImgUrl?: string | undefined;
     productBasePrice: string;
     profitMargin: number;
     productStatus: boolean;
+    recipe?: RecipeParams[];
+}
+export interface RecipeParams {
+    inventoryItemId: string;
+    quantity: string;
+    isOptional: boolean;
 }
 
 export interface SearchProductsApplicationParams {

@@ -127,7 +127,7 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
 
 
         const rows = await query.getMany();
-
+        
         return rows.map(ProductCategoryMapper.toDomain);
     }
 }
