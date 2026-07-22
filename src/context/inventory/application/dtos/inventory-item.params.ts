@@ -46,32 +46,20 @@ export interface UpdateInventoryItemParams {
 
 
 
-export interface RegisterWasteParams {
+export interface RegisterWasteUseCaseParams {
     itemId: string;
     branchId: string;
     quantity: string;
     reason: string;
-    batchId?: string;
     occurredAt?: string;
 };
 
 
 
-export interface AdjustBatchParams {
-    itemId: string;
-    batchId: string;
-    actualQuantity: string;
-    reason: string;
-    occurredAt?: string;
-};
-
-
-
-export interface CountStockParams {
+export interface CountStockUseCaseParams {
     itemId: string;
     branchId: string;
     actualTotal: string;
     reason: string;
-    surplusBatchId?: string;
     occurredAt?: string;
 };

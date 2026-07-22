@@ -12,10 +12,6 @@ export class RegisterWasteDto {
     reason!: string;
 
     @IsOptional()
-    @IsUUID()
-    batchId?: string;
-
-    @IsOptional()
     @IsISO8601()
     occurredAt?: string;
 };

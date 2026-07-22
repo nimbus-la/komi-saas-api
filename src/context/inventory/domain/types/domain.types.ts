@@ -88,7 +88,6 @@ export interface RegisterWasteParams {
     branchId: string;
     quantity: Quantity;
     reason: string;
-    batchId?: string;
     occurredAt?: Date;
 };
 
@@ -107,6 +106,5 @@ export interface CountStockParams {
     branchId: string;
     actualTotal: Quantity;
     reason: string;
-    surplusBatchId?: string;
     occurredAt?: Date;
 };

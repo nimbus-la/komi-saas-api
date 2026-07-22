@@ -1,7 +1,7 @@
 import { EventPublisher, Quantity } from "@/shared";
 
 import { InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
-import { CountStockParams } from "../../dtos/inventory-item.params";
+import { CountStockUseCaseParams } from "../../dtos/inventory-item.params";
 
 
 export class CountStockUseCase {
@@ -10,7 +10,7 @@ export class CountStockUseCase {
         private readonly eventPublisher: EventPublisher
     ) { };
 
-    public async execute(params: CountStockParams): Promise<void> {
+    public async execute(params: CountStockUseCaseParams): Promise<void> {
         const item = await this.repository.findById(InventoryItemId.create(params.itemId));
 
         if (item === null) {
@@ -21,7 +21,6 @@ export class CountStockUseCase {
             branchId: params.branchId,
             actualTotal: Quantity.of(params.actualTotal),
             reason: params.reason,
-            ...(params.surplusBatchId ? { surplusBatchId: params.surplusBatchId } : {}),
             ...(params.occurredAt ? { occurredAt: new Date(params.occurredAt) } : {}),
         });
 

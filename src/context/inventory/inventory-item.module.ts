@@ -9,7 +9,6 @@ import { BranchCheckerAdapter, InventoryBatchEntity, InventoryItemController, In
 import { EventPublisher } from "@/shared";
 import { EventEmitterPublisher } from "@/infrastructure";
 import { RegisterWasteUseCase } from "./application/use-cases/register-waste/register-waste.use-case";
-import { AdjustBatchUseCase } from "./application/use-cases/adjust-batch/adjust-batch.use-case";
 import { CountStockUseCase } from "./application/use-cases/count-stock/count-stock.use-case";
 
 
@@ -72,11 +71,6 @@ import { CountStockUseCase } from "./application/use-cases/count-stock/count-sto
         {
             provide: RegisterWasteUseCase,
             useFactory: (r: InventoryItemRepository, e: EventPublisher) => new RegisterWasteUseCase(r, e),
-            inject: [InventoryItemRepository, EventPublisher],
-        },
-        {
-            provide: AdjustBatchUseCase,
-            useFactory: (r: InventoryItemRepository, e: EventPublisher) => new AdjustBatchUseCase(r, e),
             inject: [InventoryItemRepository, EventPublisher],
         },
         {

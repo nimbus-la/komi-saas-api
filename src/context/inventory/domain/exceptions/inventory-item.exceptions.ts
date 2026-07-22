@@ -231,36 +231,13 @@ export class NoAdjustmentDifferenceException extends DomainException {
 
 
 
-/** El lote indicado no pertenece a la sucursal de la operación. Código 1335. */
-export class BatchBranchMismatchException extends DomainException {
-    constructor(batchId: string, branchId: string) {
-        super({
-            code: '1335',
-            detail: `El lote ${batchId} no pertenece a la sucursal ${branchId}.`
-        });
-    };
-};
-
-
-
-/** Sobrante de conteo pero sin lotes activos a los que asignarlo. Código 1336. */
-export class NoBatchToAdjustException extends DomainException {
-    constructor(branchId: string) {
-        super({
-            code: '1336',
-            detail: `La sucursal ${branchId} no tiene lotes activos: registre una entrada en vez de un conteo.`
-        });
-    };
-};
-
-
-
-/** Conteo hacia arriba de un perecedero sin indicar el lote. Código 1337. */
-export class BatchRequiredForPerishableException extends DomainException {
+/** El conteo físico da MÁS de lo que hay en sistema: el sobrante debe registrarse
+ *  como una entrada (con su costo y vencimiento), no como un ajuste. Código 1338. */
+export class CountIncreaseNotAllowedException extends DomainException {
     constructor(itemId: string) {
         super({
-            code: '1337',
-            detail: `El item ${itemId} es perecedero: indique a qué lote pertenece el sobrante, o regístrelo como una entrada nueva con su propia fecha de vencimiento.`
+            code: '1338',
+            detail: `El conteo del item ${itemId} supera el stock registrado. El sobrante debe registrarse como una entrada de mercancía, no como un conteo.`
         });
     };
 };

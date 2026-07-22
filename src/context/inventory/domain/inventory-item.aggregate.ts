@@ -1,8 +1,8 @@
 import { AggregateRoot, Money, Quantity } from "@/shared";
 
-import { AdjustBatchParams, AdjustedBatchDetail, ConsumedBatchDetail, CountStockParams, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
+import { AdjustedBatchDetail, ConsumedBatchDetail, CountStockParams, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { AmbiguousBranchScopeException, BatchBranchMismatchException, BatchNotFoundException, BatchRequiredForPerishableException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NoBatchToAdjustException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { AmbiguousBranchScopeException, CountIncreaseNotAllowedException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -416,14 +416,13 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
 
     /**
-     * Registra una MERMA: producto perdido (vencido, dañado, derramado, robado).
-     * El dato registrado era CIERTO; la mercancía ya no está. El costo unitario de
-     * los lotes NO cambia: se perdió producto, no se corrigió un precio.
+     * Registra una MERMA por CANTIDAD TOTAL: el usuario informa cuánto se perdió en
+     * una sucursal y el motivo; el dominio reparte esa cantidad entre los lotes
+     * activos por FEFO. El costo unitario de cada lote NO cambia (se perdió
+     * producto, no se corrigió un precio); cada lote tocado aporta su costo real.
      *
-     * Dos modos:
-     *   - Con batchId: merma un lote concreto (ej. un vencido que se bota).
-     *   - Sin batchId: se reparte por FEFO sobre los lotes ACTIVOS de la sucursal,
-     *     igual que un consumo ("se cayó medio kilo, no sé de qué lote era").
+     * El usuario razona en totales ("se dañaron 500 g"); el sistema resuelve los
+     * lotes y deja la trazabilidad por lote en la bitácora.
      */
     public registerWaste(params: RegisterWasteParams): void {
         const reason = params.reason.trim();
@@ -437,55 +436,38 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         };
 
         const occurredOn = params.occurredAt ?? new Date();
+        const available = this.currentStockForBranch(params.branchId, occurredOn);
+
+        if (params.quantity.isGreaterThan(available)) {
+            throw new InsufficientStockException(
+                this.id.value, params.quantity.getValue(), available.getValue()
+            );
+        };
+
+        const ordered = this.activateBatchesOfBranch(params.branchId, occurredOn)
+            .sort(InventoryItem.compararPorFefo);
+
+
+        let pending = params.quantity;
         const wastedBatches: WastedBatchDetail[] = [];
 
-        if (params.batchId !== undefined) {
-            const batch = this.findBatch(params.batchId);
+        for (const batch of ordered) {
+            if (pending.isZero()) break;
 
-            if (batch.getBranchId() !== params.branchId) {
-                throw new BatchBranchMismatchException(params.batchId, params.branchId);
-            };
+            const take = pending.isGreaterThan(batch.getRemaining())
+                ? batch.getRemaining()
+                : pending;
 
-            batch.waste(params.quantity);
+            batch.waste(take);
 
             wastedBatches.push({
                 batchId: batch.getId(),
-                quantity: params.quantity.getValue(),
+                quantity: take.getValue(),
                 unitCostAmount: batch.getUnitCost().getAmount(),
                 unitCostCurrency: batch.getUnitCost().currency,
             });
-        } else {
-            const available = this.currentStockForBranch(params.branchId, occurredOn);
 
-            if (params.quantity.isGreaterThan(available)) {
-                throw new InsufficientStockException(
-                    this.id.value, params.quantity.getValue(), available.getValue()
-                );
-            };
-
-            const ordered = this.activateBatchesOfBranch(params.branchId, occurredOn)
-                .sort(InventoryItem.compararPorFefo);
-
-            let pending = params.quantity;
-
-            for (const batch of ordered) {
-                if (pending.isZero()) break;
-
-                const take = pending.isGreaterThan(batch.getRemaining())
-                    ? batch.getRemaining()
-                    : pending;
-
-                batch.waste(take);
-
-                wastedBatches.push({
-                    batchId: batch.getId(),
-                    quantity: take.getValue(),
-                    unitCostAmount: batch.getUnitCost().getAmount(),
-                    unitCostCurrency: batch.getUnitCost().currency,
-                });
-
-                pending = pending.subtract(take);
-            };
+            pending = pending.subtract(take);
         };
 
         this.registerEvent(
@@ -505,67 +487,18 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
 
     /**
-     * AJUSTA un lote a su cantidad REAL. El usuario declara CUÁNTO HAY en ese lote
-     * y el sistema calcula la diferencia y su dirección. Puede subir o bajar: al
-     * elegir el lote, el usuario dice de qué entrada es el sobrante, y con eso
-     * queda determinado su costo.
+     * CONTEO FÍSICO por CANTIDAD TOTAL: el usuario declara cuánto hay EN TOTAL del
+     * item en una sede y el motivo. El dominio compara contra el stock del sistema:
      *
-     * Caso de error de captura: si además el costo se digitó mal, no basta ajustar;
-     * hay que anular el lote (ajustar a cero) y volver a registrarlo con los datos
-     * correctos y su receivedAt original.
-     */
-    public adjustBatch(params: AdjustBatchParams): void {
-        const reason = params.reason.trim();
-
-        if (reason.length === 0) {
-            throw new ReasonRequiredException('ajuste');
-        };
-
-        const batch = this.findBatch(params.batchId);
-        const current = batch.getRemaining();
-
-        const isIncrease = params.actualQuantity.isGreaterThan(current);
-        const isDecrease = current.isGreaterThan(params.actualQuantity);
-
-        if (!isIncrease && !isDecrease) {
-            throw new NoAdjustmentDifferenceException(`el lote ${params.batchId}`);
-        };
-
-        const delta = isIncrease
-            ? params.actualQuantity.subtract(current)
-            : current.subtract(params.actualQuantity);
-
-        batch.adjustTo(params.actualQuantity);
-
-        this.registerEvent(
-            new StockAdjustedEvent({
-                itemId: this.id.value,
-                tenantId: this.tenantId,
-                branchId: batch.getBranchId(),
-                reason,
-                adjustedBatches: [{
-                    batchId: batch.getId(),
-                    direction: isIncrease ? 'IN' : 'OUT',
-                    quantity: delta.getValue(),
-                    unitCostAmount: batch.getUnitCost().getAmount(),
-                    unitCostCurrency: batch.getUnitCost().currency,
-                }],
-                occurredOn: params.occurredAt ?? new Date(),
-            })
-        );
-
-        this.touch();
-    };
-
-
-
-    /**
-     * CONTEO FÍSICO: el usuario declara cuánto hay EN TOTAL del item en una sede.
-     * El sistema resuelve los lotes:
-     *   - Faltante: se reparte por FEFO (no inventa nada, solo saca).
-     *   - Sobrante: hay que decidir a qué lote pertenece (define costo y
-     *     vencimiento). Con surplusBatchId va a ese; sin él y NO perecedero, al
-     *     lote activo más reciente; sin él y PERECEDERO, se rechaza.
+     *   - Igual        -> no hay nada que ajustar.
+     *   - Menos (falta)-> se reparte el faltante por FEFO (un ADJUSTMENT_OUT por
+     *                     lote afectado, con su costo real).
+     *   - Más (sobra)  -> se RECHAZA: un conteo no puede crear inventario de la
+     *                     nada, porque el sobrante no tiene costo ni vencimiento
+     *                     conocidos. Ese sobrante se registra como una ENTRADA.
+     *
+     * Nunca sube. El usuario razona en totales; la bitácora guarda el detalle por
+     * lote.
      */
     public countStock(params: CountStockParams): void {
         const reason = params.reason.trim();
@@ -577,53 +510,41 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         const occurredOn = params.occurredAt ?? new Date();
         const current = this.currentStockForBranch(params.branchId, occurredOn);
 
-        const isIncrease = params.actualTotal.isGreaterThan(current);
-        const isDecrease = current.isGreaterThan(params.actualTotal);
+        if (params.actualTotal.isGreaterThan(current)) {
+            throw new CountIncreaseNotAllowedException(this.id.value);
+        };
 
-        if (!isIncrease && !isDecrease) {
+        if (!current.isGreaterThan(params.actualTotal)) {
+            // actualTotal == current: no hay diferencia.
             throw new NoAdjustmentDifferenceException(`la sucursal ${params.branchId}`);
         };
 
-        const active = this.activateBatchesOfBranch(params.branchId, occurredOn);
+        const missing = current.subtract(params.actualTotal);
+
+        const ordered = this.activateBatchesOfBranch(params.branchId, occurredOn)
+            .sort(InventoryItem.compararPorFefo);
+
+        let pending = missing;
         const adjustedBatches: AdjustedBatchDetail[] = [];
 
-        if (isIncrease) {
-            const target = this.resolveSurplusBatch(active, params.branchId, params.surplusBatchId);
-            const delta = params.actualTotal.subtract(current);
+        for (const batch of ordered) {
+            if (pending.isZero()) break;
 
-            target.adjustTo(target.getRemaining().add(delta));
+            const take = pending.isGreaterThan(batch.getRemaining())
+                ? batch.getRemaining()
+                : pending;
+
+            batch.adjustTo(batch.getRemaining().subtract(take));
 
             adjustedBatches.push({
-                batchId: target.getId(),
-                direction: 'IN',
-                quantity: delta.getValue(),
-                unitCostAmount: target.getUnitCost().getAmount(),
-                unitCostCurrency: target.getUnitCost().currency,
+                batchId: batch.getId(),
+                direction: 'OUT',
+                quantity: take.getValue(),
+                unitCostAmount: batch.getUnitCost().getAmount(),
+                unitCostCurrency: batch.getUnitCost().currency,
             });
 
-        } else {
-            let pending = current.subtract(params.actualTotal);
-            const ordered = [...active].sort(InventoryItem.compararPorFefo);
-
-            for (const batch of ordered) {
-                if (pending.isZero()) break;
-
-                const take = pending.isGreaterThan(batch.getRemaining())
-                    ? batch.getRemaining()
-                    : pending;
-
-                batch.adjustTo(batch.getRemaining().subtract(take));
-
-                adjustedBatches.push({
-                    batchId: batch.getId(),
-                    direction: 'OUT',
-                    quantity: take.getValue(),
-                    unitCostAmount: batch.getUnitCost().getAmount(),
-                    unitCostCurrency: batch.getUnitCost().currency,
-                });
-
-                pending = pending.subtract(take);
-            };
+            pending = pending.subtract(take);
         };
 
         this.registerEvent(
@@ -642,67 +563,11 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
 
 
-    /**
-     * Busca un lote propio por id. El batchId entra como PARÁMETRO, no como puerta
-     * de entrada: el lote sigue siendo entidad hija y solo se llega a él a través
-     * del root.
-     */
-    private findBatch(batchId: string): InventoryBatch {
-        const batch = this.batches.find(
-            (candidate: InventoryBatch) => candidate.getId() === batchId
-        );
-
-        if (batch === undefined) {
-            throw new BatchNotFoundException(batchId, this.id.value);
-        };
-
-        return batch;
-    };
-
-
-
     /** Lotes utilizables de una sucursal: con existencias y sin vencer. */
     private activateBatchesOfBranch(branchId: string, date: Date): InventoryBatch[] {
         return this.batches.filter(
             (batch: InventoryBatch) => batch.getBranchId() === branchId && batch.isActive(date)
         );
-    };
-
-
-
-    /**
-     * Decide a qué lote se le carga un sobrante de conteo. Aísla la regla más
-     * delicada: en un perecedero, elegir el lote equivocado es asignar una
-     * caducidad equivocada.
-     */
-    private resolveSurplusBatch(
-        active: InventoryBatch[],
-        branchId: string,
-        surplusBatchId?: string,
-    ): InventoryBatch {
-        if (surplusBatchId !== undefined) {
-            const declared = this.findBatch(surplusBatchId);
-
-            if (declared.getBranchId() !== branchId) {
-                throw new BatchBranchMismatchException(surplusBatchId, branchId);
-            };
-
-            return declared;
-        };
-
-        if (this.isPerishable) {
-            throw new BatchRequiredForPerishableException(this.id.value);
-        };
-
-        const newest = [...active].sort(
-            (firstLote, secondLote) => secondLote.getReceivedAt().getTime() - firstLote.getReceivedAt().getTime()
-        )[0];
-
-        if (newest === undefined) {
-            throw new NoBatchToAdjustException(branchId);
-        };
-
-        return newest;
     };
 
 

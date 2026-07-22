@@ -12,10 +12,6 @@ export class CountStockDto {
     reason!: string;
 
     @IsOptional()
-    @IsUUID()
-    surplusBatchId?: string;
-
-    @IsOptional()
     @IsISO8601()
     occurredAt?: string;
 };
