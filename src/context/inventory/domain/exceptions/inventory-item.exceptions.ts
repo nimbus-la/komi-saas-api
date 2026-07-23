@@ -192,3 +192,52 @@ export class MinimumStockValueRequiredException extends DomainException {
         });
     };
 };
+
+
+
+/** El lote indicado no pertenece al item (o está agotado y no se cargó). Código 1332. */
+export class BatchNotFoundException extends DomainException {
+    constructor(batchId: string, itemId: string) {
+        super({
+            code: '1332',
+            detail: `El lote ${batchId} no pertenece al item ${itemId} o ya está agotado.`
+        });
+    };
+};
+
+
+
+/** Merma, ajuste o conteo sin motivo. Código 1333. */
+export class ReasonRequiredException extends DomainException {
+    constructor(operation: string) {
+        super({
+            code: '1333',
+            detail: `La operación de ${operation} requiere un motivo.`
+        });
+    };
+};
+
+
+
+/** Ajuste/conteo cuya cantidad real coincide con la registrada. Código 1334. */
+export class NoAdjustmentDifferenceException extends DomainException {
+    constructor(reference: string) {
+        super({
+            code: '1334',
+            detail: `No hay diferencia que ajustar en ${reference}: la cantidad real coincide con la registrada.`
+        });
+    };
+};
+
+
+
+/** El conteo físico da MÁS de lo que hay en sistema: el sobrante debe registrarse
+ *  como una entrada (con su costo y vencimiento), no como un ajuste. Código 1338. */
+export class CountIncreaseNotAllowedException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1338',
+            detail: `El conteo del item ${itemId} supera el stock registrado. El sobrante debe registrarse como una entrada de mercancía, no como un conteo.`
+        });
+    };
+};

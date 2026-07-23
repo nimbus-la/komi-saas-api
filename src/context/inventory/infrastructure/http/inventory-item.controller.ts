@@ -7,6 +7,10 @@ import { ReceiveStockDto } from "./dtos/receive-stock.dto";
 import { ConsumeStockDto } from "./dtos/consume-stock.dto";
 import { UpdateItemDto } from "./dtos/update-item.dto";
 import { SetMinimumStockDto } from "./dtos/set-minimum-stock.dto";
+import { RegisterWasteUseCase } from "../../application/use-cases/register-waste/register-waste.use-case";
+import { CountStockUseCase } from "../../application/use-cases/count-stock/count-stock.use-case";
+import { RegisterWasteDto } from "./dtos/register-waste.dto";
+import { CountStockDto } from "./dtos/count-stock.dto";
 
 
 @UseInterceptors(ResponseInterceptor)
@@ -22,6 +26,8 @@ export class InventoryItemController {
         private readonly searchItemBatches: SearchItemBatchesUseCase,
         private readonly updateItem: UpdateInventoryItemUseCase,
         private readonly setMinimumStock: SetMinimumStockUseCase,
+        private readonly registerWaste: RegisterWasteUseCase,
+        private readonly countStock: CountStockUseCase,
     ) { };
 
 
@@ -76,6 +82,34 @@ export class InventoryItemController {
             branchId: dto.branchId,
             quantity: dto.quantity,
             ...(dto.consumedAt ? { consumedAt: dto.consumedAt } : {}),
+        });
+    };
+
+
+
+    /** Merma por cantidad total: FEFO reparte entre lotes. */
+    @Post('waste/:id')
+    public async waste(@Param('id') id: string, @Body() dto: RegisterWasteDto): Promise<void> {
+        await this.registerWaste.execute({
+            itemId: id,
+            branchId: dto.branchId,
+            quantity: dto.quantity,
+            reason: dto.reason,
+            ...(dto.occurredAt ? { occurredAt: dto.occurredAt } : {}),
+        });
+    };
+
+
+
+    /** Conteo físico: cuadra el total del item en una sucursal (solo hacia abajo). */
+    @Post('count/:id')
+    public async count(@Param('id') id: string, @Body() dto: CountStockDto): Promise<void> {
+        await this.countStock.execute({
+            itemId: id,
+            branchId: dto.branchId,
+            actualTotal: dto.actualTotal,
+            reason: dto.reason,
+            ...(dto.occurredAt ? { occurredAt: dto.occurredAt } : {}),
         });
     };
 
