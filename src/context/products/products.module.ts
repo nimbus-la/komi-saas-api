@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ProductController } from './infrastructure/http/product.controller';
 import { ProductEntity } from './infrastructure/persistence/models/product.entity';
-import { ProductRepositoryImpl, ProductService } from './infrastructure/persistence/repositories/product.repository.impl';
+import { ProductRepositoryImpl } from './infrastructure/persistence/repositories/product.repository.impl';
 import { ProductRepository } from './domain';
 import { ProductCategoryEntity } from '../product-categories/infrastructure/persistence/models/product-category.entity';
 import { CategoriesModule } from "../product-categories/categories.module";
@@ -29,8 +29,6 @@ import { RecipeIngredientEntity } from "./infrastructure/persistence/models/reci
     ProductController,
   ],
   providers: [
-    ProductService,
-
     {
       provide: ProductRepository,
       useClass: ProductRepositoryImpl,

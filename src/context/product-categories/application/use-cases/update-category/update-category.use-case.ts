@@ -3,6 +3,8 @@ import { Injectable } from "@nestjs/common";
 import {
     ProductCategoryRepository,
     ProductCategoryNotFoundException,
+    ProductCategoryAlreadyActivatedException,
+    ProductCategoryAlreadyDeactivatedException,
 } from "../../../domain";
 import { CategoryName } from "@/context/product-categories/domain/exceptions/InvalidCategoryNameException";
 
@@ -39,15 +41,19 @@ export class UpdateCategoryUseCase {
         if (params.estado !== undefined) {
             const currentState = category.toPrimitives().isActive;
 
-            if (params.estado !== currentState) {
-                if (params.estado) {
-                    category.activate();
-                } else {
-                    category.deactivate();
+            if (params.estado === currentState) {
+                if (currentState) {
+                    throw new ProductCategoryAlreadyActivatedException();
                 }
+                throw new ProductCategoryAlreadyDeactivatedException();
+            }
+
+            if (params.estado) {
+                category.activate();
+            } else {
+                category.deactivate();
             }
         }
-
         await this.repository.update(category);
     }
 }

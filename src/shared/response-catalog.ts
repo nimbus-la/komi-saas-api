@@ -12,7 +12,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '0001': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'No se encontraron resultados.' },
     '0002': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Sucursal no encontrada. ' },
     '0003': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Tenant no encontrado ' },
-    
+
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Los datos enviados no son válidos.' },
     '1001': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La unidad de medida no es válida.' },
@@ -52,6 +52,31 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1326': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar.' },
     '1330': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
     '1331': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Debe especificar una sucursal para esta operación.' },
+
+    // Rangos de códigos de error
+    // Productos: 1400 - 1433
+    '1400': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró el producto que intentas editar.' },
+    '1401': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del producto es inválido.' },
+    '1402': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe un producto registrado con ese nombre' },
+    '1403': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se pudo obtener el siguiente valor de la secuencia de SKU.' },
+    '1404': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra desactivado.' },
+    '1405': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra activado.' },
+    '1406': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ítem de inventario especificado no pertenece al tenant proporcionado.' },
+    '1407': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen de beneficio no puede ser menor que 0.' },
+
+    // Categorías: 1434 - 1466
+    '1434': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría que deseas editar.' },
+    '1435': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe una categoría registrada con ese nombre.' },
+    '1436': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra activada.' },
+    '1437': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra desactivada.' },
+    '1438': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la categoría debe tener al menos 2 caracteres.' },
+    '1439': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la categoría debe tener como máximo 120 caracteres.' },
+
+    // Recetas: 1467 - 4999
+    '1467': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado ya se encuentra agregado a la receta.' },
+    '1468': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente no se encuentra agregado a la receta.' },
+    '1469': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se encontró el ítem de inventario.' },
+    '1470': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado no está disponible para este negocio.' },
 
     '1500': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad del movimiento debe ser mayor a cero.' },
     '1501': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Este tipo de movimiento requiere un motivo.' },

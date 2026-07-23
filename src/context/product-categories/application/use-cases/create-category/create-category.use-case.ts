@@ -1,5 +1,6 @@
 import {
     ProductCategory,
+    ProductCategoryAlreadyExistsException,
     ProductCategoryRepository,
 } from "../../../domain";
 import { CategoryName } from "@/context/product-categories/domain/exceptions/InvalidCategoryNameException";
@@ -24,9 +25,10 @@ export class CreateCategoryUseCase {
         const exists = await this.repository.existsByName(params.name, params.tenantId);
 
         if (exists) {
-            throw new Error("La categoría ya existe");
+            throw new ProductCategoryAlreadyExistsException(
+                params.name,
+            );
         }
-
         const category = ProductCategory.create({
             tenantId: params.tenantId,
             name: CategoryName.create(params.name),

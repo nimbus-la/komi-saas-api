@@ -1,8 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
 
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
 import { CategoryService } from "../persistence/services/category.service";
+import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
+
+@UseInterceptors(ResponseInterceptor)
+@UseFilters(AllExceptionsFilter)
 
 @Controller("categories")
 export class CategoryController {
@@ -11,32 +15,13 @@ export class CategoryController {
     ) { }
 
     @Post()
-    async create(
-        @Body() dto: CreateCategoryDto,
-    ) {
+    async create(@Body() dto: CreateCategoryDto) {
         await this.service.create(dto);
-
-        return {
-            status: "SUCCESS",
-            code: "0000",
-            statusCode: 200,
-            message: "Categoría creada con éxito",
-        };
     }
 
     @Patch(':id')
-    async update(
-        @Param('id') id: string,
-        @Body() dto: UpdateCategoryDto,
-    ) {
+    async update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
         await this.service.update(id, dto);
-
-        return {
-            status: "SUCCESS",
-            code: "0000",
-            statusCode: 200,
-            message: 'Categoría actualizada con éxito',
-        };
     }
 
     @Get()

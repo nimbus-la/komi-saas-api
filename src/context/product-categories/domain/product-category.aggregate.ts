@@ -3,6 +3,7 @@ import { AggregateRoot } from "@/shared";
 import { CategoryId } from "./value-object/category-id.value-object";
 import { CategoryPrimitives } from "./types/product-primitives";
 import { CategoryName } from "./exceptions/InvalidCategoryNameException";
+import { ProductCategoryAlreadyActivatedException, ProductCategoryAlreadyDeactivatedException } from "./exceptions/product-category.exception";
 
 export class ProductCategory extends AggregateRoot<CategoryId> {
     private tenantId: string;
@@ -63,7 +64,7 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
 
     public activate(): void {
         if (this.isActive) {
-            throw new Error("La categoría ya se encuentra activada.");
+            throw new ProductCategoryAlreadyActivatedException();
         }
 
         this.isActive = true;
@@ -71,7 +72,7 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
 
     public deactivate(): void {
         if (!this.isActive) {
-            throw new Error("La categoría ya se encuentra desactivada.");
+            throw new ProductCategoryAlreadyDeactivatedException();
         }
 
         this.isActive = false;
