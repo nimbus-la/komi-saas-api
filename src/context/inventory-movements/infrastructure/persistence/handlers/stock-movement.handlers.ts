@@ -92,8 +92,8 @@ export class StockMovementHandlers {
         }));
 
         await this.recordAll(
-            MovementType.Waste, 
-            event.eventName, 
+            MovementType.Waste,
+            event.eventName,
             movements
         );
     };
