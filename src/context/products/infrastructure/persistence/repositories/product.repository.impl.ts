@@ -3,8 +3,10 @@ import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, In, Repository } from "typeorm";
 
 import {
+  InventoryItemNotValidForTenantException,
   Product,
   ProductRepository,
+  SkuSequenceNotGeneratedException,
 } from "../../../domain";
 
 import { ProductEntity } from "../models/product.entity";
@@ -12,41 +14,9 @@ import { SearchProductsApplicationParams } from "../../../domain/types/product-a
 import { ProductResponse } from "../../../domain/types/product.response";
 import { ProductName } from "../../../domain/value-object/product-name.value-object";
 import { ProductId } from "../../../domain/value-object/product-id.value-object";
-import { CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "@/context/products/application";
-import { CreateProductDto } from "../../http/dto/create-product.dto";
-import { UpdateProductDto } from "../../http/dto/update-product.dto";
 import { ProductMapper } from "../mappers/products-mapper";
 import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
 import { InventoryItemEntity } from "@/context/inventory";
-import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
-
-@Injectable()
-export class ProductService {
-  constructor(
-    private readonly createProductUseCase: CreateProductUseCase,
-    private readonly updateProductUseCase: UpdateProductUseCase,
-    private readonly searchProductsUseCase: SearchProductsUseCase,
-
-  ) { }
-
-  async create(dto: CreateProductDto) {
-    return this.createProductUseCase.execute(dto);
-
-  }
-  async update(id: string, dto: UpdateProductDto) {
-    return this.updateProductUseCase.execute({
-      id,
-      ...dto,
-    });
-  }
-
-  async search(params: SearchProductsApplicationParams) {
-    return this.searchProductsUseCase.execute(params);
-  }
-  async findAll() {
-    return [];
-  }
-}
 
 @Injectable()
 export class ProductRepositoryImpl extends ProductRepository {
@@ -106,35 +76,12 @@ export class ProductRepositoryImpl extends ProductRepository {
       // 4. Guardar los ingredientes de la receta
       if (primitives.ingredients.length > 0) {
 
-        const ingredients =
-          primitives.ingredients.map(
-            (ingredient) => {
-
-              const entity =
-                new RecipeIngredientEntity();
-
-              entity.id =
-                ingredient.id;
-
-              entity.productId =
-                product.id.value;
-
-              entity.inventoryItemId =
-                ingredient.inventoryItemId;
-
-              entity.quantity =
-                ingredient.quantity;
-
-              entity.isOptional =
-                ingredient.isOptional;
-
-              return entity;
-            },
-          );
-
-        await recipeIngredientRepository.save(
-          ingredients,
+        const ingredients = ProductMapper.mapIngredients(
+          product.id.value,
+          primitives.ingredients,
         );
+
+        await recipeIngredientRepository.save(ingredients);
       }
     });
   }
@@ -169,19 +116,9 @@ export class ProductRepositoryImpl extends ProductRepository {
       });
 
       if (primitives.ingredients.length > 0) {
-        const ingredients = primitives.ingredients.map(
-          (ingredient) => {
-            const entity = new RecipeIngredientEntity();
-
-            entity.id = ingredient.id;
-            entity.productId = product.id.value;
-            entity.inventoryItemId =
-              ingredient.inventoryItemId;
-            entity.quantity = ingredient.quantity;
-            entity.isOptional = ingredient.isOptional;
-
-            return entity;
-          },
+        const ingredients = ProductMapper.mapIngredients(
+          product.id.value,
+          primitives.ingredients,
         );
 
         await recipeIngredientRepository.save(ingredients);
@@ -270,16 +207,14 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    return rows.map((row) => ({
-      ...ProductMapper.toResponse(row),
-      ingredients:
-        ingredientsByProduct.get(row.id)?.map((ingredient) => ({
-          id: ingredient.id,
-          inventoryItemId: ingredient.inventoryItemId,
-          quantity: ingredient.quantity,
-          isOptional: ingredient.isOptional,
-        })) ?? [],
-    }));
+    return rows.map((row) =>
+      ProductMapper.toResponse(
+        row,
+        ProductMapper.toIngredientsResponse(
+          ingredientsByProduct.get(row.id) ?? [],
+        ),
+      ),
+    );
   }
 
   public async existsByName(
@@ -301,14 +236,11 @@ export class ProductRepositoryImpl extends ProductRepository {
 
   public async findById(
     id: ProductId,
-    tenantId: string,
   ): Promise<Product | null> {
     const row = await this.productRepository.findOne({
       where: {
         id: id.value,
-        tenantId,
       },
-
     });
 
     if (!row) {
@@ -326,9 +258,7 @@ export class ProductRepositoryImpl extends ProductRepository {
     const first = rows[0];
 
     if (first === undefined) {
-      throw new Error(
-        "No se pudo obtener el siguiente valor de la secuencia de SKU.",
-      );
+      throw new SkuSequenceNotGeneratedException();
     }
 
     return Number(first.n);

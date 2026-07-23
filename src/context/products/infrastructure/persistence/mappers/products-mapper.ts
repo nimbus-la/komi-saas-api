@@ -2,6 +2,8 @@ import { ProductResponse } from "@/context/products/domain/types/product.respons
 import { ProductEntity } from "../models/product.entity";
 
 import { Product } from "@/context/products/domain";
+import { RecipeIngredientPrimitives } from "@/context/products/domain/recipe/recipe-ingredient-primitives";
+import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
 
 export class ProductMapper {
 
@@ -19,7 +21,7 @@ export class ProductMapper {
             productImgUrl: row.imageUrl ?? undefined,
             productBasePrice: row.basePrice,
             costCurrency: "COP",
-            profitMargin: Number(row.profitMargin),
+            profitMargin: row.profitMargin,
             productStatus: row.isActive,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
@@ -42,8 +44,10 @@ export class ProductMapper {
             productImgUrl: row.imageUrl ?? undefined,
             productBasePrice: row.basePrice,
             costCurrency: "COP",
-            profitMargin: Number(row.profitMargin),
+            profitMargin: row.profitMargin,
             productStatus: row.isActive,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
             ingredients,
         });
 
@@ -65,5 +69,49 @@ export class ProductMapper {
             profitMargin: primitives.profitMargin.toString(),
             isActive: primitives.productStatus,
         };
+    }
+    static toCreateResponse(product: Product) {
+        const primitives = product.toPrimitives();
+
+        return {
+            productCategoryId: primitives.productCategoryId,
+            tenantId: primitives.tenantId,
+            productName: primitives.productName,
+            productDescription: primitives.productDescription,
+            productImgUrl: primitives.productImgUrl,
+            productBasePrice: primitives.productBasePrice,
+            profitMargin: primitives.profitMargin,
+            recipe: primitives.ingredients.map((ingredient) => ({
+                inventoryItemId: ingredient.inventoryItemId,
+                quantity: ingredient.quantity,
+                isOptional: ingredient.isOptional,
+            })),
+        };
+    }
+    static mapIngredients(
+        productId: string,
+        ingredients: RecipeIngredientPrimitives[],
+    ): RecipeIngredientEntity[] {
+        return ingredients.map((ingredient) => {
+            const entity = new RecipeIngredientEntity();
+
+            entity.id = ingredient.id;
+            entity.productId = productId;
+            entity.inventoryItemId = ingredient.inventoryItemId;
+            entity.quantity = ingredient.quantity;
+            entity.isOptional = ingredient.isOptional;
+
+            return entity;
+        });
+    }
+    static toIngredientsResponse(
+        ingredients: RecipeIngredientEntity[],
+    ): ProductResponse["ingredients"] {
+        return ingredients.map((ingredient) => ({
+            id: ingredient.id,
+            inventoryItemId: ingredient.inventoryItemId,
+            quantity: ingredient.quantity,
+            isOptional: ingredient.isOptional,
+        }));
     }
 }

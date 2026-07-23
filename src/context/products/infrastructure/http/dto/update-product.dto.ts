@@ -5,22 +5,22 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Min,
-  MinLength,
   ValidateNested,
 } from "class-validator";
 import { UpdateRecipeIngredientDto } from "./update-recipe-ingredient.dto";
 
 
 export class UpdateProductDto {
+  @IsOptional()
   @IsUUID()
   productCategoryId!: string;
 
+  @IsOptional()
   @IsUUID()
   tenantId!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(2)
   productName!: string;
 
   @IsOptional()
@@ -31,14 +31,16 @@ export class UpdateProductDto {
   @IsString()
   productImgUrl?: string | undefined;
 
+  @IsOptional()
   @IsBoolean()
   productStatus!: boolean;
 
+  @IsOptional()
   @IsString()
   productBasePrice!: string;
 
+  @IsOptional()
   @IsNumber()
-  @Min(0)
   profitMargin!: number;
 
   @IsOptional()
