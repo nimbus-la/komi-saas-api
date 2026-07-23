@@ -4,6 +4,7 @@ import {
     Product,
     ProductNameAlreadyExistsException,
     ProductRepository,
+    TenantNotFoundException,
 } from "@/context/products/domain";
 
 import { CreateProductApplicationParams } from "@/context/products/domain/types/product-application";
@@ -27,7 +28,9 @@ export class CreateProductUseCase {
         );
 
         if (!tenantExists) {
-            throw new Error("Tenant no encontrado");
+            throw new TenantNotFoundException(
+                params.tenantId,
+            );
         }
 
         // 2. Crear el Value Object del nombre
@@ -56,16 +59,12 @@ export class CreateProductUseCase {
             tenantId: params.tenantId,
             productCategoryId: params.productCategoryId,
             productName,
-            productDescription:
-                params.productDescription,
-            productSku:
-                ProductSku.fromNumber(sequence),
-            productImgUrl:
-                params.productImgUrl,
-            productBasePrice:
-                Money.of(params.productBasePrice),
-            profitMargin:
-                params.profitMargin,
+            productDescription: params.productDescription,
+            productSku: ProductSku.fromNumber(sequence),
+            productImgUrl: params.productImgUrl,
+            productBasePrice: Money.of(params.productBasePrice),
+            profitMargin: params.profitMargin,
+
         });
 
         // 6. Agregar los ingredientes de la receta

@@ -13,9 +13,8 @@ export abstract class ProductRepository {
         params: SearchProductsApplicationParams,
     ): Promise<ProductResponse[]>;
 
-    abstract findById(
+    public abstract findById(
         id: ProductId,
-        tenantId: string,
     ): Promise<Product | null>;
 
     abstract existsByName(

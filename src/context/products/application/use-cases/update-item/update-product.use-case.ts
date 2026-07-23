@@ -19,22 +19,45 @@ export class UpdateProductUseCase {
 
         const product = await this.repository.findById(
             ProductId.create(params.id),
-            params.tenantId,
         );
 
         if (!product) {
             throw new ProductNotFoundException(params.id);
         }
 
+        const current = product.toPrimitives();
+
         product.update({
-            productCategoryId: params.productCategoryId,
-            productName: ProductName.create(params.productName),
-            productDescription: params.productDescription,
-            productImgUrl: params.productImgUrl,
-            productBasePrice: Money.of(params.productBasePrice),
-            profitMargin: params.profitMargin,
-            productStatus: params.productStatus,
+            productCategoryId:
+                params.productCategoryId ?? current.productCategoryId,
+
+            productName:
+                params.productName
+                    ? ProductName.create(params.productName)
+                    : ProductName.create(current.productName),
+
+            productDescription:
+                params.productDescription ?? current.productDescription,
+
+            productImgUrl:
+                params.productImgUrl ?? current.productImgUrl,
+
+            productBasePrice:
+                params.productBasePrice !== undefined
+                    ? Money.of(params.productBasePrice)
+                    : Money.of(current.productBasePrice),
+
+            profitMargin:
+                params.profitMargin ?? current.profitMargin,
         });
+        if (params.productStatus !== undefined) {
+            if (params.productStatus) {
+                product.activate();
+            } else {
+                product.deactivate();
+            }
+        }
+
         if (params.recipe) {
             product.replaceRecipe(
                 params.recipe.map((ingredient) => ({

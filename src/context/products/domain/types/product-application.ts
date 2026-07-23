@@ -1,3 +1,5 @@
+import { ProfitMargin } from "../value-object/profit-margin.value-object";
+
 export interface CreateProductApplicationParams {
     tenantId: string;
     productCategoryId: string;
@@ -5,15 +7,16 @@ export interface CreateProductApplicationParams {
     productDescription: string | undefined;
     productImgUrl: string | undefined;
     productBasePrice: string;
-    profitMargin: number;
+    profitMargin: ProfitMargin;
     recipe?: CreateProductRecipeIngredientParams[];
-
 }
+
 export interface CreateProductRecipeIngredientParams {
     inventoryItemId: string;
     quantity: string;
     isOptional: boolean;
 }
+
 export interface UpdateProductApplicationParams {
     id: string;
     tenantId: string;
@@ -22,7 +25,7 @@ export interface UpdateProductApplicationParams {
     productDescription?: string | undefined;
     productImgUrl?: string | undefined;
     productBasePrice: string;
-    profitMargin: number;
+    profitMargin: ProfitMargin;
     productStatus: boolean;
     recipe?: RecipeParams[];
 }
@@ -33,6 +36,7 @@ export interface RecipeParams {
 }
 
 export interface SearchProductsApplicationParams {
+    productId?: string;
     tenantId: string;
     text?: string;
     productCategoryId?: string;
