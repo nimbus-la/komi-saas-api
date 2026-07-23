@@ -1,6 +1,12 @@
 import { DomainEvent } from "@/shared";
 import { WastedBatchDetail } from "../types/domain.types";
 
+
+/**
+ * Se registró una MERMA: producto perdido físicamente (caída, derrame, daño).
+ * Lleva el detalle por lote porque el reparto FEFO puede tocar varios, y cada uno
+ * aporta su propio costo real.
+ */
 export class StockWastedEvent extends DomainEvent {
     public readonly eventName = 'inventory.stock.wasted';
 

@@ -1,6 +1,12 @@
 import { DomainEvent } from "@/shared";
 import { AdjustedBatchDetail } from "../types/domain.types";
 
+
+/**
+ * Se ajustó el stock por CONTEO FÍSICO. Con el diseño actual el conteo solo baja
+ * (un sobrante se registra como entrada), así que en la práctica todos los
+ * detalles vienen con direction 'OUT'.
+ */
 export class StockAdjustedEvent extends DomainEvent {
     public readonly eventName = 'inventory.stock.adjusted';
 

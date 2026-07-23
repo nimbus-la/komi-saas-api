@@ -15,6 +15,8 @@ export * from './entities/inventory-stock/inventory-stock.entity';
 export * from './events/inventory-item-created.event';
 export * from './events/stock-consumed.event';
 export * from './events/stock-received.event';
+export * from './events/stock-wasted.event';
+export * from './events/stock-adjusted.event';
 
 
 export * from './exceptions/inventory-batch.exceptions';
