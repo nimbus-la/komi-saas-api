@@ -1,28 +1,32 @@
 import { Money, Quantity } from "@/shared";
 
+import { CreateProductApplicationParams } from "@/context/products/domain/types/product-application";
+import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
+import { ProductSku } from "@/context/products/domain/value-object/product-sku.value-object";
+import { TenantChecker } from "../../ports/tenant-checker";
+import { ProductCategoryChecker } from "../../ports/product-category-checker";
+import { InventoryItemChecker } from "../../ports/inventory-item-checker";
+import { ProductCategoryNotFoundException } from "@/context/product-categories";
+
 import {
+    InventoryItemNotValidForTenantException,
     Product,
     ProductNameAlreadyExistsException,
     ProductRepository,
     TenantNotFoundException,
 } from "@/context/products/domain";
 
-import { CreateProductApplicationParams } from "@/context/products/domain/types/product-application";
-import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
-import { ProductSku } from "@/context/products/domain/value-object/product-sku.value-object";
-import { TenantChecker } from "../../ports/tenant-checker";
-
 export class CreateProductUseCase {
     constructor(
         private readonly repository: ProductRepository,
         private readonly tenantChecker: TenantChecker,
+        private readonly categoryChecker: ProductCategoryChecker,
+        private readonly inventoryChecker: InventoryItemChecker,
     ) { }
 
     public async execute(
         params: CreateProductApplicationParams,
     ): Promise<Product> {
-
-        // 1. Validar que el tenant exista
         const tenantExists = await this.tenantChecker.exists(
             params.tenantId,
         );
@@ -33,12 +37,37 @@ export class CreateProductUseCase {
             );
         }
 
-        // 2. Crear el Value Object del nombre
+        const categoryExists =
+            await this.categoryChecker.existsForTenant(
+                params.tenantId,
+                params.productCategoryId,
+            );
+
+        if (!categoryExists) {
+            throw new ProductCategoryNotFoundException(
+                params.productCategoryId,
+            );
+        }
+
+        for (const ingredient of params.recipe ?? []) {
+
+            const exists = await this.inventoryChecker.existsForTenant(
+                params.tenantId,
+                ingredient.inventoryItemId,
+            );
+
+            if (!exists) {
+                throw new InventoryItemNotValidForTenantException(
+                    params.tenantId,
+                    ingredient.inventoryItemId,
+                );
+            }
+        }
+
         const productName = ProductName.create(
             params.productName,
         );
 
-        // 3. Validar que no exista otro producto
         if (
             await this.repository.existsByName(
                 productName,
@@ -50,11 +79,9 @@ export class CreateProductUseCase {
             );
         }
 
-        // 4. Obtener el siguiente SKU
         const sequence =
             await this.repository.nextSkuSequence();
 
-        // 5. Crear el producto
         const product = Product.create({
             tenantId: params.tenantId,
             productCategoryId: params.productCategoryId,
@@ -67,7 +94,6 @@ export class CreateProductUseCase {
 
         });
 
-        // 6. Agregar los ingredientes de la receta
         for (const ingredient of params.recipe ?? []) {
             product.addIngredient({
                 inventoryItemId:
@@ -83,7 +109,6 @@ export class CreateProductUseCase {
             });
         }
 
-        // 7. Guardar producto y receta
         await this.repository.save(product);
 
         return product;

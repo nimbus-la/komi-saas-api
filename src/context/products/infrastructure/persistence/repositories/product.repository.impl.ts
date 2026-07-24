@@ -3,7 +3,6 @@ import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, In, Repository } from "typeorm";
 
 import {
-  InventoryItemNotValidForTenantException,
   Product,
   ProductRepository,
   SkuSequenceNotGeneratedException,
@@ -16,7 +15,6 @@ import { ProductName } from "../../../domain/value-object/product-name.value-obj
 import { ProductId } from "../../../domain/value-object/product-id.value-object";
 import { ProductMapper } from "../mappers/products-mapper";
 import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
-import { InventoryItemEntity } from "@/context/inventory";
 
 @Injectable()
 export class ProductRepositoryImpl extends ProductRepository {
@@ -39,41 +37,14 @@ export class ProductRepositoryImpl extends ProductRepository {
       const recipeIngredientRepository =
         manager.getRepository(RecipeIngredientEntity);
 
-      const inventoryItemRepository =
-        manager.getRepository(InventoryItemEntity);
-
-      // 1. Obtener los datos del producto
       const primitives = product.toPrimitives();
 
-      // 2. Validar cada ingrediente de la receta
-      for (const ingredient of primitives.ingredients) {
-
-        const inventoryItem =
-          await inventoryItemRepository.findOne({
-            where: {
-              id: ingredient.inventoryItemId,
-              tenantId: primitives.tenantId,
-            },
-          });
-
-        // Si no existe o pertenece a otro tenant
-        if (!inventoryItem) {
-          throw new InventoryItemNotValidForTenantException(
-            ingredient.inventoryItemId,
-            primitives.tenantId,
-          );
-        }
-      }
-
-      // 3. Si todos los ingredientes son válidos,
-      // ahora sí guardamos el producto
       const row = productRepository.create(
         ProductMapper.toEntity(product),
       );
 
       await productRepository.save(row);
 
-      // 4. Guardar los ingredientes de la receta
       if (primitives.ingredients.length > 0) {
 
         const ingredients = ProductMapper.mapIngredients(
@@ -132,7 +103,6 @@ export class ProductRepositoryImpl extends ProductRepository {
     const query = this.productRepository
       .createQueryBuilder("product");
 
-    // Filtrar siempre por tenant
     query.andWhere(
       "product.tenantId = :tenantId",
       {
@@ -140,7 +110,6 @@ export class ProductRepositoryImpl extends ProductRepository {
       },
     );
 
-    // Buscar por nombre o SKU
     if (params.text) {
       query.andWhere(
         `(LOWER(product.name) LIKE LOWER(:text)
@@ -151,7 +120,6 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    // Filtrar por categoría
     if (params.productCategoryId) {
       query.andWhere(
         "product.productCategoryId = :categoryId",
@@ -161,7 +129,6 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    // Filtrar por estado
     if (params.productStatus !== undefined) {
       query.andWhere(
         "product.isActive = :status",
@@ -171,7 +138,6 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    // Paginación
     const page = params.page ?? 1;
     const limit = params.limit ?? 10;
 

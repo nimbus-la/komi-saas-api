@@ -52,7 +52,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1326': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar.' },
     '1330': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
     '1331': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Debe especificar una sucursal para esta operación.' },
-    '1332': { status: ResponseStatus.Error, category: ErrorCategory.NotFound,   message: 'El lote indicado no existe en el item.' },
+    '1332': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El lote indicado no existe en el item.' },
     '1333': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el motivo de la operación.' },
     '1334': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No hay diferencia que ajustar.' },
     '1338': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El sobrante del conteo debe registrarse como una entrada de mercancía.' },
@@ -67,9 +67,10 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1405': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra activado.' },
     '1406': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ítem de inventario especificado no pertenece al tenant proporcionado.' },
     '1407': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen de beneficio no puede ser menor que 0.' },
+    '1408': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se encontraron cambios para actualizar el producto.' },
 
     // Categorías: 1434 - 1466
-    '1434': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría que deseas editar.' },
+    '1434': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría.' },
     '1435': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe una categoría registrada con ese nombre.' },
     '1436': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra activada.' },
     '1437': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra desactivada.' },

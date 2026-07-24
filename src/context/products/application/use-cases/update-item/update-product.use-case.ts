@@ -1,12 +1,13 @@
 import { Money, Quantity } from "@/shared";
-
-import {
-    ProductNotFoundException,
-    ProductRepository,
-} from "../../../domain";
 import { UpdateProductApplicationParams } from "@/context/products/domain/types/product-application";
 import { ProductId } from "@/context/products/domain/value-object/product-id.value-object";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
+
+import {
+    ProductNotFoundException,
+    ProductNotModifiedException,
+    ProductRepository,
+} from "../../../domain";
 
 export class UpdateProductUseCase {
     constructor(
@@ -26,6 +27,34 @@ export class UpdateProductUseCase {
         }
 
         const current = product.toPrimitives();
+
+        const hasChanges =
+            (params.productCategoryId !== undefined &&
+                params.productCategoryId !== current.productCategoryId) ||
+
+            (params.productName !== undefined &&
+                params.productName !== current.productName) ||
+
+            (params.productDescription !== undefined &&
+                params.productDescription !== current.productDescription) ||
+
+            (params.productImgUrl !== undefined &&
+                params.productImgUrl !== current.productImgUrl) ||
+
+            (params.productBasePrice !== undefined &&
+                params.productBasePrice !== current.productBasePrice) ||
+
+            (params.profitMargin !== undefined &&
+                params.profitMargin.toPrimitives() !== current.profitMargin) ||
+
+            (params.productStatus !== undefined &&
+                params.productStatus !== current.productStatus) ||
+
+            (params.recipe !== undefined);
+
+        if (!hasChanges) {
+            throw new ProductNotModifiedException();
+        }
 
         product.update({
             productCategoryId:
@@ -50,6 +79,8 @@ export class UpdateProductUseCase {
             profitMargin:
                 params.profitMargin ?? current.profitMargin,
         });
+
+        
         if (params.productStatus !== undefined) {
             if (params.productStatus) {
                 product.activate();

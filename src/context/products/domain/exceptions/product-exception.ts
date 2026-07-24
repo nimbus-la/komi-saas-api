@@ -86,3 +86,12 @@ export class InvalidProfitMarginException extends DomainException {
         });
     }
 }
+
+export class ProductNotModifiedException extends DomainException {
+    constructor() {
+        super({
+            code: "1408",
+            detail: "No se encontraron cambios para actualizar el producto.",
+        });
+    }
+}
