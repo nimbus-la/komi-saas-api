@@ -1,7 +1,8 @@
 export * from './http/dtos/consume-stock.dto';
 export * from './http/dtos/create-item.dto';
 export * from './http/dtos/receive-stock.dto';
-export * from './http/dtos/set-minimum-stock.dto';
+export * from './http/dtos/set-global-minimum-stock.dto';
+export * from './http/dtos/set-branch-minimum-stock.dto';
 export * from './http/dtos/update-item.dto';
 
 export * from './http/inventory-item.controller';

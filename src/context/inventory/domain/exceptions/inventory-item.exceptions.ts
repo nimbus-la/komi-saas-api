@@ -241,3 +241,30 @@ export class CountIncreaseNotAllowedException extends DomainException {
         });
     };
 };
+
+
+
+/** El arreglo de configuración trae la misma sucursal dos veces. Código 1339. */
+export class DuplicateBranchInBatchException extends DomainException {
+    constructor(branchId: string) {
+        super({
+            code: '1339',
+            detail: `La sucursal ${branchId} aparece más de una vez en la configuración.`
+        });
+    };
+};
+
+
+
+/**
+ * La peticion de minimo de stock no indica que configurar: no trae branches, ni
+ * branchId, ni minStock. Codigo 1340.
+ */
+export class InvalidMinimumStockModeException extends DomainException {
+    constructor(itemId: string) {
+        super({
+            code: '1340',
+            detail: `La configuracion de minimo del item ${itemId} debe indicar minStock (global), branchId o branches.`
+        });
+    };
+};
