@@ -39,7 +39,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1206': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre de la sucursal ya se encuentra registrado.' },
     '1207': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
 
-    // 13xx / reglas de lote y stock
+    // 13xx / reglas de inventario, lote y stock
     '1300': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La fecha de vencimiento no es válida.' },
     '1310': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad recibida del lote no es válida.' },
     '1311': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No hay cantidad suficiente en el lote.' },
@@ -56,6 +56,8 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1333': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el motivo de la operación.' },
     '1334': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No hay diferencia que ajustar.' },
     '1338': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El sobrante del conteo debe registrarse como una entrada de mercancía.' },
+    '1339': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Una sucursal aparece repetida en la configuración.' },
+    '1340': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el mínimo global, una sucursal o un listado de sucursales.' },
 
     '1500': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad del movimiento debe ser mayor a cero.' },
     '1501': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Este tipo de movimiento requiere un motivo.' },

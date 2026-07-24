@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
-import { DataSource, Repository } from "typeorm";
+import { DataSource, EntityManager, Repository } from "typeorm";
 
 import { InventoryItemRepository, InventoryItem, InventoryItemId, InventoryItemName } from "../../../domain";
 import { InventoryItemEntity } from "../models/inventory-item.entity";
@@ -29,21 +29,46 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
     public async save(item: InventoryItem): Promise<void> {
-        const { 
-            item: itemRow, 
-            batch: batchRow, 
-            stock: stockRow 
+        const {
+            item: itemRow,
+            batch: batchRow,
+            stock: stockRow
         } = InventoryItemPersistenceMapper.toPersistence(item);
 
-        await this.items.save(itemRow);
+        // Todo en una transaccion: si algo falla, no queda el item guardado con
+        // sus hijos a medias.
+        await this.dataSource.transaction(
+            async (manager: EntityManager) => {
+                await manager.getRepository(InventoryItemEntity).save(itemRow);
 
-        if (batchRow.length > 0) {
-            await this.batches.save(batchRow);
-        };
+                if (batchRow.length > 0) {
+                    await manager.getRepository(InventoryBatchEntity).save(batchRow);
+                };
 
-        if (stockRow.length > 0) {
-            await this.stocks.save(stockRow);
-        };
+                // Los overrides de minimo se ELIMINAN cuando el usuario los quita
+                // (minStock null), asi que no basta con guardar: hay que borrar los que
+                // ya no estan en el agregado. save() solo inserta y actualiza; las filas
+                // ausentes de la coleccion sobrevivirian en la tabla y la sucursal
+                // seguiria usando un override que el usuario ya elimino.
+                //
+                // OJO: solo se reconcilia si el agregado se cargo con TODOS los
+                // overrides (sin filtrar por sucursal). Si se cargo por sede, borrar los
+                // ausentes eliminaria los de las demas sucursales.
+                const stocksRepo = manager.getRepository(InventoryStockEntity);
+                const keptIds = stockRow.map((stock) => stock.id);
+
+                await stocksRepo
+                    .createQueryBuilder()
+                    .delete()
+                    .where('inventory_item_id = :itemId', { itemId: itemRow.id })
+                    .andWhere(keptIds.length > 0 ? 'inventory_stock_id NOT IN (:...keptIds)' : '1 = 1', { keptIds })
+                    .execute();
+
+                if (stockRow.length > 0) {
+                    await stocksRepo.save(stockRow);
+                };
+            }
+        );
     };
 
 
@@ -72,7 +97,7 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
         return rows.map((row) =>
             InventoryItemPersistenceMapper.toAggregate(
-                row, 
+                row,
                 groupedBatch.get(row.id) ?? [],
                 groupedStock.get(row.id) ?? []
             ),

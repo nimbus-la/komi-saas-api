@@ -2,7 +2,7 @@ import { AggregateRoot, Money, Quantity } from "@/shared";
 
 import { AdjustedBatchDetail, ConsumedBatchDetail, CountStockParams, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { AmbiguousBranchScopeException, CountIncreaseNotAllowedException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { AmbiguousBranchScopeException, CountIncreaseNotAllowedException, DuplicateBranchInBatchException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -299,14 +299,58 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
 
     /**
-     * Crea o actualiza el OVERRIDE de mínimo de una sucursal concreta. A partir de
-     * aquí esa sede deja de derivar del global y usa su propio umbral. Es un upsert:
-     * si ya existía un override para la sucursal, se actualiza; si no, se agrega.
+     * Configura el mínimo de VARIAS sucursales en una sola operación.
+     *
+     * Es PARCIAL, solo afecta las sucursales presentes en el arreglo; las que no
+     * vengan conservan su configuración. Un minStock null en una entrada elimina
+     * el override de esa sede (vuelve a heredar el mínimo global).
      */
-    public setBranchMinimum(branchId: string, minStock: Quantity): void {
-        const existing = this.stocks.find(
+    public setMinimumsForBranches(entries: Array<{ branchId: string; minStock: Quantity | null }>): void {
+        if (entries.length === 0) {
+            throw new EmptyUpdateException(this.id.value);
+        };
+
+        // Duplicados en el arreglo: la última entrada pisaría a la anterior en
+        // silencio, así que se rechaza antes de mutar nada.
+        const seen = new Set<string>();
+
+        for (const entry of entries) {
+            if (seen.has(entry.branchId)) {
+                throw new DuplicateBranchInBatchException(entry.branchId);
+            };
+
+            seen.add(entry.branchId);
+        };
+
+        for (const entry of entries) {
+            this.setMinimumForBranch(entry.branchId, entry.minStock);
+        };
+
+        this.touch();
+    };
+
+
+
+    /**
+     * Fija el mínimo de UNA sucursal. Con null elimina el override: la sede vuelve
+     * a heredar el mínimo global. Borrar la fila (en vez de escribir el valor
+     * global en ella) es lo correcto: así la sede sigue futuros cambios del global.
+     */
+    public setMinimumForBranch(branchId: string, minStock: Quantity | null): void {
+        const index = this.stocks.findIndex(
             (stock: InventoryStock) => stock.getBranchId() === branchId
         );
+
+        if (minStock === null) {
+            if (index !== -1) {
+                this.stocks.splice(index, 1);
+            };
+
+            this.touch();
+            return;
+        };
+
+        const existing = this.stocks[index];
 
         if (existing !== undefined) {
             existing.changeMinimum(minStock);
@@ -325,7 +369,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * el mínimo global; si tampoco hay global, null (el item no tiene política de
      * mínimos y nunca se reporta "bajo mínimo").
      */
-    public minimumStockFor(branchId: string): Quantity | null {
+    public resolveMinimumForBranch(branchId: string): Quantity | null {
         const override = this.stocks.find(
             (stock: InventoryStock) => stock.getBranchId() === branchId
         );
@@ -354,7 +398,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * puede afirmar nada. "Bajo mínimo" es estricto: stock == mínimo NO cuenta.
      */
     public isBelowMinimumFor(branchId: string, date: Date = new Date()): boolean | null {
-        const minimum = this.minimumStockFor(branchId);
+        const minimum = this.resolveMinimumForBranch(branchId);
 
         if (minimum === null) return null;
 

@@ -4,7 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { InventoryItemRepository } from "./domain/inventory-item.repository";
 import { TenantModule } from "../tenants/tenant.module";
 import { BranchModule } from "../branch/branch.module";
-import { BranchChecker, ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, InventoryBatchReadRepository, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetMinimumStockUseCase, TenantChecker, UpdateInventoryItemUseCase } from "./application";
+import { BranchChecker, ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, InventoryBatchReadRepository, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetGlobalMinimumStockUseCase, SetBranchMinimumStockUseCase, TenantChecker, UpdateInventoryItemUseCase } from "./application";
 import { BranchCheckerAdapter, InventoryBatchEntity, InventoryItemController, InventoryItemEntity, InventoryStockEntity, TenantCheckerAdapter, TypeOrmInventoryBatchReadRepository, TypeOrmInventoryItemRepository } from "./infrastructure";
 import { EventPublisher } from "@/shared";
 import { EventEmitterPublisher } from "@/infrastructure";
@@ -64,8 +64,13 @@ import { CountStockUseCase } from "./application/use-cases/count-stock/count-sto
             inject: [InventoryItemRepository]
         },
         {
-            provide: SetMinimumStockUseCase,
-            useFactory: (r: InventoryItemRepository, b: BranchChecker) => new SetMinimumStockUseCase(r, b),
+            provide: SetGlobalMinimumStockUseCase,
+            useFactory: (r: InventoryItemRepository) => new SetGlobalMinimumStockUseCase(r),
+            inject: [InventoryItemRepository],
+        },
+        {
+            provide: SetBranchMinimumStockUseCase,
+            useFactory: (r: InventoryItemRepository, b: BranchChecker) => new SetBranchMinimumStockUseCase(r, b),
             inject: [InventoryItemRepository, BranchChecker],
         },
         {

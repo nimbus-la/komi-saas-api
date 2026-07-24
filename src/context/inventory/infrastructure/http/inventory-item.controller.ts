@@ -1,12 +1,13 @@
 import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
 
 import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
-import { ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetMinimumStockUseCase, UpdateInventoryItemUseCase } from "../../application";
+import { ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetGlobalMinimumStockUseCase, SetBranchMinimumStockUseCase, UpdateInventoryItemUseCase } from "../../application";
 import { CreateItemDto } from "./dtos/create-item.dto";
 import { ReceiveStockDto } from "./dtos/receive-stock.dto";
 import { ConsumeStockDto } from "./dtos/consume-stock.dto";
 import { UpdateItemDto } from "./dtos/update-item.dto";
-import { SetMinimumStockDto } from "./dtos/set-minimum-stock.dto";
+import { SetGlobalMinimumStockDto } from "./dtos/set-global-minimum-stock.dto";
+import { SetBranchMinimumStockDto } from "./dtos/set-branch-minimum-stock.dto";
 import { RegisterWasteUseCase } from "../../application/use-cases/register-waste/register-waste.use-case";
 import { CountStockUseCase } from "../../application/use-cases/count-stock/count-stock.use-case";
 import { RegisterWasteDto } from "./dtos/register-waste.dto";
@@ -25,7 +26,8 @@ export class InventoryItemController {
         private readonly consumeStock: ConsumeStockUseCase,
         private readonly searchItemBatches: SearchItemBatchesUseCase,
         private readonly updateItem: UpdateInventoryItemUseCase,
-        private readonly setMinimumStock: SetMinimumStockUseCase,
+        private readonly globalMinimumStock: SetGlobalMinimumStockUseCase,
+        private readonly branchMinimumStock: SetBranchMinimumStockUseCase,
         private readonly registerWaste: RegisterWasteUseCase,
         private readonly countStock: CountStockUseCase,
     ) { };
@@ -137,15 +139,35 @@ export class InventoryItemController {
 
 
 
-    @Patch('minimum-stock/:id')
-    public async setMinimum(
+    /**
+     * Minimo GLOBAL del item: aplica a toda sucursal sin override propio.
+     * No toca los overrides existentes. minStock null lo limpia.
+     */
+    @Patch('minimum/global/:id')
+    public async setGlobalMinimumStock(
         @Param('id') id: string,
-        @Body() dto: SetMinimumStockDto,
-    ) {
-        await this.setMinimumStock.execute({
+        @Body() dto: SetGlobalMinimumStockDto,
+    ): Promise<void> {
+        await this.globalMinimumStock.execute({
             itemId: id,
-            ...(dto.branchId ? { branchId: dto.branchId } : {}),
-            minStock: dto.minStock
+            minStock: dto.minStock,
+        });
+    };
+
+
+
+    /**
+     * Minimo POR SUCURSAL, en lote. Parcial: solo toca las sucursales enviadas.
+     * Una entrada con minStock null elimina el override de esa sede.
+     */
+    @Patch('minimum/branches/:id')
+    public async setBranchMinimumStock(
+        @Param('id') id: string,
+        @Body() dto: SetBranchMinimumStockDto,
+    ): Promise<void> {
+        await this.branchMinimumStock.execute({
+            itemId: id,
+            branches: dto.branches,
         });
     };
 };
