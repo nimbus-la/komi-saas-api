@@ -12,7 +12,7 @@ export abstract class ProductCategoryRepository {
     abstract update(category: ProductCategory): Promise<void>;
 
     abstract search(params: {
-        tenantId: string;
+        tenantId?: string;
         text?: string;
         id?: string;
         estado?: boolean;

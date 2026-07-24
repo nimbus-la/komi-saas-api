@@ -8,11 +8,13 @@ export class SearchCategoriesUseCase {
     ) { }
 
     async execute(params: {
-        tenantId: string;
+        tenantId?: string;
         text?: string;
         id?: string;
         estado?: boolean;
     }) {
-        return this.repository.search(params);
+        const categories = await this.repository.search(params);
+
+        return categories.map((category) => category.toPrimitives());
     }
 }

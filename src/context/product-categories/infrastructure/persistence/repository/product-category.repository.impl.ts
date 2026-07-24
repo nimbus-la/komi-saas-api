@@ -1,14 +1,13 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+import { ProductCategoryMapper } from "../mappers/products-categories-mapper";
+import { ProductCategoryEntity } from "../models/product-category.entity";
 
 import {
     ProductCategory,
     ProductCategoryRepository,
 } from "../../../domain";
-
-import { ProductCategoryMapper } from "../mappers/products-categories-mapper";
-import { ProductCategoryEntity } from "../models/product-category.entity";
 
 @Injectable()
 export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
@@ -64,13 +63,14 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
     }): Promise<ProductCategory[]> {
 
         const query = this.categoryRepository
-            .createQueryBuilder("category")
-            .where("category.tenantId = :tenantId", {
+            .createQueryBuilder("category");
+
+        if (params.tenantId) {
+            query.andWhere("category.tenantId = :tenantId", {
                 tenantId: params.tenantId,
             });
+        }
 
-
-        // ID
         if (params.id) {
             query.andWhere(
                 "category.id = :id",
@@ -127,7 +127,7 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
 
 
         const rows = await query.getMany();
-        
+
         return rows.map(ProductCategoryMapper.toDomain);
     }
 }

@@ -1,13 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, In, Repository } from "typeorm";
-
-import {
-  Product,
-  ProductRepository,
-  SkuSequenceNotGeneratedException,
-} from "../../../domain";
-
 import { ProductEntity } from "../models/product.entity";
 import { SearchProductsApplicationParams } from "../../../domain/types/product-application";
 import { ProductResponse } from "../../../domain/types/product.response";
@@ -15,6 +8,13 @@ import { ProductName } from "../../../domain/value-object/product-name.value-obj
 import { ProductId } from "../../../domain/value-object/product-id.value-object";
 import { ProductMapper } from "../mappers/products-mapper";
 import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
+
+import {
+  Product,
+  ProductRepository,
+  SkuSequenceNotGeneratedException,
+} from "../../../domain";
+
 
 @Injectable()
 export class ProductRepositoryImpl extends ProductRepository {
@@ -103,12 +103,14 @@ export class ProductRepositoryImpl extends ProductRepository {
     const query = this.productRepository
       .createQueryBuilder("product");
 
-    query.andWhere(
-      "product.tenantId = :tenantId",
-      {
-        tenantId: params.tenantId,
-      },
-    );
+    if (params.tenantId) {
+      query.andWhere(
+        "product.tenantId = :tenantId",
+        {
+          tenantId: params.tenantId,
+        },
+      );
+    }
 
     if (params.text) {
       query.andWhere(
