@@ -1,4 +1,4 @@
-import { InvalidExpirationDateException } from "../../../exceptions/inventory-item.exceptions";
+import { InvalidExpirationDateException } from "../../../exceptions/inventory-batch.exceptions";
 
 
 /**

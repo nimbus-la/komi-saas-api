@@ -109,15 +109,15 @@ CREATE INDEX IF NOT EXISTS idx_inventory_batchs_branch
 
 
 
-CREATE TABLE inventory_stocks (
-    inventory_stock_id uuid PRIMARY KEY,
-    inventory_item_id  uuid NOT NULL REFERENCES inventory_items (inventory_item_id),
-    branch_id          uuid NOT NULL,
-    min_stock          numeric(14,3) NOT NULL,
-    CONSTRAINT uq_inventory_stocks_item_branch UNIQUE (inventory_item_id, branch_id)
+CREATE TABLE inventory_branch_configs (
+    inventory_branch_config_id uuid PRIMARY KEY,
+    inventory_item_id          uuid NOT NULL REFERENCES inventory_items (inventory_item_id),
+    branch_id                  uuid NOT NULL,
+    min_stock                  numeric(14,3) NOT NULL,
+    CONSTRAINT uq_inventory_branch_configs_item_branch UNIQUE (inventory_item_id, branch_id)
 );
 
-CREATE INDEX idx_inventory_stocks_item ON inventory_stocks (inventory_item_id);
+CREATE INDEX idx_inventory_branch_configs_item ON inventory_branch_configs (inventory_item_id);
 
 
 

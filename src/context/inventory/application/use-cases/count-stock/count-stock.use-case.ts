@@ -11,7 +11,7 @@ export class CountStockUseCase {
     ) { };
 
     public async execute(params: CountStockUseCaseParams): Promise<void> {
-        const item = await this.repository.findById(InventoryItemId.create(params.itemId));
+        const item = await this.repository.findById(InventoryItemId.create(params.itemId), params.tenantId);
 
         if (item === null) {
             throw new InventoryItemNotFoundException(params.itemId);

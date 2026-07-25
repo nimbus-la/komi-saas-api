@@ -4,8 +4,8 @@ import { InventoryItemName } from "./value-objects/inventory-item-name.value-obj
 
 export abstract class InventoryItemRepository {
     abstract save(item: InventoryItem): Promise<void>;
-    abstract findById(id: InventoryItemId, branchId?: string): Promise<InventoryItem | null>;
-    abstract search(branchId?: string): Promise<InventoryItem[]>;
-    abstract existsByName(name: InventoryItemName): Promise<boolean>;
+    abstract findById(id: InventoryItemId, tenantId: string, branchId?: string): Promise<InventoryItem | null>;
+    abstract search(tenantId: string, branchId?: string): Promise<InventoryItem[]>;
+    abstract existsByName(name: InventoryItemName, tenantId: string): Promise<boolean>;
     abstract nextSkuSequence(): Promise<number>;
 };

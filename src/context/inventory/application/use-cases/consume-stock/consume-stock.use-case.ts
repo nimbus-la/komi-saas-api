@@ -13,6 +13,7 @@ export class ConsumeStockUseCase {
     public async execute(params: ConsumeStockParams): Promise<void> {
         const item = await this.repository.findById(
             InventoryItemId.create(params.itemId),
+            params.tenantId,
             params.branchId
         );
 

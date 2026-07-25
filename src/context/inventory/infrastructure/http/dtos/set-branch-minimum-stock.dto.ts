@@ -2,6 +2,7 @@ import { Type } from "class-transformer";
 import { ArrayMinSize, IsArray, IsNumberString, IsUUID, ValidateIf, ValidateNested } from "class-validator";
 
 
+
 /** Una entrada del listado: el minimo de UNA sucursal. */
 export class BranchMinimumDto {
     @IsUUID()
@@ -24,6 +25,9 @@ export class BranchMinimumDto {
  *   ] }
  */
 export class SetBranchMinimumStockDto {
+    @IsUUID()
+    tenantId!: string;
+
     @IsArray()
     @ArrayMinSize(1, { message: 'Debe enviar al menos una sucursal.' })
     @ValidateNested({ each: true })

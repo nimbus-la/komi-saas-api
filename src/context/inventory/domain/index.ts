@@ -8,8 +8,8 @@ export * from './entities/inventory-batch/value-objects/inventory-batch-expirati
 export * from './entities/inventory-batch/value-objects/inventory-batch-id.value-object';
 export * from './entities/inventory-batch/inventory-batch.entity';
 
-export * from './entities/inventory-stock/inventory-stock-id.value-object';
-export * from './entities/inventory-stock/inventory-stock.entity';
+export * from './entities/inventory-branch-config/inventory-branch-config-id.value-object';
+export * from './entities/inventory-branch-config/inventory-branch-config.entity';
 
 
 export * from './events/inventory-item-created.event';
@@ -19,8 +19,12 @@ export * from './events/stock-wasted.event';
 export * from './events/stock-adjusted.event';
 
 
-export * from './exceptions/inventory-batch.exceptions';
 export * from './exceptions/inventory-item.exceptions';
+export * from './exceptions/inventory-batch.exceptions';
+export * from './exceptions/stock-movement.exceptions';
+export * from './exceptions/branch-scope.exceptions';
+export * from './exceptions/minimum-stock.exceptions';
+export * from './exceptions/update-item.exceptions';
 
 
 export * from './types/domain.types';

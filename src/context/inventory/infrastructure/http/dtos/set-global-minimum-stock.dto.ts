@@ -1,4 +1,4 @@
-import { IsNumberString, ValidateIf } from "class-validator";
+import { IsNumberString, IsUUID, ValidateIf } from "class-validator";
 
 
 /**
@@ -8,6 +8,9 @@ import { IsNumberString, ValidateIf } from "class-validator";
  *   { "minStock": null }     -> lo limpia
  */
 export class SetGlobalMinimumStockDto {
+    @IsUUID()
+    tenantId!: string;
+
     @ValidateIf((dto: SetGlobalMinimumStockDto) => dto.minStock !== null)
     @IsNumberString({}, { message: 'minStock debe ser un valor numerico o null.' })
     minStock!: string | null;

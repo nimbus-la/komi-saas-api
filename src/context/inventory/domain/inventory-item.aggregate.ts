@@ -2,7 +2,11 @@ import { AggregateRoot, Money, Quantity } from "@/shared";
 
 import { AdjustedBatchDetail, ConsumedBatchDetail, CountStockParams, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { AmbiguousBranchScopeException, CountIncreaseNotAllowedException, DuplicateBranchInBatchException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { InactiveItemException } from "./exceptions/inventory-item.exceptions";
+import { PerishableRequiresExpirationException } from "./exceptions/inventory-batch.exceptions";
+import { NonPositiveConsumptionException, InsufficientStockException, ReasonRequiredException, NoAdjustmentDifferenceException, CountIncreaseNotAllowedException } from "./exceptions/stock-movement.exceptions";
+import { AmbiguousBranchScopeException, DuplicateBranchInBatchException } from "./exceptions/branch-scope.exceptions";
+import { UnitChangeNotAllowedException, PerishabilityChangeNotAllowedException, EmptyUpdateException } from "./exceptions/update-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -10,7 +14,7 @@ import { InventoryBatch } from "./entities/inventory-batch/inventory-batch.entit
 import { InventoryBatchExpirationDate } from "./entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
 import { InventoryItemSku } from "./value-objects/inventory-item-sku.value-object";
 import { DEFAULT_CURRENCY } from "./common/constants.common";
-import { InventoryStock } from "./entities/inventory-stock/inventory-stock.entity";
+import { InventoryBranchConfig } from "./entities/inventory-branch-config/inventory-branch-config.entity";
 import { StockReceivedEvent } from "./events/stock-received.event";
 import { StockConsumedEvent } from "./events/stock-consumed.event";
 import { StockWastedEvent } from "./events/stock-wasted.event";
@@ -26,7 +30,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     private isPerishable: boolean;
     private isActive: boolean;
     private minGlobalStock: Quantity | null;
-    private stocks: InventoryStock[];
+    private branchConfigs: InventoryBranchConfig[];
     private readonly createdAt: Date;
     private updatedAt: Date;
 
@@ -49,7 +53,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         updatedAt: Date,
         batches: InventoryBatch[],
         minGlobalStock: Quantity | null,
-        stocks: InventoryStock[]
+        branchConfigs: InventoryBranchConfig[]
     ) {
         super(id);
 
@@ -63,7 +67,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         this.updatedAt = updatedAt;
         this.batches = batches;
         this.minGlobalStock = minGlobalStock;
-        this.stocks = stocks;
+        this.branchConfigs = branchConfigs;
     };
 
 
@@ -337,26 +341,26 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * global en ella) es lo correcto: así la sede sigue futuros cambios del global.
      */
     public setMinimumForBranch(branchId: string, minStock: Quantity | null): void {
-        const index = this.stocks.findIndex(
-            (stock: InventoryStock) => stock.getBranchId() === branchId
+        const index = this.branchConfigs.findIndex(
+            (config: InventoryBranchConfig) => config.getBranchId() === branchId
         );
 
         if (minStock === null) {
             if (index !== -1) {
-                this.stocks.splice(index, 1);
+                this.branchConfigs.splice(index, 1);
             };
 
             this.touch();
             return;
         };
 
-        const existing = this.stocks[index];
+        const existing = this.branchConfigs[index];
 
         if (existing !== undefined) {
             existing.changeMinimum(minStock);
 
         } else {
-            this.stocks.push(InventoryStock.create({ branchId, minStock }));
+            this.branchConfigs.push(InventoryBranchConfig.create({ branchId, minStock }));
         };
 
         this.touch();
@@ -370,8 +374,8 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * mínimos y nunca se reporta "bajo mínimo").
      */
     public resolveMinimumForBranch(branchId: string): Quantity | null {
-        const override = this.stocks.find(
-            (stock: InventoryStock) => stock.getBranchId() === branchId
+        const override = this.branchConfigs.find(
+            (config: InventoryBranchConfig) => config.getBranchId() === branchId
         );
 
         return override ? override.getMinStock() : this.minGlobalStock;
@@ -729,7 +733,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             batches: this.batches.map((batch) => batch.toPrimitives()),
-            stocks: this.stocks.map((stock) => stock.toPrimitives()),
+            branchConfigs: this.branchConfigs.map((config) => config.toPrimitives()),
         };
     };
 
@@ -755,7 +759,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             p.updatedAt,
             p.batches.map((batch) => InventoryBatch.fromPrimitives(batch)),
             p.minGlobalStock !== null ? Quantity.of(p.minGlobalStock) : null,
-            p.stocks.map((stock) => InventoryStock.fromPrimitives(stock)),
+            p.branchConfigs.map((config) => InventoryBranchConfig.fromPrimitives(config)),
         );
     };
 };
