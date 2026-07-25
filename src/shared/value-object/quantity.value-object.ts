@@ -1,9 +1,15 @@
 import Decimal from 'decimal.js';
+import { DomainException } from '../domain/domain.exception';
 
 
-export class InvalidQuantityError extends Error {
+/**
+ * Cantidad inválida: formato no numérico, negativa, o resultado inválido de
+ * una operación (ej. una resta que dejaría el remanente en negativo).
+ * Código 1015.
+ */
+export class InvalidQuantityError extends DomainException {
     constructor(message: string) {
-        super(message);
+        super({ code: '1015', detail: message });
     };
 };
 

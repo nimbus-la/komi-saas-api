@@ -8,7 +8,7 @@ export class SearchItemBatchesUseCase {
         private readonly reader: InventoryBatchReadRepository
     ) { };
 
-    public execute(itemId: string, pagination: Pagination, branchId?: string): Promise<Paginated<InventoryBatchView>> {
-        return this.reader.findByItem(itemId, pagination, branchId);
+    public execute(itemId: string, tenantId: string, pagination: Pagination, branchId?: string): Promise<Paginated<InventoryBatchView>> {
+        return this.reader.findByItem(itemId, tenantId, pagination, branchId);
     };
 };

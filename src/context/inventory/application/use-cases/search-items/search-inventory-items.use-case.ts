@@ -8,8 +8,8 @@ export class SearchInventoryItemsUseCase {
         private readonly repository: InventoryItemRepository
     ) { };
 
-    public async execute(branchId?: string): Promise<InventoryItemResponse[]> {
-        const items = await this.repository.search(branchId);
+    public async execute(tenantId: string, branchId?: string): Promise<InventoryItemResponse[]> {
+        const items = await this.repository.search(tenantId, branchId);
         const now = new Date();
 
         return items.map((item) =>

@@ -10,7 +10,8 @@ export class RegisterWasteUseCase {
 
     public async execute(params: RegisterWasteUseCaseParams): Promise<void> {
         const item = await this.repository.findById(
-            InventoryItemId.create(params.itemId)
+            InventoryItemId.create(params.itemId),
+            params.tenantId
         );
 
         if (item === null) {

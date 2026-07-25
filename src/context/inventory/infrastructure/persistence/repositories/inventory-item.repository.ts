@@ -73,8 +73,8 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
 
-    public async findById(id: InventoryItemId, branchId?: string): Promise<InventoryItem | null> {
-        const row = await this.items.findOne({ where: { id: id.value } });
+    public async findById(id: InventoryItemId, tenantId: string, branchId?: string): Promise<InventoryItem | null> {
+        const row = await this.items.findOne({ where: { id: id.value, tenantId } });
         if (row === null) return null;
 
         const batchRows = await this.activeBatchesOf([row.id], branchId);
@@ -85,8 +85,8 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
 
-    public async search(branchId?: string): Promise<InventoryItem[]> {
-        const rows = await this.items.find();
+    public async search(tenantId: string, branchId?: string): Promise<InventoryItem[]> {
+        const rows = await this.items.find({ where: { tenantId } });
         if (rows.length === 0) return [];
 
         const batchRows = await this.activeBatchesOf(rows.map((r) => r.id), branchId);
@@ -106,8 +106,8 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
 
-    public async existsByName(name: InventoryItemName): Promise<boolean> {
-        return (await this.items.count({ where: { name: name.value } })) > 0;
+    public async existsByName(name: InventoryItemName, tenantId: string): Promise<boolean> {
+        return (await this.items.count({ where: { name: name.value, tenantId } })) > 0;
     };
 
 

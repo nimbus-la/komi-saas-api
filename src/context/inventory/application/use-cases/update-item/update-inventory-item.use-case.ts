@@ -7,8 +7,8 @@ export class UpdateInventoryItemUseCase {
         private readonly repository: InventoryItemRepository,
     ) { };
 
-    public async execute(itemId: string, params: UpdateInventoryItemParams): Promise<void> {
-        const item = await this.repository.findById(InventoryItemId.create(itemId));
+    public async execute(itemId: string, tenantId: string, params: UpdateInventoryItemParams): Promise<void> {
+        const item = await this.repository.findById(InventoryItemId.create(itemId), tenantId);
 
         if (item === null) {
             throw new InventoryItemNotFoundException(itemId);
@@ -20,7 +20,7 @@ export class UpdateInventoryItemUseCase {
         if (params.name !== undefined) {
             name = InventoryItemName.create(params.name);
 
-            if (await this.repository.existsByName(name)) {
+            if (await this.repository.existsByName(name, tenantId)) {
                 throw new InventoryItemNameAlreadyExistsException(params.name);
             };
         };

@@ -2,6 +2,9 @@ import { IsISO8601, IsOptional, IsString, IsUUID, Matches, MinLength } from "cla
 
 export class CountStockDto {
     @IsUUID()
+    tenantId!: string;
+
+    @IsUUID()
     branchId!: string;
 
     @Matches(/^\d+(\.\d{1,3})?$/, { message: 'actualTotal debe ser numérico (hasta 3 decimales).' })

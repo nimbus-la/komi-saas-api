@@ -15,9 +15,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Los datos enviados no son válidos.' },
-    '1001': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La unidad de medida no es válida.' },
     '1002': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El costo ingresado no es válido.' },
-    '1003': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del item no es válido.' },
     '1004': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La operación monetaria no es válida.' },
     '1005': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del tenant no es válido.' },
     '1006': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El NIT del tenant no es válido.' },
@@ -28,10 +26,10 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1011': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El teléfono de la sucursal no es válido.' },
     '1012': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La ciudad de la sucursal no es válida.' },
     '1013': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El departamento de la sucursal no es válido.' },
+    '1014': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El identificador no es válido.' },
+    '1015': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad ingresada no es válida.' },
 
 
-    '1200': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre del item ya se encuentra registrado.' },
-    '1201': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El item de inventario no existe.' },
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El slug del tenant ya se encuentra registrado.' },
     '1204': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre del tenant ya se encuentra registrado.' },
@@ -39,28 +37,42 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1206': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre de la sucursal ya se encuentra registrado.' },
     '1207': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
 
-    // 13xx / reglas de inventario, lote y stock
-    '1300': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La fecha de vencimiento no es válida.' },
+    // 13xx — estándar de errores de INVENTARIO (1300-1399)
+    //   1300-1309 Item (catálogo) · 1310-1319 Lote · 1320-1329 Movimientos de stock
+    //   1330-1339 Sucursal (scope) · 1340-1349 Configuración de sucursal (mínimos)
+    //   1350-1359 Reglas de actualización del item
+    '1300': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del item no es válido.' },
+    '1301': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La unidad de medida no es válida.' },
+    '1302': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre del item ya se encuentra registrado.' },
+    '1303': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El item de inventario no existe.' },
+    '1304': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El item está inactivo.' },
+    '1305': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El tenant indicado no existe.' },
+
     '1310': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad recibida del lote no es válida.' },
     '1311': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No hay cantidad suficiente en el lote.' },
-    '1320': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El item está inactivo.' },
-    '1321': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El item perecedero requiere fecha de vencimiento.' },
-    '1322': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad a consumir debe ser mayor a cero.' },
-    '1323': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Stock insuficiente para completar la operación.' },
-    '1324': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se puede cambiar la unidad de medida; el item ya tiene lotes.' },
-    '1325': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se puede cambiar la perecibilidad; el item ya tiene lotes.' },
-    '1326': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar.' },
-    '1330': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
-    '1331': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Debe especificar una sucursal para esta operación.' },
-    '1332': { status: ResponseStatus.Error, category: ErrorCategory.NotFound,   message: 'El lote indicado no existe en el item.' },
-    '1333': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el motivo de la operación.' },
-    '1334': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No hay diferencia que ajustar.' },
-    '1338': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El sobrante del conteo debe registrarse como una entrada de mercancía.' },
-    '1339': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Una sucursal aparece repetida en la configuración.' },
-    '1340': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el mínimo global, una sucursal o un listado de sucursales.' },
+    '1312': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La fecha de vencimiento no es válida.' },
+    '1313': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El item perecedero requiere fecha de vencimiento.' },
+    '1314': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El lote indicado no existe en el item.' },
 
-    '1500': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad del movimiento debe ser mayor a cero.' },
-    '1501': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Este tipo de movimiento requiere un motivo.' },
+    '1320': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad a consumir debe ser mayor a cero.' },
+    '1321': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Stock insuficiente para completar la operación.' },
+    '1322': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el motivo de la operación.' },
+    '1323': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No hay diferencia que ajustar.' },
+    '1324': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El sobrante del conteo debe registrarse como una entrada de mercancía.' },
+    '1325': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad del movimiento debe ser mayor a cero.' },
+    '1326': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Este tipo de movimiento requiere un motivo.' },
+    '1327': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El tipo de movimiento no es soportado.' },
+
+    '1330': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Debe especificar una sucursal para esta operación.' },
+    '1331': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Una sucursal aparece repetida en la configuración.' },
+    '1332': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
+
+    '1340': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar el mínimo global, una sucursal o un listado de sucursales.' },
+    '1341': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe indicar la cantidad mínima para la sucursal.' },
+
+    '1350': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se puede cambiar la unidad de medida; el item ya tiene lotes.' },
+    '1351': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se puede cambiar la perecibilidad; el item ya tiene lotes.' },
+    '1352': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar.' },
 
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El recurso solicitado no existe.' },
