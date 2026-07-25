@@ -3,6 +3,7 @@ import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
 import { DataSource, EntityManager, Repository } from "typeorm";
 
+import { Paginated, Pagination } from "@/interfaces";
 import { InventoryItemRepository, InventoryItem, InventoryItemId, InventoryItemName } from "../../../domain";
 import { InventoryItemEntity } from "../models/inventory-item.entity";
 import { InventoryBatchEntity } from "../models/inventory-batch.entity";
@@ -85,9 +86,17 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
 
-    public async search(tenantId: string, branchId?: string): Promise<InventoryItem[]> {
-        const rows = await this.items.find({ where: { tenantId } });
-        if (rows.length === 0) return [];
+    public async search(tenantId: string, pagination: Pagination, branchId?: string): Promise<Paginated<InventoryItem>> {
+        const [rows, total] = await this.items.findAndCount({
+            where: { tenantId },
+            order: { createdAt: 'DESC' },
+            skip: (pagination.pageNumber - 1) * pagination.pageSize,
+            take: pagination.pageSize,
+        });
+
+        if (rows.length === 0) {
+            return { data: [], pageNumber: pagination.pageNumber, pageSize: pagination.pageSize, total };
+        };
 
         const batchRows = await this.activeBatchesOf(rows.map((r) => r.id), branchId);
         const groupedBatch = this.groupByItemBatch(batchRows);
@@ -95,13 +104,15 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         const branchConfigRows = await this.branchConfigsOf(rows.map((s) => s.id), branchId);
         const groupedBranchConfig = this.groupByItemBranchConfig(branchConfigRows)
 
-        return rows.map((row) =>
+        const data = rows.map((row) =>
             InventoryItemPersistenceMapper.toAggregate(
                 row,
                 groupedBatch.get(row.id) ?? [],
                 groupedBranchConfig.get(row.id) ?? []
             ),
         );
+
+        return { data, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize, total };
     };
 
 
