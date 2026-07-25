@@ -19,8 +19,12 @@ export * from './events/stock-wasted.event';
 export * from './events/stock-adjusted.event';
 
 
-export * from './exceptions/inventory-batch.exceptions';
 export * from './exceptions/inventory-item.exceptions';
+export * from './exceptions/inventory-batch.exceptions';
+export * from './exceptions/stock-movement.exceptions';
+export * from './exceptions/branch-scope.exceptions';
+export * from './exceptions/minimum-stock.exceptions';
+export * from './exceptions/update-item.exceptions';
 
 
 export * from './types/domain.types';

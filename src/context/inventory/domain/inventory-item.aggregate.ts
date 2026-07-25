@@ -2,7 +2,11 @@ import { AggregateRoot, Money, Quantity } from "@/shared";
 
 import { AdjustedBatchDetail, ConsumedBatchDetail, CountStockParams, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { AmbiguousBranchScopeException, CountIncreaseNotAllowedException, DuplicateBranchInBatchException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NoAdjustmentDifferenceException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, ReasonRequiredException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { InactiveItemException } from "./exceptions/inventory-item.exceptions";
+import { PerishableRequiresExpirationException } from "./exceptions/inventory-batch.exceptions";
+import { NonPositiveConsumptionException, InsufficientStockException, ReasonRequiredException, NoAdjustmentDifferenceException, CountIncreaseNotAllowedException } from "./exceptions/stock-movement.exceptions";
+import { AmbiguousBranchScopeException, DuplicateBranchInBatchException } from "./exceptions/branch-scope.exceptions";
+import { UnitChangeNotAllowedException, PerishabilityChangeNotAllowedException, EmptyUpdateException } from "./exceptions/update-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
