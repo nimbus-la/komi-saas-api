@@ -5,6 +5,9 @@ import { MovementType } from "../../../domain";
 
 
 export class SearchInventoryMovementsDto {
+    @IsUUID()
+    tenantId!: string;
+
     @IsOptional()
     @IsUUID()
     inventoryItemId?: string;

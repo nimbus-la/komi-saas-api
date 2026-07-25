@@ -15,6 +15,7 @@ export interface InventoryMovementView {
 
 
 export interface MovementSearchFilters {
+    tenantId: string;
     inventoryItemId?: string;
     branchId?: string;
     movementType?: MovementType;
