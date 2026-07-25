@@ -1,7 +1,7 @@
-import { InventoryBatchPrimitives, InventoryItemPrimitives, InventoryStockPrimitives, InventoryItem } from "../../../domain";
+import { InventoryBatchPrimitives, InventoryItemPrimitives, InventoryBranchConfigPrimitives, InventoryItem } from "../../../domain";
 import { InventoryBatchEntity } from "../models/inventory-batch.entity";
 import { InventoryItemEntity } from "../models/inventory-item.entity";
-import { InventoryStockEntity } from "../models/inventory-stock.entity";
+import { InventoryBranchConfigEntity } from "../models/inventory-branch-config.entity";
 
 /**
  * Traduce entre el agregado de dominio (InventoryItem) y las entidades de
@@ -14,7 +14,7 @@ export class InventoryItemPersistenceMapper {
      * De persistencia a dominio: reconstruye el agregado a partir de la fila del
      * item y sus filas de lotes (solo los activos, ya filtrados por el repo).
      */
-    public static toAggregate(itemRow: InventoryItemEntity, batchRows: InventoryBatchEntity[], stockRows: InventoryStockEntity[],) {
+    public static toAggregate(itemRow: InventoryItemEntity, batchRows: InventoryBatchEntity[], branchConfigRows: InventoryBranchConfigEntity[],) {
         const primitives: InventoryItemPrimitives = {
             id: itemRow.id,
             tenantId: itemRow.tenantId,
@@ -38,11 +38,11 @@ export class InventoryItemPersistenceMapper {
                     receivedAt: batch.receivedAt,
                 })
             ),
-            stocks: stockRows.map(
-                (stock: InventoryStockEntity): InventoryStockPrimitives => ({
-                    id: stock.id,
-                    branchId: stock.branchId,
-                    minStock: stock.minStock,
+            branchConfigs: branchConfigRows.map(
+                (config: InventoryBranchConfigEntity): InventoryBranchConfigPrimitives => ({
+                    id: config.id,
+                    branchId: config.branchId,
+                    minStock: config.minStock,
                 })
             ),
         };
@@ -56,8 +56,8 @@ export class InventoryItemPersistenceMapper {
      * las filas de sus lotes (con la FK inventoryItemId puesta). El repositorio
      * las guarda en sus tablas respectivas.
      */
-    public static toPersistence(item: InventoryItem): { item: InventoryItemEntity, batch: InventoryBatchEntity[], stock: InventoryStockEntity[]; } {
-        const { id, tenantId, sku, name, unitOfMeasure, isPerishable, isActive, batches, minGlobalStock, stocks, createdAt, updatedAt } = item.toPrimitives();
+    public static toPersistence(item: InventoryItem): { item: InventoryItemEntity, batch: InventoryBatchEntity[], branchConfig: InventoryBranchConfigEntity[]; } {
+        const { id, tenantId, sku, name, unitOfMeasure, isPerishable, isActive, batches, minGlobalStock, branchConfigs, createdAt, updatedAt } = item.toPrimitives();
 
         const itemRow: InventoryItemEntity = {
             id,
@@ -86,15 +86,15 @@ export class InventoryItemPersistenceMapper {
             })
         );
 
-        const stockRows: InventoryStockEntity[] = stocks.map(
-            (stock: InventoryStockPrimitives) => ({
-                id: stock.id,
+        const branchConfigRows: InventoryBranchConfigEntity[] = branchConfigs.map(
+            (config: InventoryBranchConfigPrimitives) => ({
+                id: config.id,
                 inventoryItemId: id,
-                branchId: stock.branchId,
-                minStock: stock.minStock,
+                branchId: config.branchId,
+                minStock: config.minStock,
             })
         );
 
-        return { item: itemRow, batch: batchRows, stock: stockRows };
+        return { item: itemRow, batch: batchRows, branchConfig: branchConfigRows };
     };
 };

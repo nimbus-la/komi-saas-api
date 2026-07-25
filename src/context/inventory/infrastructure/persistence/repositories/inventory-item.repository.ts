@@ -7,7 +7,7 @@ import { InventoryItemRepository, InventoryItem, InventoryItemId, InventoryItemN
 import { InventoryItemEntity } from "../models/inventory-item.entity";
 import { InventoryBatchEntity } from "../models/inventory-batch.entity";
 import { InventoryItemPersistenceMapper } from "../mappers/inventory-item.persistence-mapper";
-import { InventoryStockEntity } from "../models/inventory-stock.entity";
+import { InventoryBranchConfigEntity } from "../models/inventory-branch-config.entity";
 
 
 @Injectable()
@@ -19,8 +19,8 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         @InjectRepository(InventoryBatchEntity)
         private readonly batches: Repository<InventoryBatchEntity>,
 
-        @InjectRepository(InventoryStockEntity)
-        private readonly stocks: Repository<InventoryStockEntity>,
+        @InjectRepository(InventoryBranchConfigEntity)
+        private readonly branchConfigs: Repository<InventoryBranchConfigEntity>,
 
         @InjectDataSource()
         private readonly dataSource: DataSource
@@ -32,7 +32,7 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         const {
             item: itemRow,
             batch: batchRow,
-            stock: stockRow
+            branchConfig: branchConfigRow
         } = InventoryItemPersistenceMapper.toPersistence(item);
 
         // Todo en una transaccion: si algo falla, no queda el item guardado con
@@ -54,18 +54,18 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
                 // OJO: solo se reconcilia si el agregado se cargo con TODOS los
                 // overrides (sin filtrar por sucursal). Si se cargo por sede, borrar los
                 // ausentes eliminaria los de las demas sucursales.
-                const stocksRepo = manager.getRepository(InventoryStockEntity);
-                const keptIds = stockRow.map((stock) => stock.id);
+                const branchConfigsRepo = manager.getRepository(InventoryBranchConfigEntity);
+                const keptIds = branchConfigRow.map((config) => config.id);
 
-                await stocksRepo
+                await branchConfigsRepo
                     .createQueryBuilder()
                     .delete()
                     .where('inventory_item_id = :itemId', { itemId: itemRow.id })
-                    .andWhere(keptIds.length > 0 ? 'inventory_stock_id NOT IN (:...keptIds)' : '1 = 1', { keptIds })
+                    .andWhere(keptIds.length > 0 ? 'inventory_branch_config_id NOT IN (:...keptIds)' : '1 = 1', { keptIds })
                     .execute();
 
-                if (stockRow.length > 0) {
-                    await stocksRepo.save(stockRow);
+                if (branchConfigRow.length > 0) {
+                    await branchConfigsRepo.save(branchConfigRow);
                 };
             }
         );
@@ -78,9 +78,9 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         if (row === null) return null;
 
         const batchRows = await this.activeBatchesOf([row.id], branchId);
-        const stockRows = await this.stocksOf([row.id], branchId);
+        const branchConfigRows = await this.branchConfigsOf([row.id], branchId);
 
-        return InventoryItemPersistenceMapper.toAggregate(row, batchRows, stockRows);
+        return InventoryItemPersistenceMapper.toAggregate(row, batchRows, branchConfigRows);
     };
 
 
@@ -92,14 +92,14 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         const batchRows = await this.activeBatchesOf(rows.map((r) => r.id), branchId);
         const groupedBatch = this.groupByItemBatch(batchRows);
 
-        const stockRows = await this.stocksOf(rows.map((s) => s.id), branchId);
-        const groupedStock = this.groupByItemStock(stockRows)
+        const branchConfigRows = await this.branchConfigsOf(rows.map((s) => s.id), branchId);
+        const groupedBranchConfig = this.groupByItemBranchConfig(branchConfigRows)
 
         return rows.map((row) =>
             InventoryItemPersistenceMapper.toAggregate(
                 row,
                 groupedBatch.get(row.id) ?? [],
-                groupedStock.get(row.id) ?? []
+                groupedBranchConfig.get(row.id) ?? []
             ),
         );
     };
@@ -130,12 +130,12 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
      * Overrides de mínimo por sucursal. Si se pasa branchId, solo el de esa sede
      * (basta para resolver su mínimo efectivo); si no, todos los del item.
      */
-    private async stocksOf(itemIds: string[], branchId?: string): Promise<InventoryStockEntity[]> {
-        const query = this.stocks.createQueryBuilder('s')
-            .where('s.inventoryItemId IN (:...itemIds)', { itemIds });
+    private async branchConfigsOf(itemIds: string[], branchId?: string): Promise<InventoryBranchConfigEntity[]> {
+        const query = this.branchConfigs.createQueryBuilder('c')
+            .where('c.inventoryItemId IN (:...itemIds)', { itemIds });
 
         if (branchId !== undefined) {
-            query.andWhere('s.branchId = :branchId', { branchId });
+            query.andWhere('c.branchId = :branchId', { branchId });
         };
 
         return query.getMany();
@@ -158,8 +158,8 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
 
-    private groupByItemStock(rows: InventoryStockEntity[]): Map<string, InventoryStockEntity[]> {
-        const map = new Map<string, InventoryStockEntity[]>();
+    private groupByItemBranchConfig(rows: InventoryBranchConfigEntity[]): Map<string, InventoryBranchConfigEntity[]> {
+        const map = new Map<string, InventoryBranchConfigEntity[]>();
 
         for (const row of rows) {
             const list = map.get(row.inventoryItemId) ?? [];
