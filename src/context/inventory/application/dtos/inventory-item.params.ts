@@ -10,6 +10,7 @@ export interface CreateInventoryItemParams {
 
 export interface ConsumeStockParams {
     itemId: string;
+    tenantId: string;
     branchId: string;
     quantity: string;
     consumedAt?: string;
@@ -19,6 +20,7 @@ export interface ConsumeStockParams {
 
 export interface ReceiveStockParams {
     itemId: string;
+    tenantId: string;
     branchId: string;
     quantityReceived: string;
     totalCostAmount: string;
@@ -40,6 +42,7 @@ export interface UpdateInventoryItemParams {
 
 export interface RegisterWasteUseCaseParams {
     itemId: string;
+    tenantId: string;
     branchId: string;
     quantity: string;
     reason: string;
@@ -50,6 +53,7 @@ export interface RegisterWasteUseCaseParams {
 
 export interface CountStockUseCaseParams {
     itemId: string;
+    tenantId: string;
     branchId: string;
     actualTotal: string;
     reason: string;
@@ -71,6 +75,7 @@ export interface BranchMinimumEntry {
  */
 export interface SetGlobalMinimumStockParams {
     itemId: string;
+    tenantId: string;
     minStock: string | null;
 };
 
@@ -83,5 +88,6 @@ export interface SetGlobalMinimumStockParams {
  */
 export interface SetBranchMinimumStockParams {
     itemId: string;
+    tenantId: string;
     branches: BranchMinimumEntry[];
 };

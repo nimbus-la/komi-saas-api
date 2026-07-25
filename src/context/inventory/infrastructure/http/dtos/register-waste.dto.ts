@@ -2,6 +2,9 @@ import { IsISO8601, IsOptional, IsString, IsUUID, Matches, MinLength } from "cla
 
 export class RegisterWasteDto {
     @IsUUID()
+    tenantId!: string;
+
+    @IsUUID()
     branchId!: string;
 
     @Matches(/^\d+(\.\d{1,3})?$/, { message: 'quantity debe ser numérico (hasta 3 decimales).' })

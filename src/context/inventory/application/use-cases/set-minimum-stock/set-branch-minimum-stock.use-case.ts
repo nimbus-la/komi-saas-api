@@ -25,7 +25,7 @@ export class SetBranchMinimumStockUseCase {
     public async execute(params: SetBranchMinimumStockParams): Promise<void> {
         // Carga SIN filtrar por sucursal: necesitamos todos los overrides presentes
         // para no perderlos en el upsert al guardar.
-        const item = await this.repository.findById(InventoryItemId.create(params.itemId));
+        const item = await this.repository.findById(InventoryItemId.create(params.itemId), params.tenantId);
 
         if (item === null) {
             throw new InventoryItemNotFoundException(params.itemId);

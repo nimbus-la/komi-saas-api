@@ -42,8 +42,8 @@ export class InventoryItemController {
 
 
     @Get()
-    public async list(@Query('branchId') branchId?: string) {
-        return this.searchItems.execute(branchId);
+    public async list(@Query('tenantId') tenantId: string, @Query('branchId') branchId?: string) {
+        return this.searchItems.execute(tenantId, branchId);
     };
 
 
@@ -51,8 +51,10 @@ export class InventoryItemController {
     @Get(':id')
     public async find(
         @Param('id') id: string,
+        @Query('tenantId') tenantId: string,
+        @Query('branchId') branchId?: string,
     ) {
-        return this.findItem.execute(id);
+        return this.findItem.execute(id, tenantId, branchId);
     };
 
 
@@ -64,6 +66,7 @@ export class InventoryItemController {
     ): Promise<void> {
         await this.receiveStock.execute({
             itemId: id,
+            tenantId: dto.tenantId,
             branchId: dto.branchId,
             quantityReceived: dto.quantityReceived,
             totalCostAmount: dto.totalCostAmount,
@@ -81,6 +84,7 @@ export class InventoryItemController {
     ): Promise<void> {
         await this.consumeStock.execute({
             itemId: id,
+            tenantId: dto.tenantId,
             branchId: dto.branchId,
             quantity: dto.quantity,
             ...(dto.consumedAt ? { consumedAt: dto.consumedAt } : {}),
@@ -94,6 +98,7 @@ export class InventoryItemController {
     public async waste(@Param('id') id: string, @Body() dto: RegisterWasteDto): Promise<void> {
         await this.registerWaste.execute({
             itemId: id,
+            tenantId: dto.tenantId,
             branchId: dto.branchId,
             quantity: dto.quantity,
             reason: dto.reason,
@@ -108,6 +113,7 @@ export class InventoryItemController {
     public async count(@Param('id') id: string, @Body() dto: CountStockDto): Promise<void> {
         await this.countStock.execute({
             itemId: id,
+            tenantId: dto.tenantId,
             branchId: dto.branchId,
             actualTotal: dto.actualTotal,
             reason: dto.reason,
@@ -120,11 +126,12 @@ export class InventoryItemController {
     @Get('batches/:id')
     public async batches(
         @Param('id') id: string,
+        @Query('tenantId') tenantId: string,
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) pageNumber: number,
         @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
         @Query('branchId') branchId?: string,
     ) {
-        return this.searchItemBatches.execute(id, { pageNumber, pageSize }, branchId);
+        return this.searchItemBatches.execute(id, tenantId, { pageNumber, pageSize }, branchId);
     };
 
 
@@ -134,7 +141,7 @@ export class InventoryItemController {
         @Param('id') id: string,
         @Body() dto: UpdateItemDto,
     ): Promise<void> {
-        await this.updateItem.execute(id, dto);
+        await this.updateItem.execute(id, dto.tenantId, dto);
     };
 
 
@@ -150,6 +157,7 @@ export class InventoryItemController {
     ): Promise<void> {
         await this.globalMinimumStock.execute({
             itemId: id,
+            tenantId: dto.tenantId,
             minStock: dto.minStock,
         });
     };
@@ -167,6 +175,7 @@ export class InventoryItemController {
     ): Promise<void> {
         await this.branchMinimumStock.execute({
             itemId: id,
+            tenantId: dto.tenantId,
             branches: dto.branches,
         });
     };

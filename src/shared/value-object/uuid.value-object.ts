@@ -5,7 +5,7 @@ import { DomainException } from '../domain/domain.exception';
 export class InvalidUuidException extends DomainException {
     constructor(value: string) {
         super({
-            code: '1003',
+            code: '1014',
             detail: `El valor "${value}" no es un UUID válido.`
         });
     };
