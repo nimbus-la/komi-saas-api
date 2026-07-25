@@ -8,8 +8,8 @@ export * from './entities/inventory-batch/value-objects/inventory-batch-expirati
 export * from './entities/inventory-batch/value-objects/inventory-batch-id.value-object';
 export * from './entities/inventory-batch/inventory-batch.entity';
 
-export * from './entities/inventory-stock/inventory-stock-id.value-object';
-export * from './entities/inventory-stock/inventory-stock.entity';
+export * from './entities/inventory-branch-config/inventory-branch-config-id.value-object';
+export * from './entities/inventory-branch-config/inventory-branch-config.entity';
 
 
 export * from './events/inventory-item-created.event';

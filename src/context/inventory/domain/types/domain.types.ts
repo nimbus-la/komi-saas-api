@@ -27,7 +27,7 @@ export interface InventoryBatchPrimitives {
 
 
 
-export interface InventoryStockPrimitives {
+export interface InventoryBranchConfigPrimitives {
     id: string;
     branchId: string;
     minStock: string;
@@ -47,7 +47,7 @@ export interface InventoryItemPrimitives {
     createdAt: Date;
     updatedAt: Date;
     batches: InventoryBatchPrimitives[];
-    stocks: InventoryStockPrimitives[];
+    branchConfigs: InventoryBranchConfigPrimitives[];
 };
 
 
