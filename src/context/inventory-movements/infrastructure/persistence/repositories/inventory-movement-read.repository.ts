@@ -20,6 +20,7 @@ export class TypeOrmInventoryMovementReadRespository implements InventoryMovemen
     public async search(filters: MovementSearchFilters, pagination: Pagination): Promise<Paginated<InventoryMovementView>> {
         const [rows, total] = await this.movements.findAndCount({
             where: {
+                tenantId: filters.tenantId,
                 ...(filters.inventoryItemId ? { inventoryItemId: filters.inventoryItemId } : {}),
                 ...(filters.branchId ? { branchId: filters.branchId } : {}),
                 ...(filters.movementType ? { movementType: filters.movementType } : {})
