@@ -7,6 +7,7 @@ import { ReceiveStockDto } from "./dtos/receive-stock.dto";
 import { ConsumeStockDto } from "./dtos/consume-stock.dto";
 import { UpdateItemDto } from "./dtos/update-item.dto";
 import { SetGlobalMinimumStockDto } from "./dtos/set-global-minimum-stock.dto";
+import { SearchInventoryItemsDto } from "./dtos/search-items.dto";
 import { SetBranchMinimumStockDto } from "./dtos/set-branch-minimum-stock.dto";
 import { RegisterWasteUseCase } from "../../application/use-cases/register-waste/register-waste.use-case";
 import { CountStockUseCase } from "../../application/use-cases/count-stock/count-stock.use-case";
@@ -42,8 +43,10 @@ export class InventoryItemController {
 
 
     @Get()
-    public async list(@Query('tenantId') tenantId: string, @Query('branchId') branchId?: string) {
-        return this.searchItems.execute(tenantId, branchId);
+    public async list(@Query() query: SearchInventoryItemsDto) {
+        const { tenantId, branchId, pageNumber, pageSize } = query;
+
+        return this.searchItems.execute(tenantId, { pageNumber, pageSize }, branchId);
     };
 
 
