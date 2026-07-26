@@ -54,11 +54,27 @@ export class ProductController {
     @Param("id") id: string,
     @Body() dto: UpdateProductDto,
   ) {
-    await this.updateProductUseCase.execute({
-      id,
-      ...dto,
-      profitMargin: ProfitMargin.create(dto.profitMargin.toString())
-    });
+
+    const product =
+      await this.updateProductUseCase.execute({
+        id,
+        ...dto,
+        profitMargin: ProfitMargin.create(
+          dto.profitMargin.toString()
+        )
+      });
+
+    const response =
+      await this.searchProductsUseCase.execute({
+        tenantId: dto.tenantId,
+        productId: product.id.value,
+        page: 1,
+        limit: 1,
+      });
+
+    return {
+      data: response[0],
+    };
   }
 
   @Get()

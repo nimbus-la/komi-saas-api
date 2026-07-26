@@ -1,4 +1,4 @@
-import { Money, Quantity } from "@/shared";
+import { EventPublisher, Money, Quantity } from "@/shared";
 
 import { CreateProductApplicationParams } from "@/context/products/domain/types/product-application";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
@@ -22,6 +22,8 @@ export class CreateProductUseCase {
         private readonly tenantChecker: TenantChecker,
         private readonly categoryChecker: ProductCategoryChecker,
         private readonly inventoryChecker: InventoryItemChecker,
+        private readonly eventPublisher: EventPublisher,
+
     ) { }
 
     public async execute(
@@ -108,8 +110,13 @@ export class CreateProductUseCase {
                     ingredient.isOptional,
             });
         }
-
         await this.repository.save(product);
+
+        await this.eventPublisher.publish(
+            product.getDomainEvents(),
+        );
+
+        product.clearDomainEvents();
 
         return product;
     }

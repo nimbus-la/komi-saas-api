@@ -52,3 +52,12 @@ export class CategoryNameTooLongException extends DomainException {
     });
   }
 }
+
+export class TenantNotFoundException extends DomainException {
+  constructor(tenantId: string) {
+    super({
+      code: "1205",
+      detail: `No se encontró el tenant con id ${tenantId}.`,
+    });
+  }
+}

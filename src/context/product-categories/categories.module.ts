@@ -9,12 +9,17 @@ import { UpdateCategoryUseCase } from "./application/use-cases/update-category/u
 import { SearchCategoriesUseCase } from "./application/use-cases/search-categories/search-categories.use-case";
 import { ProductCategoryRepositoryImpl } from "./infrastructure";
 import { CategoryService } from "./infrastructure/persistence/services/category.service";
+import { TenantChecker } from "./application/ports/tenant-checker";
+import { TenantCheckerAdapter } from "./infrastructure/persistence/adapters/tenant-checker.adapter";
+import { TenantModule } from "../tenants/tenant.module";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([
             ProductCategoryEntity,
         ]),
+        TenantModule,
+
     ],
     controllers: [
         CategoryController,
@@ -27,12 +32,22 @@ import { CategoryService } from "./infrastructure/persistence/services/category.
             provide: ProductCategoryRepository,
             useClass: ProductCategoryRepositoryImpl,
         },
+        TenantCheckerAdapter,
 
         {
+            provide: TenantChecker,
+            useExisting: TenantCheckerAdapter,
+        },
+        {
             provide: CreateCategoryUseCase,
-            useFactory: (repository: ProductCategoryRepository) =>
-                new CreateCategoryUseCase(repository),
-            inject: [ProductCategoryRepository],
+            useFactory: (
+                repository: ProductCategoryRepository,
+                tenantChecker: TenantChecker,
+            ) =>
+                new CreateCategoryUseCase(
+                    repository,
+                    tenantChecker),
+            inject: [ProductCategoryRepository, TenantChecker],
         },
         {
             provide: UpdateCategoryUseCase,
@@ -50,6 +65,9 @@ import { CategoryService } from "./infrastructure/persistence/services/category.
     ],
     exports: [
         TypeOrmModule,
+        TenantChecker,
+        ProductCategoryRepository,
+
     ],
 })
 export class CategoriesModule { }

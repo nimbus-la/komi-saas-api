@@ -16,12 +16,19 @@ export class CategoryController {
 
     @Post()
     async create(@Body() dto: CreateCategoryDto) {
-        await this.service.create(dto);
+        return this.service.create(dto);
     }
 
     @Patch(':id')
-    async update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
-        await this.service.update(id, dto);
+    async update(
+        @Param('id') id: string,
+        @Body() dto: UpdateCategoryDto
+    ) {
+        const category = await this.service.update(id, dto);
+
+        return {
+            data: category.toPrimitives(),
+        };
     }
 
     @Get()

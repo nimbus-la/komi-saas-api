@@ -31,7 +31,7 @@ export class ProductMapper {
 
     static toDomain(
         row: ProductEntity,
-        ingredients = [],
+        ingredients: RecipeIngredientPrimitives[] = [],
     ): Product {
 
         return Product.fromPrimitives({

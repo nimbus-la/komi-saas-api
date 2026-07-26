@@ -204,10 +204,12 @@ export class ProductRepositoryImpl extends ProductRepository {
 
   public async findById(
     id: ProductId,
+    tenantId: string,
   ): Promise<Product | null> {
     const row = await this.productRepository.findOne({
       where: {
         id: id.value,
+        tenantId
       },
     });
 

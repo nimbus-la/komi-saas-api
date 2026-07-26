@@ -50,6 +50,22 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         };
     }
 
+    public getTenantId(): string {
+        return this.tenantId;
+    }
+
+    public getName(): CategoryName {
+        return this.name;
+    }
+
+    public getDescription(): string | undefined {
+        return this.description;
+    }
+
+    public getIsActive(): boolean {
+        return this.isActive;
+    }
+
     public static fromPrimitives(
         primitives: CategoryPrimitives,
     ): ProductCategory {

@@ -2,30 +2,82 @@ import { Money, Quantity } from "@/shared";
 import { UpdateProductApplicationParams } from "@/context/products/domain/types/product-application";
 import { ProductId } from "@/context/products/domain/value-object/product-id.value-object";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
+import { InventoryItemChecker } from "../../ports/inventory-item-checker";
+import { ProductCategoryChecker } from "../../ports/product-category-checker";
 
 import {
+    Product,
     ProductNotFoundException,
     ProductNotModifiedException,
     ProductRepository,
+    TenantNotFoundException,
 } from "../../../domain";
+import { ProductCategoryNotFoundException } from "@/context/product-categories";
+import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
+import { TenantChecker } from "../../ports/tenant-checker";
 
 export class UpdateProductUseCase {
     constructor(
         private readonly repository: ProductRepository,
+        private readonly tenantChecker: TenantChecker,
+        private readonly categoryChecker: ProductCategoryChecker,
+        private readonly inventoryChecker: InventoryItemChecker,
     ) { }
 
     public async execute(
         params: UpdateProductApplicationParams,
-    ): Promise<void> {
+    ): Promise<Product> {
 
+        const tenantExists = await this.tenantChecker.exists(
+            params.tenantId,
+        );
+
+        if (!tenantExists) {
+            throw new TenantNotFoundException(
+                params.tenantId,
+            );
+        }
         const product = await this.repository.findById(
             ProductId.create(params.id),
+            params.tenantId,
+
         );
 
         if (!product) {
             throw new ProductNotFoundException(params.id);
         }
+        if (params.productCategoryId) {
 
+            const categoryExists =
+                await this.categoryChecker.existsForTenant(
+                    params.tenantId,
+                    params.productCategoryId,
+                );
+
+            if (!categoryExists) {
+                throw new ProductCategoryNotFoundException(
+                    params.productCategoryId,
+                );
+            }
+        }
+        if (params.recipe) {
+
+            for (const ingredient of params.recipe) {
+
+                const exists =
+                    await this.inventoryChecker.existsForTenant(
+                        params.tenantId,
+                        ingredient.inventoryItemId,
+                    );
+
+                if (!exists) {
+                    throw new InventoryItemNotValidForTenantException(
+                        params.tenantId,
+                        ingredient.inventoryItemId,
+                    );
+                }
+            }
+        }
         const current = product.toPrimitives();
 
         const hasChanges =
@@ -80,7 +132,7 @@ export class UpdateProductUseCase {
                 params.profitMargin ?? current.profitMargin,
         });
 
-        
+
         if (params.productStatus !== undefined) {
             if (params.productStatus) {
                 product.activate();
@@ -100,5 +152,7 @@ export class UpdateProductUseCase {
         }
 
         await this.repository.update(product);
+
+        return product;
     }
 }

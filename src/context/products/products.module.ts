@@ -10,14 +10,15 @@ import { SearchProductsUseCase } from "./application/use-cases/search-items/sear
 import { CreateProductUseCase } from "./application";
 import { CategoriesModule } from "../product-categories/categories.module";
 import { TenantModule } from "../tenants/tenant.module";
-import { TenantChecker } from "./application/ports/tenant-checker";
-import { ProductCategoryChecker } from "./application/ports/product-category-checker";
+import { TenantChecker } from "@/context/products/application/ports/tenant-checker";
+import { TenantCheckerAdapter } from "@/context/products/infrastructure/persistence/adapters/tenant-checker.adapter"; import { ProductCategoryChecker } from "./application/ports/product-category-checker";
 import { InventoryItemChecker } from "./application/ports/inventory-item-checker";
-import { TenantCheckerAdapter } from "./infrastructure/persistence/adapters/tenant-checker.adapter";
 import { ProductCategoryCheckerAdapter } from "./infrastructure/persistence/adapters/product-category-checker.adapter";
 import { InventoryItemCheckerAdapter } from "./infrastructure/persistence/adapters/inventory-item-checker.adapter";
 import { ProductCategoryEntity } from "../product-categories";
-import { InventoryItemEntity } from "../inventory";
+import { InventoryItemEntity, InventoryModule } from "../inventory";
+import { EventPublisher } from "@/shared";
+import { EventEmitterPublisher } from "@/infrastructure";
 
 @Module({
   imports: [
@@ -29,6 +30,8 @@ import { InventoryItemEntity } from "../inventory";
     ]),
     CategoriesModule,
     TenantModule,
+    InventoryModule,
+
   ],
 
   controllers: [
@@ -36,6 +39,7 @@ import { InventoryItemEntity } from "../inventory";
   ],
 
   providers: [
+
     {
       provide: InventoryItemChecker,
       useExisting: InventoryItemCheckerAdapter,
@@ -51,15 +55,19 @@ import { InventoryItemEntity } from "../inventory";
 
     {
       provide: ProductCategoryChecker,
-      useExisting: ProductCategoryCheckerAdapter,
+      useClass: ProductCategoryCheckerAdapter,
     },
 
     {
       provide: InventoryItemChecker,
       useExisting: InventoryItemCheckerAdapter,
     },
+    {
+      provide: EventPublisher,
+      useClass: EventEmitterPublisher
+    },
+
     TenantCheckerAdapter,
-    ProductCategoryCheckerAdapter,
     InventoryItemCheckerAdapter,
     {
       provide: CreateProductUseCase,
@@ -68,8 +76,36 @@ import { InventoryItemEntity } from "../inventory";
         tenantChecker: TenantChecker,
         categoryChecker: ProductCategoryChecker,
         inventoryChecker: InventoryItemChecker,
+        eventPublisher: EventPublisher,
       ) => {
         return new CreateProductUseCase(
+          repository,
+          tenantChecker,
+          categoryChecker,
+          inventoryChecker,
+          eventPublisher,
+
+        );
+      },
+
+      inject: [
+        ProductRepository,
+        TenantChecker,
+        ProductCategoryChecker,
+        InventoryItemChecker,
+        EventPublisher,
+      ],
+    },
+
+    {
+      provide: UpdateProductUseCase,
+      useFactory: (
+        repository: ProductRepository,
+        tenantChecker: TenantChecker,
+        categoryChecker: ProductCategoryChecker,
+        inventoryChecker: InventoryItemChecker,
+      ) => {
+        return new UpdateProductUseCase(
           repository,
           tenantChecker,
           categoryChecker,
@@ -86,24 +122,10 @@ import { InventoryItemEntity } from "../inventory";
     },
 
     {
-      provide: UpdateProductUseCase,
-      useFactory: (
-        repository: ProductRepository,
-      ) => {
-        return new UpdateProductUseCase(
-          repository,
-        );
-      },
-
-      inject: [
-        ProductRepository,
-      ],
-    },
-
-    {
       provide: SearchProductsUseCase,
       useFactory: (
         repository: ProductRepository,
+
       ) => {
         return new SearchProductsUseCase(
           repository,

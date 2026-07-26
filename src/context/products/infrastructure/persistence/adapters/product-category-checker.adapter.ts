@@ -1,28 +1,25 @@
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-
+import { ProductCategoryRepository } from "@/context/product-categories/domain/product-category.repository";
 import { ProductCategoryChecker } from "@/context/products/application/ports/product-category-checker";
-import { ProductCategoryEntity } from "@/context/product-categories/infrastructure/persistence/models/product-category.entity";
 
 @Injectable()
 export class ProductCategoryCheckerAdapter
     implements ProductCategoryChecker {
+
     constructor(
-        @InjectRepository(ProductCategoryEntity)
-        private readonly repository: Repository<ProductCategoryEntity>,
+        private readonly categories: ProductCategoryRepository,
     ) { }
 
     async existsForTenant(
-        productCategoryId: string,
+        tenantId: string,
+        categoryId: string,
     ): Promise<boolean> {
 
-        const category = await this.repository.findOne({
-            where: {
-                id: productCategoryId,
-            },
+        const categories = await this.categories.search({
+            tenantId,
+            id: categoryId,
         });
 
-        return category !== null;
+        return categories.length > 0;
     }
 }

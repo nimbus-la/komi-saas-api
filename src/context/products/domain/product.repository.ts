@@ -15,6 +15,7 @@ export abstract class ProductRepository {
 
     public abstract findById(
         id: ProductId,
+        ternand: string,
     ): Promise<Product | null>;
 
     abstract existsByName(
