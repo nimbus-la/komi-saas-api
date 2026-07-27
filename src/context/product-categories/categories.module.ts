@@ -51,15 +51,28 @@ import { TenantModule } from "../tenants/tenant.module";
         },
         {
             provide: UpdateCategoryUseCase,
-            useFactory: (repository: ProductCategoryRepository) =>
-                new UpdateCategoryUseCase(repository),
-            inject: [ProductCategoryRepository],
+            useFactory: (
+                repository: ProductCategoryRepository,
+                tenantChecker: TenantChecker
+            ) =>
+                new UpdateCategoryUseCase(
+                    repository,
+                    tenantChecker),
+            inject: [
+                ProductCategoryRepository,
+                TenantChecker],
         },
         {
             provide: SearchCategoriesUseCase,
-            useFactory: (repository: ProductCategoryRepository) =>
-                new SearchCategoriesUseCase(repository),
-            inject: [ProductCategoryRepository],
+            useFactory: (
+                repository: ProductCategoryRepository,
+                tenantChecker: TenantChecker) =>
+                new SearchCategoriesUseCase(
+                    repository,
+                    tenantChecker),
+            inject: [
+                ProductCategoryRepository,
+                TenantChecker],
         },
 
     ],

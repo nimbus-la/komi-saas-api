@@ -8,8 +8,12 @@ import {
     ProductCategory,
 } from "../../../domain";
 import { CategoryName } from "@/context/product-categories/domain/exceptions/InvalidCategoryNameException";
+import { TenantChecker } from "../../ports/tenant-checker";
+import { TenantNotFoundException } from "@/context/products";
+import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId-Exception";
 
 export interface UpdateCategoryApplicationParams {
+    tenantId: string;
     name?: string;
     description?: string;
     estado?: boolean;
@@ -19,12 +23,30 @@ export interface UpdateCategoryApplicationParams {
 export class UpdateCategoryUseCase {
     constructor(
         private readonly repository: ProductCategoryRepository,
+        private readonly tenantChecker: TenantChecker,
+
     ) { }
 
     async execute(
         id: string,
         params: UpdateCategoryApplicationParams,
     ): Promise<ProductCategory> {
+
+
+        if (!params.tenantId) {
+            throw new TenantIdRequiredForSearchException();
+        }
+
+        const tenantExists = await this.tenantChecker.exists(
+            params.tenantId,
+        );
+
+        if (!tenantExists) {
+            throw new TenantNotFoundException(
+                params.tenantId,
+            );
+        }
+
 
         const category = await this.repository.findById(id);
 

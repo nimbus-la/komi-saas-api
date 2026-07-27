@@ -13,6 +13,7 @@ import {
   Product,
   ProductRepository,
   SkuSequenceNotGeneratedException,
+  TenantIdRequiredForSearchException,
 } from "../../../domain";
 
 
@@ -101,15 +102,16 @@ export class ProductRepositoryImpl extends ProductRepository {
     params: SearchProductsApplicationParams,
   ): Promise<ProductResponse[]> {
     const query = this.productRepository
-      .createQueryBuilder("product");
-
-    if (params.tenantId) {
-      query.andWhere(
+      .createQueryBuilder("product")
+      .where(
         "product.tenantId = :tenantId",
         {
           tenantId: params.tenantId,
         },
       );
+
+    if (!params.tenantId) {
+      throw new TenantIdRequiredForSearchException();
     }
 
     if (params.text) {

@@ -85,6 +85,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1406': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ítem de inventario especificado no pertenece al tenant proporcionado.' },
     '1407': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen de beneficio no puede ser menor que 0.' },
     '1408': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se encontraron cambios para actualizar el producto.' },
+    '1409': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El tenantId es obligatorio para buscar' },
 
     // Categorías: 1434 - 1466
     '1434': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría.' },

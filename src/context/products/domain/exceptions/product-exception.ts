@@ -95,3 +95,12 @@ export class ProductNotModifiedException extends DomainException {
         });
     }
 }
+
+export class TenantIdRequiredForSearchException extends DomainException {
+    constructor() {
+        super({
+            code: "1409",
+            detail: "El tenantId es obligatorio para buscar productos.",
+        });
+    }
+}
