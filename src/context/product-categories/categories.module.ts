@@ -66,7 +66,8 @@ import { TenantModule } from "../tenants/tenant.module";
             provide: SearchCategoriesUseCase,
             useFactory: (
                 repository: ProductCategoryRepository,
-                tenantChecker: TenantChecker) =>
+                tenantChecker: TenantChecker
+            ) =>
                 new SearchCategoriesUseCase(
                     repository,
                     tenantChecker),

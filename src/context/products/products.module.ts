@@ -125,15 +125,19 @@ import { EventEmitterPublisher } from "@/infrastructure";
       provide: SearchProductsUseCase,
       useFactory: (
         repository: ProductRepository,
+        tenantChecker: TenantChecker
 
       ) => {
         return new SearchProductsUseCase(
           repository,
+          tenantChecker
         );
       },
 
       inject: [
         ProductRepository,
+        TenantChecker,
+
       ],
     },
   ],

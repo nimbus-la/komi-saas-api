@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ProductCategoryRepository, TenantNotFoundException } from "../../../domain";
 import { TenantChecker } from "../../ports/tenant-checker";
+import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId-Exception";
 
 @Injectable()
 export class SearchCategoriesUseCase {
@@ -25,6 +26,9 @@ export class SearchCategoriesUseCase {
             throw new TenantNotFoundException(
                 params.tenantId,
             );
+        }
+        if (!params.tenantId) {
+            throw new TenantIdRequiredForSearchException();
         }
         return categories.map((category) => category.toPrimitives());
     }

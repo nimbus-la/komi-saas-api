@@ -8,7 +8,6 @@ import {
     ProductCategory,
     ProductCategoryRepository,
 } from "../../../domain";
-import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId-Exception";
 
 @Injectable()
 export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
@@ -62,9 +61,6 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
         createdAt?: string;
         updatedAt?: string;
     }): Promise<ProductCategory[]> {
-        if (!params.tenantId) {
-            throw new TenantIdRequiredForSearchException();
-        }
         const query = this.categoryRepository
             .createQueryBuilder("category")
             .where(

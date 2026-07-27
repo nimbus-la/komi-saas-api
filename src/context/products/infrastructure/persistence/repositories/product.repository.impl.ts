@@ -13,7 +13,6 @@ import {
   Product,
   ProductRepository,
   SkuSequenceNotGeneratedException,
-  TenantIdRequiredForSearchException,
 } from "../../../domain";
 
 
@@ -109,10 +108,6 @@ export class ProductRepositoryImpl extends ProductRepository {
           tenantId: params.tenantId,
         },
       );
-
-    if (!params.tenantId) {
-      throw new TenantIdRequiredForSearchException();
-    }
 
     if (params.text) {
       query.andWhere(
