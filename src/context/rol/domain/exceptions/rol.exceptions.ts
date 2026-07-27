@@ -3,7 +3,7 @@ import { DomainException } from "@/shared";
 export class InvalidRolCodeException extends DomainException{
     constructor(reason: string) {
         super({
-            code: '1014',
+            code: '1016',
             detail:  `El código del rol es inválido ${reason}.`
         });
     };
@@ -12,7 +12,7 @@ export class InvalidRolCodeException extends DomainException{
 export class InvalidRolNameException extends DomainException {
     constructor(reason: string) {
         super({
-            code: "1015",
+            code: "1017",
             detail: `El nombre del rol es inválido: ${reason}.`,
         });
     }

@@ -1,30 +1,29 @@
 import { EventPublisher, Quantity } from "@/shared";
-
 import { InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
-import { ConsumeStockParams } from "../../dtos/inventory-item.params";
+import { RegisterWasteUseCaseParams } from "../../dtos/inventory-item.params";
 
-
-export class ConsumeStockUseCase {
+export class RegisterWasteUseCase {
     constructor(
         private readonly repository: InventoryItemRepository,
         private readonly eventPublisher: EventPublisher
     ) { };
 
-    public async execute(params: ConsumeStockParams): Promise<void> {
+    public async execute(params: RegisterWasteUseCaseParams): Promise<void> {
         const item = await this.repository.findById(
             InventoryItemId.create(params.itemId),
-            params.tenantId,
-            params.branchId
+            params.tenantId
         );
 
         if (item === null) {
             throw new InventoryItemNotFoundException(params.itemId);
         };
 
-        item.consume(
-            Quantity.of(params.quantity),
-            params.consumedAt ? new Date(params.consumedAt) : undefined
-        );
+        item.registerWaste({
+            branchId: params.branchId,
+            quantity: Quantity.of(params.quantity),
+            reason: params.reason,
+            ...(params.occurredAt ? { occurredAt: new Date(params.occurredAt) } : {}),
+        });
 
         await this.repository.save(item);
 

@@ -22,7 +22,7 @@ export const toInventoryItemResponse = (
     // Con sucursal: mínimo efectivo (override ?? global) y estado bajo-mínimo de esa sede.
     // Sin sucursal: solo tiene sentido reportar el global; el estado queda indeterminado.
     const minStock = branchId !== undefined
-        ? (item.minimumStockFor(branchId)?.getValue() ?? null)
+        ? (item.resolveMinimumForBranch(branchId)?.getValue() ?? null)
         : p.minGlobalStock;
 
     const isBelowMinimum = branchId !== undefined

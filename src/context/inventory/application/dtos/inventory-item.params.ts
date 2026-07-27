@@ -10,6 +10,7 @@ export interface CreateInventoryItemParams {
 
 export interface ConsumeStockParams {
     itemId: string;
+    tenantId: string;
     branchId: string;
     quantity: string;
     consumedAt?: string;
@@ -19,19 +20,12 @@ export interface ConsumeStockParams {
 
 export interface ReceiveStockParams {
     itemId: string;
+    tenantId: string;
     branchId: string;
     quantityReceived: string;
     totalCostAmount: string;
     expirationDate?: string | null;
     receivedAt?: string;
-};
-
-
-
-export interface SetMinimumStockParams {
-    itemId: string;
-    branchId?: string;        // ausente: mínimo GLOBAL; presente: override de la sucursal
-    minStock: string | null;  // null (solo global): limpia el mínimo global
 };
 
 
@@ -42,4 +36,58 @@ export interface UpdateInventoryItemParams {
     costCurrency?: string;
     unitOfMeasure?: string;
     isPerishable?: boolean;
+};
+
+
+
+export interface RegisterWasteUseCaseParams {
+    itemId: string;
+    tenantId: string;
+    branchId: string;
+    quantity: string;
+    reason: string;
+    occurredAt?: string;
+};
+
+
+
+export interface CountStockUseCaseParams {
+    itemId: string;
+    tenantId: string;
+    branchId: string;
+    actualTotal: string;
+    reason: string;
+    occurredAt?: string;
+};
+
+
+
+export interface BranchMinimumEntry {
+    branchId: string;
+    minStock: string | null;
+};
+
+
+
+/**
+ * Minimo GLOBAL del item: el umbral por defecto que aplica a toda sucursal sin
+ * override propio. minStock null limpia el minimo global.
+ */
+export interface SetGlobalMinimumStockParams {
+    itemId: string;
+    tenantId: string;
+    minStock: string | null;
+};
+
+
+
+/**
+ * Minimo POR SUCURSAL, en lote. Es parcial: solo afecta las sucursales enviadas;
+ * las que no vengan conservan su configuracion. Una entrada con minStock null
+ * elimina el override de esa sede (vuelve a heredar el minimo global).
+ */
+export interface SetBranchMinimumStockParams {
+    itemId: string;
+    tenantId: string;
+    branches: BranchMinimumEntry[];
 };

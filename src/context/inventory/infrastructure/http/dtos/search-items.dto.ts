@@ -1,24 +1,14 @@
 import { Type } from "class-transformer";
-import { IsEnum, IsInt, IsOptional, IsUUID, Min } from "class-validator";
-
-import { MovementType } from "../../../domain";
+import { IsInt, IsOptional, IsUUID, Min } from "class-validator";
 
 
-export class SearchInventoryMovementsDto {
+export class SearchInventoryItemsDto {
     @IsUUID()
     tenantId!: string;
 
     @IsOptional()
     @IsUUID()
-    inventoryItemId?: string;
-
-    @IsOptional()
-    @IsUUID()
     branchId?: string;
-
-    @IsOptional()
-    @IsEnum(MovementType)
-    movementType?: MovementType;
 
     @Type(() => Number)
     @IsInt()
@@ -31,4 +21,4 @@ export class SearchInventoryMovementsDto {
     @Min(1)
     @IsOptional()
     pageSize = 20;
-}
+};

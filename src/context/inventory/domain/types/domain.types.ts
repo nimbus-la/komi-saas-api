@@ -1,3 +1,5 @@
+import { Quantity } from "@/shared";
+
 export interface InventoryItemCreatedProps {
     itemId: string;
     tenantId: string;
@@ -25,7 +27,7 @@ export interface InventoryBatchPrimitives {
 
 
 
-export interface InventoryStockPrimitives {
+export interface InventoryBranchConfigPrimitives {
     id: string;
     branchId: string;
     minStock: string;
@@ -45,7 +47,7 @@ export interface InventoryItemPrimitives {
     createdAt: Date;
     updatedAt: Date;
     batches: InventoryBatchPrimitives[];
-    stocks: InventoryStockPrimitives[];
+    branchConfigs: InventoryBranchConfigPrimitives[];
 };
 
 
@@ -55,4 +57,54 @@ export interface ConsumedBatchDetail {
     quantity: string;
     unitCostAmount: string;
     unitCostCurrency: string;
+};
+
+
+
+export interface WastedBatchDetail {
+    batchId: string;
+    quantity: string;
+    unitCostAmount: string;
+    unitCostCurrency: string;
+};
+
+
+
+export type AdjustmentDirection = 'IN' | 'OUT';
+
+
+
+export interface AdjustedBatchDetail {
+    batchId: string;
+    direction: AdjustmentDirection;
+    quantity: string;
+    unitCostAmount: string;
+    unitCostCurrency: string;
+};
+
+
+
+export interface RegisterWasteParams {
+    branchId: string;
+    quantity: Quantity;
+    reason: string;
+    occurredAt?: Date;
+};
+
+
+
+export interface AdjustBatchParams {
+    batchId: string;
+    actualQuantity: Quantity;
+    reason: string;
+    occurredAt?: Date;
+};
+
+
+
+export interface CountStockParams {
+    branchId: string;
+    actualTotal: Quantity;
+    reason: string;
+    occurredAt?: Date;
 };

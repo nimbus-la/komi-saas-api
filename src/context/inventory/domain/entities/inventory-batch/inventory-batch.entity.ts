@@ -93,6 +93,40 @@ export class InventoryBatch extends Entity<InventoryBatchId> {
      * que el root ya eligió este lote.
      */
     public consume(quantity: Quantity): void {
+        this.reduce(quantity);
+    };
+
+
+
+    /**
+     * Descuenta 'quantity' de ESTE lote por una MERMA (producto perdido: vencido,
+     * dañado, derramado). Mecánicamente igual a un consumo, pero el root lo
+     * registra como un movimiento WASTE: la mercancía no se usó, se perdió.
+     */
+    public waste(quantity: Quantity): void {
+        this.reduce(quantity);
+    };
+
+
+
+    /**
+     * Fija la cantidad restante a un valor concreto (ajuste por conteo o
+     * corrección de captura). A diferencia de consume/waste, PUEDE SUBIR: un
+     * conteo físico puede encontrar más de lo registrado.
+     * No valida contra quantityReceived a propósito: un mal conteo al recibir es
+     * justo uno de los casos que este método existe para corregir.
+     */
+    public adjustTo(newRemaining: Quantity): void {
+        this.quantityRemaining = newRemaining;
+    };
+
+
+
+    /**
+     * Resta con guarda: la cantidad restante nunca queda negativa.
+     * Lógica compartida por consume y waste (difieren en intención, no en efecto).
+     */
+    private reduce(quantity: Quantity): void {
         if (quantity.isGreaterThan(this.quantityRemaining)) {
             throw new InsufficientBatchQuantityException();
         };

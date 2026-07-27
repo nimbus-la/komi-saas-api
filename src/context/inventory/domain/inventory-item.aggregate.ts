@@ -1,8 +1,12 @@
 import { AggregateRoot, Money, Quantity } from "@/shared";
 
-import { ConsumedBatchDetail, InventoryItemPrimitives } from "./types/domain.types";
+import { AdjustedBatchDetail, ConsumedBatchDetail, CountStockParams, InventoryItemPrimitives, RegisterWasteParams, WastedBatchDetail } from "./types/domain.types";
 import { InventoryItemCreatedEvent } from "./events/inventory-item-created.event";
-import { AmbiguousBranchScopeException, EmptyUpdateException, InactiveItemException, InsufficientStockException, NonPositiveConsumptionException, PerishabilityChangeNotAllowedException, PerishableRequiresExpirationException, UnitChangeNotAllowedException } from "./exceptions/inventory-item.exceptions";
+import { InactiveItemException } from "./exceptions/inventory-item.exceptions";
+import { PerishableRequiresExpirationException } from "./exceptions/inventory-batch.exceptions";
+import { NonPositiveConsumptionException, InsufficientStockException, ReasonRequiredException, NoAdjustmentDifferenceException, CountIncreaseNotAllowedException } from "./exceptions/stock-movement.exceptions";
+import { AmbiguousBranchScopeException, DuplicateBranchInBatchException } from "./exceptions/branch-scope.exceptions";
+import { UnitChangeNotAllowedException, PerishabilityChangeNotAllowedException, EmptyUpdateException } from "./exceptions/update-item.exceptions";
 import { InventoryItemId } from "./value-objects/inventory-item-id.value-object";
 import { InventoryItemName } from "./value-objects/inventory-item-name.value-object";
 import { InventoryItemUnit } from "./value-objects/inventory-item-unit.value-object";
@@ -10,9 +14,11 @@ import { InventoryBatch } from "./entities/inventory-batch/inventory-batch.entit
 import { InventoryBatchExpirationDate } from "./entities/inventory-batch/value-objects/inventory-batch-expiration.value-object";
 import { InventoryItemSku } from "./value-objects/inventory-item-sku.value-object";
 import { DEFAULT_CURRENCY } from "./common/constants.common";
-import { InventoryStock } from "./entities/inventory-stock/inventory-stock.entity";
+import { InventoryBranchConfig } from "./entities/inventory-branch-config/inventory-branch-config.entity";
 import { StockReceivedEvent } from "./events/stock-received.event";
 import { StockConsumedEvent } from "./events/stock-consumed.event";
+import { StockWastedEvent } from "./events/stock-wasted.event";
+import { StockAdjustedEvent } from "./events/stock-adjusted.event";
 
 
 export class InventoryItem extends AggregateRoot<InventoryItemId> {
@@ -24,7 +30,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
     private isPerishable: boolean;
     private isActive: boolean;
     private minGlobalStock: Quantity | null;
-    private stocks: InventoryStock[];
+    private branchConfigs: InventoryBranchConfig[];
     private readonly createdAt: Date;
     private updatedAt: Date;
 
@@ -47,7 +53,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         updatedAt: Date,
         batches: InventoryBatch[],
         minGlobalStock: Quantity | null,
-        stocks: InventoryStock[]
+        branchConfigs: InventoryBranchConfig[]
     ) {
         super(id);
 
@@ -61,7 +67,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         this.updatedAt = updatedAt;
         this.batches = batches;
         this.minGlobalStock = minGlobalStock;
-        this.stocks = stocks;
+        this.branchConfigs = branchConfigs;
     };
 
 
@@ -297,20 +303,64 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
 
 
     /**
-     * Crea o actualiza el OVERRIDE de mínimo de una sucursal concreta. A partir de
-     * aquí esa sede deja de derivar del global y usa su propio umbral. Es un upsert:
-     * si ya existía un override para la sucursal, se actualiza; si no, se agrega.
+     * Configura el mínimo de VARIAS sucursales en una sola operación.
+     *
+     * Es PARCIAL, solo afecta las sucursales presentes en el arreglo; las que no
+     * vengan conservan su configuración. Un minStock null en una entrada elimina
+     * el override de esa sede (vuelve a heredar el mínimo global).
      */
-    public setBranchMinimum(branchId: string, minStock: Quantity): void {
-        const existing = this.stocks.find(
-            (stock: InventoryStock) => stock.getBranchId() === branchId
+    public setMinimumsForBranches(entries: Array<{ branchId: string; minStock: Quantity | null }>): void {
+        if (entries.length === 0) {
+            throw new EmptyUpdateException(this.id.value);
+        };
+
+        // Duplicados en el arreglo: la última entrada pisaría a la anterior en
+        // silencio, así que se rechaza antes de mutar nada.
+        const seen = new Set<string>();
+
+        for (const entry of entries) {
+            if (seen.has(entry.branchId)) {
+                throw new DuplicateBranchInBatchException(entry.branchId);
+            };
+
+            seen.add(entry.branchId);
+        };
+
+        for (const entry of entries) {
+            this.setMinimumForBranch(entry.branchId, entry.minStock);
+        };
+
+        this.touch();
+    };
+
+
+
+    /**
+     * Fija el mínimo de UNA sucursal. Con null elimina el override: la sede vuelve
+     * a heredar el mínimo global. Borrar la fila (en vez de escribir el valor
+     * global en ella) es lo correcto: así la sede sigue futuros cambios del global.
+     */
+    public setMinimumForBranch(branchId: string, minStock: Quantity | null): void {
+        const index = this.branchConfigs.findIndex(
+            (config: InventoryBranchConfig) => config.getBranchId() === branchId
         );
+
+        if (minStock === null) {
+            if (index !== -1) {
+                this.branchConfigs.splice(index, 1);
+            };
+
+            this.touch();
+            return;
+        };
+
+        const existing = this.branchConfigs[index];
 
         if (existing !== undefined) {
             existing.changeMinimum(minStock);
 
         } else {
-            this.stocks.push(InventoryStock.create({ branchId, minStock }));
+            this.branchConfigs.push(InventoryBranchConfig.create({ branchId, minStock }));
         };
 
         this.touch();
@@ -323,9 +373,9 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * el mínimo global; si tampoco hay global, null (el item no tiene política de
      * mínimos y nunca se reporta "bajo mínimo").
      */
-    public minimumStockFor(branchId: string): Quantity | null {
-        const override = this.stocks.find(
-            (stock: InventoryStock) => stock.getBranchId() === branchId
+    public resolveMinimumForBranch(branchId: string): Quantity | null {
+        const override = this.branchConfigs.find(
+            (config: InventoryBranchConfig) => config.getBranchId() === branchId
         );
 
         return override ? override.getMinStock() : this.minGlobalStock;
@@ -352,7 +402,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
      * puede afirmar nada. "Bajo mínimo" es estricto: stock == mínimo NO cuenta.
      */
     public isBelowMinimumFor(branchId: string, date: Date = new Date()): boolean | null {
-        const minimum = this.minimumStockFor(branchId);
+        const minimum = this.resolveMinimumForBranch(branchId);
 
         if (minimum === null) return null;
 
@@ -409,6 +459,163 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
         // Caso 2: al menos uno no tiene vencimiento (no perecedero).
         // Ordenamos por fecha de recepción: el que entró primero sale primero (FIFO).
         return loteA.getReceivedAt().getTime() - loteB.getReceivedAt().getTime();
+    };
+
+
+
+    /**
+     * Registra una MERMA por CANTIDAD TOTAL: el usuario informa cuánto se perdió en
+     * una sucursal y el motivo; el dominio reparte esa cantidad entre los lotes
+     * activos por FEFO. El costo unitario de cada lote NO cambia (se perdió
+     * producto, no se corrigió un precio); cada lote tocado aporta su costo real.
+     *
+     * El usuario razona en totales ("se dañaron 500 g"); el sistema resuelve los
+     * lotes y deja la trazabilidad por lote en la bitácora.
+     */
+    public registerWaste(params: RegisterWasteParams): void {
+        const reason = params.reason.trim();
+
+        if (reason.length === 0) {
+            throw new ReasonRequiredException('merma');
+        };
+
+        if (params.quantity.isZero()) {
+            throw new NonPositiveConsumptionException();
+        };
+
+        const occurredOn = params.occurredAt ?? new Date();
+        const available = this.currentStockForBranch(params.branchId, occurredOn);
+
+        if (params.quantity.isGreaterThan(available)) {
+            throw new InsufficientStockException(
+                this.id.value, params.quantity.getValue(), available.getValue()
+            );
+        };
+
+        const ordered = this.activateBatchesOfBranch(params.branchId, occurredOn)
+            .sort(InventoryItem.compararPorFefo);
+
+
+        let pending = params.quantity;
+        const wastedBatches: WastedBatchDetail[] = [];
+
+        for (const batch of ordered) {
+            if (pending.isZero()) break;
+
+            const take = pending.isGreaterThan(batch.getRemaining())
+                ? batch.getRemaining()
+                : pending;
+
+            batch.waste(take);
+
+            wastedBatches.push({
+                batchId: batch.getId(),
+                quantity: take.getValue(),
+                unitCostAmount: batch.getUnitCost().getAmount(),
+                unitCostCurrency: batch.getUnitCost().currency,
+            });
+
+            pending = pending.subtract(take);
+        };
+
+        this.registerEvent(
+            new StockWastedEvent({
+                itemId: this.id.value,
+                tenantId: this.tenantId,
+                branchId: params.branchId,
+                reason,
+                wastedBatches,
+                occurredOn,
+            })
+        );
+
+        this.touch();
+    };
+
+
+
+    /**
+     * CONTEO FÍSICO por CANTIDAD TOTAL: el usuario declara cuánto hay EN TOTAL del
+     * item en una sede y el motivo. El dominio compara contra el stock del sistema:
+     *
+     *   - Igual        -> no hay nada que ajustar.
+     *   - Menos (falta)-> se reparte el faltante por FEFO (un ADJUSTMENT_OUT por
+     *                     lote afectado, con su costo real).
+     *   - Más (sobra)  -> se RECHAZA: un conteo no puede crear inventario de la
+     *                     nada, porque el sobrante no tiene costo ni vencimiento
+     *                     conocidos. Ese sobrante se registra como una ENTRADA.
+     *
+     * Nunca sube. El usuario razona en totales; la bitácora guarda el detalle por
+     * lote.
+     */
+    public countStock(params: CountStockParams): void {
+        const reason = params.reason.trim();
+
+        if (reason.length === 0) {
+            throw new ReasonRequiredException('conteo');
+        };
+
+        const occurredOn = params.occurredAt ?? new Date();
+        const current = this.currentStockForBranch(params.branchId, occurredOn);
+
+        if (params.actualTotal.isGreaterThan(current)) {
+            throw new CountIncreaseNotAllowedException(this.id.value);
+        };
+
+        if (!current.isGreaterThan(params.actualTotal)) {
+            // actualTotal == current: no hay diferencia.
+            throw new NoAdjustmentDifferenceException(`la sucursal ${params.branchId}`);
+        };
+
+        const missing = current.subtract(params.actualTotal);
+
+        const ordered = this.activateBatchesOfBranch(params.branchId, occurredOn)
+            .sort(InventoryItem.compararPorFefo);
+
+        let pending = missing;
+        const adjustedBatches: AdjustedBatchDetail[] = [];
+
+        for (const batch of ordered) {
+            if (pending.isZero()) break;
+
+            const take = pending.isGreaterThan(batch.getRemaining())
+                ? batch.getRemaining()
+                : pending;
+
+            batch.adjustTo(batch.getRemaining().subtract(take));
+
+            adjustedBatches.push({
+                batchId: batch.getId(),
+                direction: 'OUT',
+                quantity: take.getValue(),
+                unitCostAmount: batch.getUnitCost().getAmount(),
+                unitCostCurrency: batch.getUnitCost().currency,
+            });
+
+            pending = pending.subtract(take);
+        };
+
+        this.registerEvent(
+            new StockAdjustedEvent({
+                itemId: this.id.value,
+                tenantId: this.tenantId,
+                branchId: params.branchId,
+                reason,
+                adjustedBatches,
+                occurredOn,
+            })
+        );
+
+        this.touch();
+    };
+
+
+
+    /** Lotes utilizables de una sucursal: con existencias y sin vencer. */
+    private activateBatchesOfBranch(branchId: string, date: Date): InventoryBatch[] {
+        return this.batches.filter(
+            (batch: InventoryBatch) => batch.getBranchId() === branchId && batch.isActive(date)
+        );
     };
 
 
@@ -526,7 +733,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
             batches: this.batches.map((batch) => batch.toPrimitives()),
-            stocks: this.stocks.map((stock) => stock.toPrimitives()),
+            branchConfigs: this.branchConfigs.map((config) => config.toPrimitives()),
         };
     };
 
@@ -552,7 +759,7 @@ export class InventoryItem extends AggregateRoot<InventoryItemId> {
             p.updatedAt,
             p.batches.map((batch) => InventoryBatch.fromPrimitives(batch)),
             p.minGlobalStock !== null ? Quantity.of(p.minGlobalStock) : null,
-            p.stocks.map((stock) => InventoryStock.fromPrimitives(stock)),
+            p.branchConfigs.map((config) => InventoryBranchConfig.fromPrimitives(config)),
         );
     };
 };

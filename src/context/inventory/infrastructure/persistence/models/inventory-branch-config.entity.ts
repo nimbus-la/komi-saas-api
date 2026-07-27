@@ -1,9 +1,9 @@
 import { Column, Entity, PrimaryColumn } from "typeorm";
 
-@Entity({ name: 'inventory_stock' })
-export class InventoryStockEntity {
+@Entity({ name: 'inventory_branch_configs' })
+export class InventoryBranchConfigEntity {
 
-    @PrimaryColumn({ name: 'inventory_stock_id', type: 'uuid' })
+    @PrimaryColumn({ name: 'inventory_branch_config_id', type: 'uuid' })
     id!: string;
 
 

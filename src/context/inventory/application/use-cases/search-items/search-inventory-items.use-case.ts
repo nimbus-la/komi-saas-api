@@ -1,3 +1,4 @@
+import { Paginated, Pagination } from "@/interfaces";
 import { InventoryItemRepository } from "../../../domain";
 import { InventoryItemResponse } from "../../dtos/inventory-item.response";
 import { toInventoryItemResponse } from "../../mappers/inventory-item-response.mapper";
@@ -8,15 +9,20 @@ export class SearchInventoryItemsUseCase {
         private readonly repository: InventoryItemRepository
     ) { };
 
-    public async execute(branchId?: string): Promise<InventoryItemResponse[]> {
-        const items = await this.repository.search(branchId);
+    public async execute(tenantId: string, pagination: Pagination, branchId?: string): Promise<Paginated<InventoryItemResponse>> {
+        const { data, pageNumber, pageSize, total } = await this.repository.search(tenantId, pagination, branchId);
         const now = new Date();
 
-        return items.map((item) =>
-            toInventoryItemResponse(item, {
-                date: now,
-                ...(branchId !== undefined ? { branchId } : {}),
-            }),
-        );
+        return {
+            data: data.map((item) =>
+                toInventoryItemResponse(item, {
+                    date: now,
+                    ...(branchId !== undefined ? { branchId } : {}),
+                }),
+            ),
+            pageNumber,
+            pageSize,
+            total,
+        };
     };
 };

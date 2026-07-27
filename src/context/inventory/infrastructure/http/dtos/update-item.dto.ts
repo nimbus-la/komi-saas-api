@@ -1,6 +1,9 @@
-import { IsBoolean, IsOptional, IsString, MinLength } from "class-validator";
+import { IsBoolean, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
 
 export class UpdateItemDto {
+    @IsUUID()
+    tenantId!: string;
+
     @IsOptional()
     @IsString()
     @MinLength(2)

@@ -12,7 +12,7 @@ export class InvalidUserNameException extends DomainException {
 export class InvalidUserEmailException extends DomainException {
     constructor(reason: string) {
         super({
-            code: "1017",
+            code: "1019",
             detail: `El correo electrónico es inválido ${reason}.`,
         });
     }
@@ -21,7 +21,7 @@ export class InvalidUserEmailException extends DomainException {
 export class InvalidUserPasswordException extends DomainException {
     constructor(reason: string) {
         super({
-            code: "1018",
+            code: "1020",
             detail: `La contraseña es inválida ${reason}.`,
         });
     }
@@ -30,7 +30,7 @@ export class InvalidUserPasswordException extends DomainException {
 export class InvalidUserFullNameException extends DomainException {
     constructor(reason: string) {
         super({
-            code: "1016",
+            code: "1018",
             detail: `El nombre del usuario es inválido ${reason}.`,
         });
     }
@@ -39,7 +39,7 @@ export class InvalidUserFullNameException extends DomainException {
 export class InvalidUserLastNameException extends DomainException {
     constructor(reason: string) {
         super({
-            code: "1019",
+            code: "1021",
             detail: `El apellido del usuario es inválido ${reason}.`,
         });
     }
@@ -48,7 +48,7 @@ export class InvalidUserLastNameException extends DomainException {
 export class InvalidUserBirthDateException extends DomainException {
     constructor(reason: string) {
         super({
-            code: "1020",
+            code: "1022",
             detail: `La fecha de nacimiento es inválida ${reason}.`,
         });
     }
@@ -57,7 +57,7 @@ export class InvalidUserBirthDateException extends DomainException {
 export class InvalidUserSexException extends DomainException {
     constructor(reason: string) {
         super({
-            code: "1021",
+            code: "1023",
             detail: `El sexo del usuario es inválido ${reason}.`,
         });
     }
@@ -66,7 +66,7 @@ export class InvalidUserSexException extends DomainException {
 export class InvalidUserPhoneException extends DomainException {
     constructor(reason: string) {
         super({
-            code: "1023",
+            code: "1024",
             detail: `El teléfono del usuario es inválido ${reason}.`,
         });
     }

@@ -17,7 +17,7 @@ export class CreateInventoryItemUseCase {
 
         const name = InventoryItemName.create(params.name);
 
-        if (await this.repository.existsByName(name)) {
+        if (await this.repository.existsByName(name, params.tenantId)) {
             throw new InventoryItemNameAlreadyExistsException(params.name);
         };
 

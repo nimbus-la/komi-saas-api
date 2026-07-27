@@ -1,30 +1,28 @@
 import { EventPublisher, Quantity } from "@/shared";
 
 import { InventoryItemId, InventoryItemNotFoundException, InventoryItemRepository } from "../../../domain";
-import { ConsumeStockParams } from "../../dtos/inventory-item.params";
+import { CountStockUseCaseParams } from "../../dtos/inventory-item.params";
 
 
-export class ConsumeStockUseCase {
+export class CountStockUseCase {
     constructor(
         private readonly repository: InventoryItemRepository,
         private readonly eventPublisher: EventPublisher
     ) { };
 
-    public async execute(params: ConsumeStockParams): Promise<void> {
-        const item = await this.repository.findById(
-            InventoryItemId.create(params.itemId),
-            params.tenantId,
-            params.branchId
-        );
+    public async execute(params: CountStockUseCaseParams): Promise<void> {
+        const item = await this.repository.findById(InventoryItemId.create(params.itemId), params.tenantId);
 
         if (item === null) {
             throw new InventoryItemNotFoundException(params.itemId);
         };
 
-        item.consume(
-            Quantity.of(params.quantity),
-            params.consumedAt ? new Date(params.consumedAt) : undefined
-        );
+        item.countStock({
+            branchId: params.branchId,
+            actualTotal: Quantity.of(params.actualTotal),
+            reason: params.reason,
+            ...(params.occurredAt ? { occurredAt: new Date(params.occurredAt) } : {}),
+        });
 
         await this.repository.save(item);
 
