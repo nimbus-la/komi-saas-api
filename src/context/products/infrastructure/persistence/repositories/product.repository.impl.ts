@@ -82,11 +82,12 @@ export class ProductRepositoryImpl extends ProductRepository {
         },
       );
 
-      await recipeIngredientRepository.delete({
-        productId: product.id.value,
-      });
-
       if (primitives.ingredients.length > 0) {
+
+        await recipeIngredientRepository.delete({
+          productId: product.id.value,
+        });
+
         const ingredients = ProductMapper.mapIngredients(
           product.id.value,
           primitives.ingredients,
@@ -108,6 +109,16 @@ export class ProductRepositoryImpl extends ProductRepository {
           tenantId: params.tenantId,
         },
       );
+
+    // Buscar un producto específico por id
+    if (params.productId) {
+      query.andWhere(
+        "product.id = :productId",
+        {
+          productId: params.productId,
+        },
+      );
+    }
 
     if (params.text) {
       query.andWhere(
