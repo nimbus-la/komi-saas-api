@@ -19,6 +19,10 @@ import { ProductCategoryEntity } from "../product-categories";
 import { InventoryItemEntity, InventoryModule } from "../inventory";
 import { EventPublisher } from "@/shared";
 import { EventEmitterPublisher } from "@/infrastructure";
+import { InventoryItemRecipeInfoProvider } from "./application/ports/inventory-item-recipe-info.provider";
+import { InventoryItemRecipeInfoProviderAdapter } from "./infrastructure/persistence/adapters/InventoryItemRecipeInfoProviderAdapter";
+import { ProductCategoryProvider } from "./application/ports/ProductCategoryProvider";
+import { ProductCategoryProviderAdapter } from "./infrastructure/persistence/adapters/ProductCategoryProviderAdapter";
 
 @Module({
   imports: [
@@ -52,7 +56,10 @@ import { EventEmitterPublisher } from "@/infrastructure";
       provide: TenantChecker,
       useExisting: TenantCheckerAdapter,
     },
-
+    {
+      provide: ProductCategoryProvider,
+      useExisting: ProductCategoryProviderAdapter,
+    },
     {
       provide: ProductCategoryChecker,
       useClass: ProductCategoryCheckerAdapter,
@@ -63,12 +70,19 @@ import { EventEmitterPublisher } from "@/infrastructure";
       useExisting: InventoryItemCheckerAdapter,
     },
     {
+      provide: InventoryItemRecipeInfoProvider,
+      useExisting: InventoryItemRecipeInfoProviderAdapter,
+    },
+    {
       provide: EventPublisher,
       useClass: EventEmitterPublisher
     },
 
     TenantCheckerAdapter,
     InventoryItemCheckerAdapter,
+    InventoryItemRecipeInfoProviderAdapter,
+    ProductCategoryProviderAdapter,
+
     {
       provide: CreateProductUseCase,
       useFactory: (
@@ -77,6 +91,7 @@ import { EventEmitterPublisher } from "@/infrastructure";
         categoryChecker: ProductCategoryChecker,
         inventoryChecker: InventoryItemChecker,
         eventPublisher: EventPublisher,
+
       ) => {
         return new CreateProductUseCase(
           repository,
@@ -125,18 +140,24 @@ import { EventEmitterPublisher } from "@/infrastructure";
       provide: SearchProductsUseCase,
       useFactory: (
         repository: ProductRepository,
-        tenantChecker: TenantChecker
+        tenantChecker: TenantChecker,
+        recipeInfoProvider: InventoryItemRecipeInfoProvider,
+        productCategoryProvider: ProductCategoryProvider,
 
       ) => {
         return new SearchProductsUseCase(
           repository,
-          tenantChecker
+          tenantChecker,
+          recipeInfoProvider,
+          productCategoryProvider
         );
       },
 
       inject: [
         ProductRepository,
         TenantChecker,
+        InventoryItemRecipeInfoProvider,
+        ProductCategoryProvider,
 
       ],
     },

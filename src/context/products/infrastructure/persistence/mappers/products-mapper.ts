@@ -2,7 +2,7 @@ import { ProductResponse } from "@/context/products/domain/types/product.respons
 import { ProductEntity } from "../models/product.entity";
 
 import { Product } from "@/context/products/domain";
-import { RecipeIngredientPrimitives } from "@/context/products/domain/recipe/recipe-ingredient-primitives";
+import { RecipeIngredientPrimitives, RecipeIngredientResponse } from "@/context/products/domain/recipe/recipe-ingredient-primitives";
 import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
 
 export class ProductMapper {
@@ -31,7 +31,7 @@ export class ProductMapper {
 
     static toDomain(
         row: ProductEntity,
-        ingredients: RecipeIngredientPrimitives[] = [],
+        ingredients: RecipeIngredientResponse[] = [],
     ): Product {
 
         return Product.fromPrimitives({
@@ -48,7 +48,7 @@ export class ProductMapper {
             productStatus: row.isActive,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
-            ingredients,
+            ingredients
         });
 
     }
@@ -112,6 +112,13 @@ export class ProductMapper {
             inventoryItemId: ingredient.inventoryItemId,
             quantity: ingredient.quantity,
             isOptional: ingredient.isOptional,
+
+            // Se completan después en SearchProductsUseCase
+            name: "",
+            unitOfMeasure: "",
+            unitCostAmount: null,
+            lineCostAmount: null,
+            hasStock: false,
         }));
     }
 }
