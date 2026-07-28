@@ -30,6 +30,7 @@ lerna-debug.log*
 
 # IDE - VSCode
 .vscode
+.claude
 
 # dotenv environment variable files
 .env
