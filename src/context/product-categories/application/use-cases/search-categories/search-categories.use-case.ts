@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ProductCategoryRepository, TenantNotFoundException } from "../../../domain";
 import { TenantChecker } from "../../ports/tenant-checker";
-import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId-Exception";
+import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId_Exception";
 
 @Injectable()
 export class SearchCategoriesUseCase {

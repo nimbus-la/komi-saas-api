@@ -10,7 +10,7 @@ import {
 import { CategoryName } from "@/context/product-categories/domain/exceptions/InvalidCategoryNameException";
 import { TenantChecker } from "../../ports/tenant-checker";
 import { TenantNotFoundException } from "@/context/products";
-import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId-Exception";
+import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId_Exception";
 
 export interface UpdateCategoryApplicationParams {
     tenantId: string;

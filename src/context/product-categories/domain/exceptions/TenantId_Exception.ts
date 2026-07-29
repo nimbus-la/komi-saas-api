@@ -9,7 +9,6 @@ export class TenantIdRequiredForSearchException extends DomainException {
     }
 }
 
-
 export class TenantNotFoundException extends DomainException {
     constructor(tenantId: string) {
         super({
