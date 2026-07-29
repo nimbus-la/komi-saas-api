@@ -1,4 +1,4 @@
-import { EventPublisher, Money, Quantity } from "@/shared";
+import { BasePriceError, EventPublisher, Money, Quantity } from "@/shared";
 
 import { CreateProductApplicationParams } from "@/context/products/domain/types/product-application";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
@@ -84,6 +84,13 @@ export class CreateProductUseCase {
         const sequence =
             await this.repository.nextSkuSequence();
 
+        const productBasePrice = Money.of(params.productBasePrice);
+
+        if (productBasePrice.getAmount() === "0.00") {
+            throw new BasePriceError(
+                "El precio base del producto debe ser mayor que 0."
+            );
+        }
         const product = Product.create({
             tenantId: params.tenantId,
             productCategoryId: params.productCategoryId,

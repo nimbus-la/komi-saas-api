@@ -22,7 +22,7 @@ export class ProfitMargin {
             throw new InvalidProfitMarginException();
         }
 
-        if (decimal.isNegative()) {
+        if (decimal.isZero() || decimal.isNegative()) {
             throw new InvalidProfitMarginException();
         }
 

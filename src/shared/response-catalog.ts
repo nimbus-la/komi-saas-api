@@ -28,6 +28,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1013': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El departamento de la sucursal no es válido.' },
     '1014': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El identificador no es válido.' },
     '1015': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad ingresada no es válida.' },
+    '1016': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio base del producto debe ser mayor que 0.' },
 
 
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
