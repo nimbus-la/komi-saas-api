@@ -17,6 +17,7 @@
     "declaration": true,
     "removeComments": true,
     "sourceMap": true,
+    "rootDir": "./src",
     "outDir": "./dist",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -41,5 +42,5 @@
   },
   
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test"],
+  "exclude": ["node_modules", "dist", "test"]
 }
