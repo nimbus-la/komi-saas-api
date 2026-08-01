@@ -84,6 +84,9 @@ import { CountStockUseCase } from "./application/use-cases/count-stock/count-sto
             inject: [InventoryItemRepository, EventPublisher],
         },
     ],
+    exports: [
+    InventoryItemRepository,
+  ],
 })
 
 export class InventoryModule { };

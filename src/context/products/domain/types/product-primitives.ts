@@ -10,8 +10,10 @@ export interface ProductPrimitives {
     productImgUrl: string | undefined;
     productBasePrice: string;
     costCurrency: string;
-    profitMargin: number;
+    profitMargin: string;
     productStatus: boolean;
 
     ingredients: RecipeIngredientPrimitives[];
+    createdAt: Date;
+    updatedAt: Date;
 }

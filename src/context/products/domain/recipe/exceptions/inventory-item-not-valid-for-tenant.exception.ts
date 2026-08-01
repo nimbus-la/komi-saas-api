@@ -6,7 +6,7 @@ export class InventoryItemNotValidForTenantException extends DomainException {
         tenantId: string,
     ) {
         super({
-            code: "2202",
+            code: "1470",
             detail: `El ingrediente de inventario con id ${inventoryItemId} no existe o no pertenece al tenant ${tenantId}.`,
         });
     }

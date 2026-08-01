@@ -1,52 +1,20 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
-
-import {
-  Product,
-  ProductRepository,
-} from "../../../domain";
-
+import { DataSource, In, Repository } from "typeorm";
 import { ProductEntity } from "../models/product.entity";
 import { SearchProductsApplicationParams } from "../../../domain/types/product-application";
 import { ProductResponse } from "../../../domain/types/product.response";
 import { ProductName } from "../../../domain/value-object/product-name.value-object";
 import { ProductId } from "../../../domain/value-object/product-id.value-object";
-import { CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "@/context/products/application";
-import { CreateProductDto } from "../../http/dto/create-product.dto";
-import { UpdateProductDto } from "../../http/dto/update-product.dto";
 import { ProductMapper } from "../mappers/products-mapper";
 import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
-import { InventoryItemEntity } from "@/context/inventory";
-import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
 
-@Injectable()
-export class ProductService {
-  constructor(
-    private readonly createProductUseCase: CreateProductUseCase,
-    private readonly updateProductUseCase: UpdateProductUseCase,
-    private readonly searchProductsUseCase: SearchProductsUseCase,
+import {
+  Product,
+  ProductRepository,
+  SkuSequenceNotGeneratedException,
+} from "../../../domain";
 
-  ) { }
-
-  async create(dto: CreateProductDto) {
-    return this.createProductUseCase.execute(dto);
-
-  }
-  async update(id: string, dto: UpdateProductDto) {
-    return this.updateProductUseCase.execute({
-      id,
-      ...dto,
-    });
-  }
-
-  async search(params: SearchProductsApplicationParams) {
-    return this.searchProductsUseCase.execute(params);
-  }
-  async findAll() {
-    return [];
-  }
-}
 
 @Injectable()
 export class ProductRepositoryImpl extends ProductRepository {
@@ -69,72 +37,22 @@ export class ProductRepositoryImpl extends ProductRepository {
       const recipeIngredientRepository =
         manager.getRepository(RecipeIngredientEntity);
 
-      const inventoryItemRepository =
-        manager.getRepository(InventoryItemEntity);
-
-      // 1. Obtener los datos del producto
       const primitives = product.toPrimitives();
 
-      // 2. Validar cada ingrediente de la receta
-      for (const ingredient of primitives.ingredients) {
-
-        const inventoryItem =
-          await inventoryItemRepository.findOne({
-            where: {
-              id: ingredient.inventoryItemId,
-              tenantId: primitives.tenantId,
-            },
-          });
-
-        // Si no existe o pertenece a otro tenant
-        if (!inventoryItem) {
-          throw new InventoryItemNotValidForTenantException(
-            ingredient.inventoryItemId,
-            primitives.tenantId,
-          );
-        }
-      }
-
-      // 3. Si todos los ingredientes son válidos,
-      // ahora sí guardamos el producto
       const row = productRepository.create(
         ProductMapper.toEntity(product),
       );
 
       await productRepository.save(row);
 
-      // 4. Guardar los ingredientes de la receta
       if (primitives.ingredients.length > 0) {
 
-        const ingredients =
-          primitives.ingredients.map(
-            (ingredient) => {
-
-              const entity =
-                new RecipeIngredientEntity();
-
-              entity.id =
-                ingredient.id;
-
-              entity.productId =
-                product.id.value;
-
-              entity.inventoryItemId =
-                ingredient.inventoryItemId;
-
-              entity.quantity =
-                ingredient.quantity;
-
-              entity.isOptional =
-                ingredient.isOptional;
-
-              return entity;
-            },
-          );
-
-        await recipeIngredientRepository.save(
-          ingredients,
+        const ingredients = ProductMapper.mapIngredients(
+          product.id.value,
+          primitives.ingredients,
         );
+
+        await recipeIngredientRepository.save(ingredients);
       }
     });
   }
@@ -164,24 +82,15 @@ export class ProductRepositoryImpl extends ProductRepository {
         },
       );
 
-      await recipeIngredientRepository.delete({
-        productId: product.id.value,
-      });
-
       if (primitives.ingredients.length > 0) {
-        const ingredients = primitives.ingredients.map(
-          (ingredient) => {
-            const entity = new RecipeIngredientEntity();
 
-            entity.id = ingredient.id;
-            entity.productId = product.id.value;
-            entity.inventoryItemId =
-              ingredient.inventoryItemId;
-            entity.quantity = ingredient.quantity;
-            entity.isOptional = ingredient.isOptional;
+        await recipeIngredientRepository.delete({
+          productId: product.id.value,
+        });
 
-            return entity;
-          },
+        const ingredients = ProductMapper.mapIngredients(
+          product.id.value,
+          primitives.ingredients,
         );
 
         await recipeIngredientRepository.save(ingredients);
@@ -194,19 +103,23 @@ export class ProductRepositoryImpl extends ProductRepository {
   ): Promise<ProductResponse[]> {
     const query = this.productRepository
       .createQueryBuilder("product")
-      .leftJoinAndSelect(
-        "product.ingredients",
-        "ingredient",
+      .where(
+        "product.tenantId = :tenantId",
+        {
+          tenantId: params.tenantId,
+        },
       );
-    // Filtrar siempre por tenant
-    query.andWhere(
-      "product.tenantId = :tenantId",
-      {
-        tenantId: params.tenantId,
-      },
-    );
 
-    // Buscar por nombre o SKU
+    // Buscar un producto específico por id
+    if (params.productId) {
+      query.andWhere(
+        "product.id = :productId",
+        {
+          productId: params.productId,
+        },
+      );
+    }
+
     if (params.text) {
       query.andWhere(
         `(LOWER(product.name) LIKE LOWER(:text)
@@ -217,7 +130,6 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    // Filtrar por categoría
     if (params.productCategoryId) {
       query.andWhere(
         "product.productCategoryId = :categoryId",
@@ -227,7 +139,6 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    // Filtrar por estado
     if (params.productStatus !== undefined) {
       query.andWhere(
         "product.isActive = :status",
@@ -237,7 +148,6 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    // Paginación
     const page = params.page ?? 1;
     const limit = params.limit ?? 10;
 
@@ -246,7 +156,41 @@ export class ProductRepositoryImpl extends ProductRepository {
 
     const rows = await query.getMany();
 
-    return rows.map(ProductMapper.toResponse);
+    const recipeIngredientRepository =
+      this.dataSource.getRepository(RecipeIngredientEntity);
+
+    const recipeIngredients =
+      await recipeIngredientRepository.find({
+        where: {
+          productId: In(rows.map((row) => row.id)),
+        },
+      });
+
+    const ingredientsByProduct = new Map<
+      string,
+      RecipeIngredientEntity[]
+    >();
+
+    for (const ingredient of recipeIngredients) {
+      const list =
+        ingredientsByProduct.get(ingredient.productId) ?? [];
+
+      list.push(ingredient);
+
+      ingredientsByProduct.set(
+        ingredient.productId,
+        list,
+      );
+    }
+
+    return rows.map((row) =>
+      ProductMapper.toResponse(
+        row,
+        ProductMapper.toIngredientsResponse(
+          ingredientsByProduct.get(row.id) ?? [],
+        ),
+      ),
+    );
   }
 
   public async existsByName(
@@ -273,9 +217,8 @@ export class ProductRepositoryImpl extends ProductRepository {
     const row = await this.productRepository.findOne({
       where: {
         id: id.value,
-        tenantId,
+        tenantId
       },
-     
     });
 
     if (!row) {
@@ -293,9 +236,7 @@ export class ProductRepositoryImpl extends ProductRepository {
     const first = rows[0];
 
     if (first === undefined) {
-      throw new Error(
-        "No se pudo obtener el siguiente valor de la secuencia de SKU.",
-      );
+      throw new SkuSequenceNotGeneratedException();
     }
 
     return Number(first.n);

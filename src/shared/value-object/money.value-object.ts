@@ -12,6 +12,13 @@ export class InvalidMoneyError extends DomainException {
     };
 };
 
+export class BasePriceError extends DomainException {
+    constructor(detail: string) {
+        super({ code: '1016', detail });
+    };
+};
+
+
 
 /**
  * Se intenta operar dos Money de monedas distintas. Es una invariante interna
@@ -81,8 +88,9 @@ export class Money {
         };
 
         if (decimal.isNegative()) {
-            throw new InvalidMoneyError(`El monto no puede ser negativo: "${amount}".`);
-        };
+            throw new BasePriceError(`El monto no puede ser negativo: "${amount}".`);
+        }
+
 
         return new Money(decimal, code);
     };

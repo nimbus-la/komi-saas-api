@@ -12,7 +12,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '0001': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'No se encontraron resultados.' },
     '0002': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Sucursal no encontrada. ' },
     '0003': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Tenant no encontrado ' },
-    
+
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Los datos enviados no son válidos.' },
     '1002': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El costo ingresado no es válido.' },
@@ -28,6 +28,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1013': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El departamento de la sucursal no es válido.' },
     '1014': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El identificador no es válido.' },
     '1015': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad ingresada no es válida.' },
+    '1016': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio base del producto debe ser mayor que 0.' },
 
 
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
@@ -73,6 +74,33 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1350': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se puede cambiar la unidad de medida; el item ya tiene lotes.' },
     '1351': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se puede cambiar la perecibilidad; el item ya tiene lotes.' },
     '1352': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar.' },
+
+    // Rangos de códigos de error
+    // Productos: 1400 - 1433
+    '1400': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró el producto que intentas editar.' },
+    '1401': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del producto es inválido.' },
+    '1402': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe un producto registrado con ese nombre' },
+    '1403': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se pudo obtener el siguiente valor de la secuencia de SKU.' },
+    '1404': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra desactivado.' },
+    '1405': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra activado.' },
+    '1406': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ítem de inventario especificado no pertenece al tenant proporcionado.' },
+    '1407': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen de beneficio no puede ser menor que 0.' },
+    '1408': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se encontraron cambios para actualizar el producto.' },
+    '1409': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El tenantId es obligatorio para buscar' },
+
+    // Categorías: 1434 - 1466
+    '1434': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría.' },
+    '1435': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe una categoría registrada con ese nombre.' },
+    '1436': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra activada.' },
+    '1437': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra desactivada.' },
+    '1438': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la categoría debe tener al menos 2 caracteres.' },
+    '1439': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la categoría debe tener como máximo 120 caracteres.' },
+
+    // Recetas: 1467 - 4999
+    '1467': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado ya se encuentra agregado a la receta.' },
+    '1468': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente no se encuentra agregado a la receta.' },
+    '1469': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se encontró el ítem de inventario.' },
+    '1470': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado no está disponible para este negocio.' },
 
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El recurso solicitado no existe.' },

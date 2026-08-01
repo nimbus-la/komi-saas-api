@@ -1,5 +1,6 @@
 import { DomainEvent } from "@/shared";
 import { ProductCreatedProps } from "../types/product-events";
+import { ProfitMargin } from "../value-object/profit-margin.value-object";
 
 export class ProductCreatedEvent extends DomainEvent {
     public readonly eventName = 'product.created';
@@ -12,7 +13,7 @@ export class ProductCreatedEvent extends DomainEvent {
     public readonly productImgUrl: string | undefined;
     public readonly productBasePrice: string;
     public readonly costCurrency: string;
-    public readonly profitMargin: number;
+    public readonly profitMargin: ProfitMargin;
     public readonly productStatus: boolean;
 
     constructor(props: ProductCreatedProps) {
