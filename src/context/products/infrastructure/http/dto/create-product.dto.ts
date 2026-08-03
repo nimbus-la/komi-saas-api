@@ -2,12 +2,10 @@ import { Type } from "class-transformer";
 
 import {
   IsArray,
-  IsBoolean,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
-  Min,
   MinLength,
   ValidateNested,
 } from "class-validator";
@@ -34,14 +32,10 @@ export class CreateProductDto {
   @IsOptional()
   productImgUrl: string | undefined;
 
-  @IsBoolean()
-  productStatus!: boolean;
-
   @IsString()
   productBasePrice!: string;
 
   @IsNumber()
-  @Min(0)
   profitMargin!: number;
 
   @IsArray()

@@ -1,3 +1,5 @@
+import { ProfitMargin } from "../value-object/profit-margin.value-object";
+
 export interface ProductCreatedProps {
     productId: string;
     tenantId: string;
@@ -8,6 +10,6 @@ export interface ProductCreatedProps {
     productImgUrl: string | undefined;
     productBasePrice: string;
     costCurrency: string;
-    profitMargin: number;
+    profitMargin: ProfitMargin;
     productStatus: boolean;
 }

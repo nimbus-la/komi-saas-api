@@ -24,3 +24,16 @@ export class ProductCategoryMapper {
         });
     }
 }
+export class ProductCategoryresponse {
+
+    static toResponse(category: ProductCategory) {
+        return {
+            id: category.id.value,
+            tenantId: category.getTenantId(),
+            name: category.getName().value,
+            description: category.getDescription(),
+            isActive: category.getIsActive(),
+
+        };
+    }
+}

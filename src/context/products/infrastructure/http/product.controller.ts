@@ -6,29 +6,47 @@ import {
   Patch,
   Post,
   Query,
+  UseFilters,
+  UseInterceptors,
 } from "@nestjs/common";
 
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { SearchProductsApplicationParams } from "../../domain/types/product-application";
-import { ProductService } from "../persistence/repositories/product.repository.impl";
+import { CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "../../application";
+import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
+import { ProfitMargin } from "../../domain/value-object/profit-margin.value-object";
+
+@UseInterceptors(ResponseInterceptor)
+@UseFilters(AllExceptionsFilter)
 
 @Controller("products")
 export class ProductController {
-  constructor(private readonly service: ProductService) { }
+  constructor(
+    private readonly createProductUseCase: CreateProductUseCase,
+    private readonly updateProductUseCase: UpdateProductUseCase,
+    private readonly searchProductsUseCase: SearchProductsUseCase,
+  ) { }
 
   @Post()
   async create(@Body() dto: CreateProductDto) {
-    const product = await this.service.create(dto);
+
+    const product = await this.createProductUseCase.execute({
+      ...dto,
+      profitMargin: ProfitMargin.create(dto.profitMargin.toString())
+    });
+
+    const response =
+      await this.searchProductsUseCase.execute({
+        tenantId: dto.tenantId,
+        productId: product.id.value,
+        page: 1,
+        limit: 1,
+      });
 
     return {
-      status: "SUCCESS",
-      code: "0000",
-      statusCode: 200,
-      message: "Producto creado exitosamente.",
-      data: product,
+      data: response[0],
     };
-
   }
 
   @Patch(":id")
@@ -36,13 +54,26 @@ export class ProductController {
     @Param("id") id: string,
     @Body() dto: UpdateProductDto,
   ) {
-    await this.service.update(id, dto);
+
+    const product =
+      await this.updateProductUseCase.execute({
+        id,
+        ...dto,
+        profitMargin: ProfitMargin.create(
+          dto.profitMargin.toString()
+        )
+      });
+
+    const response =
+      await this.searchProductsUseCase.execute({
+        tenantId: dto.tenantId,
+        productId: product.id.value,
+        page: 1,
+        limit: 1,
+      });
 
     return {
-      status: "SUCCESS",
-      code: "0000",
-      statusCode: 200,
-      message: "Producto actualizado con éxito",
+      data: response[0],
     };
   }
 
@@ -72,14 +103,10 @@ export class ProductController {
     if (productStatus !== undefined) {
       params.productStatus = productStatus === "true";
     }
-
-    const products = await this.service.search(params);
+    const products =
+      await this.searchProductsUseCase.execute(params);
 
     return {
-      status: "SUCCESS",
-      code: "0000",
-      statusCode: 200,
-      message: "Productos obtenidos con éxito",
       data: products,
     };
   }

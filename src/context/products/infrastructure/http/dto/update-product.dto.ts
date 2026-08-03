@@ -1,40 +1,50 @@
+import { Type } from "class-transformer";
 import {
   IsBoolean,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
-  Min,
-  MinLength,
+  ValidateNested,
 } from "class-validator";
+import { UpdateRecipeIngredientDto } from "./update-recipe-ingredient.dto";
+
 
 export class UpdateProductDto {
+  @IsOptional()
   @IsUUID()
   productCategoryId!: string;
 
+  @IsOptional()
   @IsUUID()
   tenantId!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(2)
   productName!: string;
 
-  @IsString()
   @IsOptional()
-  productDescription: string | undefined;
-
-
   @IsString()
-  @IsOptional()
-  productImgUrl: string | undefined;
+  productDescription?: string | undefined;
 
+  @IsOptional()
+  @IsString()
+  productImgUrl?: string | undefined;
+
+  @IsOptional()
   @IsBoolean()
   productStatus!: boolean;
 
+  @IsOptional()
   @IsString()
   productBasePrice!: string;
 
+  @IsOptional()
   @IsNumber()
-  @Min(0)
   profitMargin!: number;
+
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateRecipeIngredientDto)
+  recipe?: UpdateRecipeIngredientDto[];
 }

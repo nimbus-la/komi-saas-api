@@ -8,6 +8,9 @@ import { ProductPrimitives } from "./types/product-primitives";
 import { DuplicateIngredientException } from "./recipe/exceptions/duplicate-ingredient.exception";
 import { IngredientNotInRecipeException } from "./recipe/exceptions/ingredient-not-in-recipe.exception";
 import { RecipeIngredient } from "./recipe/recipe-ingredient.entity";
+import { RecipeParams } from "./types/product-application";
+import { ProductAlreadyActivatedException, ProductAlreadyDeactivatedException } from "./exceptions/product-exception";
+import { ProfitMargin } from "./value-object/profit-margin.value-object";
 
 export class Product extends AggregateRoot<ProductId> {
     private tenantId: string;
@@ -18,9 +21,11 @@ export class Product extends AggregateRoot<ProductId> {
     private productImgUrl: string | undefined;
 
     private productBasePrice: Money;
-    private profitMargin: number;
+    private profitMargin: ProfitMargin;
     private productStatus: boolean;
     private ingredients: RecipeIngredient[];
+    private readonly createdAt: Date;
+    private updatedAt: Date;
 
     private constructor(
         id: ProductId,
@@ -31,9 +36,11 @@ export class Product extends AggregateRoot<ProductId> {
         productSku: ProductSku,
         productImgUrl: string | undefined,
         productBasePrice: Money,
-        profitMargin: number,
+        profitMargin: ProfitMargin,
         productStatus: boolean,
         ingredients: RecipeIngredient[],
+        createdAt: Date,
+        updatedAt: Date,
     ) {
         super(id);
         this.tenantId = tenantId;
@@ -46,6 +53,8 @@ export class Product extends AggregateRoot<ProductId> {
         this.profitMargin = profitMargin;
         this.productStatus = productStatus;
         this.ingredients = ingredients;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public static create(params: {
@@ -56,8 +65,10 @@ export class Product extends AggregateRoot<ProductId> {
         productSku: ProductSku;
         productImgUrl: string | undefined;
         productBasePrice: Money;
-        profitMargin: number;
+        profitMargin: ProfitMargin;
     }): Product {
+
+        const now = new Date();
 
         const product = new Product(
             ProductId.generate(),
@@ -71,6 +82,8 @@ export class Product extends AggregateRoot<ProductId> {
             params.profitMargin,
             true,
             [],
+            now,
+            now,
         );
 
         product.registerEvent(
@@ -92,6 +105,10 @@ export class Product extends AggregateRoot<ProductId> {
         return product;
     }
 
+    private touch(date: Date = new Date()): void {
+        this.updatedAt = date;
+    }
+
     public toPrimitives(): ProductPrimitives {
         return {
             id: this.id.value,
@@ -103,11 +120,13 @@ export class Product extends AggregateRoot<ProductId> {
             productImgUrl: this.productImgUrl,
             productBasePrice: this.productBasePrice.getAmount(),
             costCurrency: this.productBasePrice.currency,
-            profitMargin: this.profitMargin,
+            profitMargin: this.profitMargin.getValue(),
             productStatus: this.productStatus,
             ingredients: this.ingredients.map(
                 (ingredient) => ingredient.toPrimitives(),
             ),
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
         };
     }
 
@@ -123,37 +142,40 @@ export class Product extends AggregateRoot<ProductId> {
             ProductSku.fromValue(primitives.productSku),
             primitives.productImgUrl,
             Money.of(primitives.productBasePrice, primitives.costCurrency),
-            primitives.profitMargin,
+            ProfitMargin.create(primitives.profitMargin),
             primitives.productStatus,
             primitives.ingredients.map(
                 (ingredient) => RecipeIngredient.fromPrimitives(ingredient),
             ),
+            primitives.createdAt,
+            primitives.updatedAt,
         );
     }
 
     public deactivate(): void {
         if (!this.productStatus) {
-            throw new Error("El producto ya se encuentra desactivado.");
+            throw new ProductAlreadyDeactivatedException();
         }
-
         this.productStatus = false;
+        this.touch();
     }
 
     public activate(): void {
         if (this.productStatus) {
-            throw new Error("El producto ya se encuentra activado.");
+            throw new ProductAlreadyActivatedException();
         }
-
         this.productStatus = true;
+        this.touch();
     }
+
     public update(params: {
         productCategoryId: string;
         productName: ProductName;
         productDescription: string | undefined;
         productImgUrl: string | undefined;
         productBasePrice: Money;
-        profitMargin: number;
-        productStatus: boolean;
+        profitMargin: ProfitMargin;
+        recipe?: RecipeParams[];
     }): void {
         this.productCategoryId = params.productCategoryId;
         this.productName = params.productName;
@@ -161,8 +183,10 @@ export class Product extends AggregateRoot<ProductId> {
         this.productImgUrl = params.productImgUrl;
         this.productBasePrice = params.productBasePrice;
         this.profitMargin = params.profitMargin;
-        this.productStatus = params.productStatus;
+        this.touch();
     }
+
+
     public addIngredient(params: {
         inventoryItemId: string;
         quantity: Quantity;
@@ -180,7 +204,10 @@ export class Product extends AggregateRoot<ProductId> {
         const ingredient = RecipeIngredient.create(params);
 
         this.ingredients.push(ingredient);
+        this.touch();
     }
+
+
     public changeIngredient(
         inventoryItemId: string,
         params: {
@@ -196,9 +223,11 @@ export class Product extends AggregateRoot<ProductId> {
         if (!ingredient) {
             throw new IngredientNotInRecipeException(inventoryItemId);
         }
-
         ingredient.change(params);
+        this.touch();
     }
+
+
     public removeIngredient(
         inventoryItemId: string,
     ): void {
@@ -212,10 +241,13 @@ export class Product extends AggregateRoot<ProductId> {
         }
 
         this.ingredients.splice(index, 1);
+        this.touch();
     }
+
     public getIngredients(): RecipeIngredient[] {
         return [...this.ingredients];
     }
+
     public replaceRecipe(
         ingredients: Array<{
             inventoryItemId: string;
@@ -223,21 +255,66 @@ export class Product extends AggregateRoot<ProductId> {
             isOptional: boolean;
         }>,
     ): void {
-        const inventoryItemIds = new Set<string>();
 
+        const incomingIds = new Set<string>();
+
+        // 1. Validar duplicados del request
         for (const ingredient of ingredients) {
-            if (inventoryItemIds.has(ingredient.inventoryItemId)) {
+
+            if (incomingIds.has(ingredient.inventoryItemId)) {
                 throw new DuplicateIngredientException(
                     ingredient.inventoryItemId,
                 );
             }
 
-            inventoryItemIds.add(ingredient.inventoryItemId);
+            incomingIds.add(ingredient.inventoryItemId);
         }
 
-        this.ingredients = ingredients.map(
-            (ingredient) =>
-                RecipeIngredient.create(ingredient),
-        );
+
+        // 2. Actualizar ingredientes existentes
+        for (const currentIngredient of [...this.ingredients]) {
+
+            const incomingIngredient =
+                ingredients.find(
+                    (ingredient) =>
+                        ingredient.inventoryItemId ===
+                        currentIngredient.getInventoryItemId(),
+                );
+
+
+            // Existe en la receta y sigue viniendo
+            if (incomingIngredient) {
+
+                currentIngredient.change({
+                    quantity: incomingIngredient.quantity,
+                    isOptional: incomingIngredient.isOptional,
+                });
+
+            } else {
+
+                // Existía pero ya no viene → eliminar
+                this.removeIngredient(
+                    currentIngredient.getInventoryItemId(),
+                );
+            }
+        }
+
+
+        // 3. Agregar ingredientes nuevos
+        for (const ingredient of ingredients) {
+
+            const exists =
+                this.ingredients.some(
+                    (item) =>
+                        item.getInventoryItemId() ===
+                        ingredient.inventoryItemId,
+                );
+
+
+            if (!exists) {
+                this.addIngredient(ingredient);
+            }
+        }
+        this.touch();
     }
 }

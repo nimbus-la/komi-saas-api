@@ -3,7 +3,7 @@ import { DomainException } from "@/shared";
 export class InvalidUserNameException extends DomainException {
   constructor(reason: string) {
     super({
-      code: "1018",
+      code: "1019",
       detail: `El nombre de usuario es inválido ${reason}.`,
     });
   }
@@ -12,7 +12,7 @@ export class InvalidUserNameException extends DomainException {
 export class InvalidUserEmailException extends DomainException {
   constructor(reason: string) {
     super({
-      code: "1019",
+      code: "1020",
       detail: `El correo electrónico es inválido ${reason}.`,
     });
   }
@@ -21,7 +21,7 @@ export class InvalidUserEmailException extends DomainException {
 export class InvalidUserPasswordException extends DomainException {
   constructor(reason: string) {
     super({
-      code: "1020",
+      code: "1021",
       detail: `La contraseña es inválida ${reason}.`,
     });
   }
@@ -30,7 +30,7 @@ export class InvalidUserPasswordException extends DomainException {
 export class InvalidUserFullNameException extends DomainException {
   constructor(reason: string) {
     super({
-      code: "1028",
+      code: "1029",
       detail: `El nombre completo del usuario es inválido ${reason}.`,
     });
   }
@@ -39,7 +39,7 @@ export class InvalidUserFullNameException extends DomainException {
 export class InvalidUserLastNameException extends DomainException {
   constructor(reason: string) {
     super({
-      code: "1021",
+      code: "1022",
       detail: `El apellido del usuario es inválido ${reason}.`,
     });
   }
@@ -48,7 +48,7 @@ export class InvalidUserLastNameException extends DomainException {
 export class InvalidUserBirthDateException extends DomainException {
   constructor(reason: string) {
     super({
-      code: "1022",
+      code: "1023",
       detail: `La fecha de nacimiento es inválida ${reason}.`,
     });
   }
@@ -57,7 +57,7 @@ export class InvalidUserBirthDateException extends DomainException {
 export class InvalidUserSexException extends DomainException {
   constructor(reason: string) {
     super({
-      code: "1023",
+      code: "1024",
       detail: `El sexo del usuario es inválido ${reason}.`,
     });
   }
@@ -66,8 +66,8 @@ export class InvalidUserSexException extends DomainException {
 export class InvalidUserPhoneException extends DomainException {
   constructor(reason: string) {
     super({
-      code: "1024",
-      detail: `El teléfono del usuario es inválido ${reason}.`,
+      code: "1025",
+      detail: `El teléfono es inválido ${reason}.`,
     });
   }
 }
@@ -120,7 +120,7 @@ export class UserEmailAlreadyExistsException extends DomainException {
 export class AdministrativeUserCannotBelongToBranchException extends DomainException {
   constructor() {
     super({
-      code: "1026",
+      code: "1027",
       detail:
         "Un usuario con rol administrativo no puede pertenecer a una sucursal.",
     });
@@ -130,7 +130,7 @@ export class AdministrativeUserCannotBelongToBranchException extends DomainExcep
 export class OperationalUserRequiresBranchException extends DomainException {
   constructor() {
     super({
-      code: "1027",
+      code: "1028",
       detail: "Un usuario con rol operativo debe pertenecer a una sucursal.",
     });
   }
