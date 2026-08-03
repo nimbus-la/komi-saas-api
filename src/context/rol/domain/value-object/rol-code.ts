@@ -1,26 +1,21 @@
 import { InvalidRolCodeException } from "../exceptions/rol.exceptions";
+import { RolCodeEnum } from "../types";
 
 export class RolCode {
-  private static readonly MIN_LENGTH = 2;
-  private static readonly MAX_LENGTH = 20;
-
-  private constructor(public readonly value: string) {}
+  private constructor(public readonly value: RolCodeEnum) {}
 
   public static create(raw: string): RolCode {
-    const value = raw.trim();
+    const value = raw.trim().toUpperCase();
 
-    if (value.length < this.MIN_LENGTH) {
-      throw new InvalidRolCodeException(`mínimo ${this.MIN_LENGTH} caracteres`);
+    if (!Object.values(RolCodeEnum).includes(value as RolCodeEnum)) {
+      throw new InvalidRolCodeException(
+        `"${raw}" no es un código de rol conocido`,
+      );
     }
-
-    if (value.length > this.MAX_LENGTH) {
-      throw new InvalidRolCodeException(`máximo ${this.MAX_LENGTH} caracteres`);
-    }
-
-    return new RolCode(value);
+    return new RolCode(value as RolCodeEnum);
   }
 
   public equals(other: RolCode): boolean {
-    return this.value.toUpperCase() === other.value.toUpperCase();
+    return this.value === other.value;
   }
 }

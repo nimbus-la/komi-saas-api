@@ -1,7 +1,10 @@
+import { RolScopeEnum } from "./rol-scope.enum";
+
 export interface RolResponse {
     id: string;
     code: string;
     name: string;
-    created_at: Date;
-    updated_at: Date;
+    scope: RolScopeEnum;
+    createdAt: Date; 
+    updatedAt: Date;
 }

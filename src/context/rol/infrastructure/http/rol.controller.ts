@@ -1,8 +1,6 @@
 import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
-import { Body, Controller, Get, Param, Patch, Post, UseFilters, UseInterceptors } from "@nestjs/common";
-import { CreateRolUseCase, SearchAllRolUseCase, SearchRolUseCase, UpdateRolUseCase } from "../../application";
-import { CreateRolDto } from "./dto/create-rol.dto";
-import { UpdateRolDto } from "./dto/update-rol.dto";
+import { Controller, Get, Param, UseFilters, UseInterceptors } from "@nestjs/common";
+import { SearchAllRolUseCase, SearchRolUseCase } from "../../application";
 
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(AllExceptionsFilter)
@@ -10,22 +8,9 @@ import { UpdateRolDto } from "./dto/update-rol.dto";
 export class RolController {
 
     constructor(
-        private readonly createRol: CreateRolUseCase,
         private readonly searchRolById: SearchRolUseCase,
         private readonly searchAllRoles: SearchAllRolUseCase,
-        private readonly updateRol: UpdateRolUseCase,
     ) {}
-
-    @Post()
-    public async create(
-        @Body() dto: CreateRolDto,
-    ): Promise<void> {
-
-        await this.createRol.execute({
-            code: dto.code,
-            name: dto.name,
-        });
-    }
 
     @Get()
     public async findAll() {
@@ -37,14 +22,5 @@ export class RolController {
         @Param("id") id: string,
     ) {
         return await this.searchRolById.execute(id);
-    }
-
-    @Patch(":id")
-    public async update(
-        @Param("id") id: string,
-        @Body() dto: UpdateRolDto,
-    ): Promise<void> {
-
-        await this.updateRol.execute(id, dto);
     }
 }

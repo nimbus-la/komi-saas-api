@@ -3,6 +3,7 @@ import { InvalidUserPhoneException } from "../exceptions/user-exceptions";
 export class UserPhone {
   private static readonly MIN_LENGTH = 7;
   private static readonly MAX_LENGTH = 15;
+  private static readonly PATTERN = /^[0-9+\-\s()]+$/;
 
   private constructor(public readonly value: string) {}
 
@@ -19,6 +20,10 @@ export class UserPhone {
       throw new InvalidUserPhoneException(
         `máximo ${this.MAX_LENGTH} caracteres`,
       );
+    }
+
+    if (!this.PATTERN.test(value)) {
+      throw new InvalidUserPhoneException("contiene caracteres no válidos");
     }
 
     return new UserPhone(value);

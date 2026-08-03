@@ -1,4 +1,11 @@
-import { UserAggregate, UserEmail, UserId, UserName, UserRepository, UserResponse } from "@/context/user/domain";
+import {
+  UserAggregate,
+  UserEmail,
+  UserId,
+  UserName,
+  UserRepository,
+  UserResponse,
+} from "@/context/user/domain";
 import { UserMapper } from "../mappers/user.mapper";
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -6,7 +13,7 @@ import { UserEntity } from "../models/user.entity";
 import { Repository } from "typeorm";
 
 @Injectable()
-export class UserService implements UserRepository {
+export class TypeOrmUserRepository implements UserRepository {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
@@ -17,8 +24,10 @@ export class UserService implements UserRepository {
 
     const row = this.userRepository.create({
       id: primitives.id,
+      tenantId: primitives.tenantId,
       branchId: primitives.branchId,
       rolId: primitives.rolId,
+      rolScope: primitives.rolScope,
       userName: primitives.userName,
       email: primitives.email,
       password: primitives.password,
@@ -77,8 +86,10 @@ export class UserService implements UserRepository {
         id: primitives.id,
       },
       {
+        tenantId: primitives.tenantId,
         branchId: primitives.branchId,
         rolId: primitives.rolId,
+        rolScope: primitives.rolScope,
         userName: primitives.userName,
         email: primitives.email,
         password: primitives.password,
@@ -93,24 +104,44 @@ export class UserService implements UserRepository {
     );
   }
 
-  public async existsByEmail(email: UserEmail): Promise<boolean> {
-    const count = await this.userRepository
+  public async existsByEmail(
+    email: UserEmail,
+    exceptId?: UserId,
+  ): Promise<boolean> {
+    const query = this.userRepository
       .createQueryBuilder("user")
-      .where("user.user_email ILIKE :email", {
+      .where("LOWER(user.email) = LOWER(:email)", {
         email: email.value,
-      })
-      .getCount();
+      });
+
+    if (exceptId) {
+      query.andWhere("user.user_id != :exceptId", {
+        exceptId: exceptId.value,
+      });
+    }
+
+    const count = await query.getCount();
 
     return count > 0;
   }
 
-  public async existsByUserName(userName: UserName): Promise<boolean> {
-    const count = await this.userRepository
+  public async existsByUserName(
+    userName: UserName,
+    exceptId?: UserId,
+  ): Promise<boolean> {
+    const query = this.userRepository
       .createQueryBuilder("user")
-      .where("user.user_name ILIKE :userName", {
+      .where("LOWER(user.user_name) = LOWER(:userName)", {
         userName: userName.value,
-      })
-      .getCount();
+      });
+
+    if (exceptId) {
+      query.andWhere("user.user_id != :exceptId", {
+        exceptId: exceptId.value,
+      });
+    }
+
+    const count = await query.getCount();
 
     return count > 0;
   }

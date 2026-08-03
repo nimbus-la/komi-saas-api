@@ -1,0 +1,4 @@
+export enum UserRolScopeEnum {
+  ADMINISTRATIVE = "ADMINISTRATIVE",
+  OPERATIONAL = "OPERATIONAL",
+}

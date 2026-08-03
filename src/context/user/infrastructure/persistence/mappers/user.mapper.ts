@@ -5,6 +5,7 @@ export class UserMapper {
   public static toResponse(entity: UserEntity): UserResponse {
     return {
       id: entity.id,
+      tenantId: entity.tenantId,
       branchId: entity.branchId,
       rolId: entity.rolId,
       userName: entity.userName,
@@ -14,8 +15,8 @@ export class UserMapper {
       age: entity.age,
       sex: entity.sex,
       phone: entity.phone,
-      created_at: entity.createdAt,
-      updated_at: entity.updatedAt,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
       isActive: entity.isActive,
     };
   }
@@ -23,8 +24,10 @@ export class UserMapper {
   public static toAggregate(entity: UserEntity): UserAggregate {
     return UserAggregate.fromPrimitives({
       id: entity.id,
+      tenantId: entity.tenantId,
       branchId: entity.branchId,
       rolId: entity.rolId,
+      rolScope: entity.rolScope,
       userName: entity.userName,
       email: entity.email,
       password: entity.password,
@@ -40,6 +43,6 @@ export class UserMapper {
   }
 
   public static toResponseList(entities: UserEntity[]): UserResponse[] {
-    return entities.map(UserMapper.toResponse);
+    return entities.map((entity) => UserMapper.toResponse(entity));
   }
 }

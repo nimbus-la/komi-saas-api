@@ -1,16 +1,30 @@
 import { UserSexEnum } from "@/context/user/domain";
-import { IsDateString, IsEmail, IsEnum, IsString, IsUUID, Matches, MaxLength, MinLength } from "class-validator";
+import {
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+  MinLength,
+} from "class-validator";
 
 export class CreateUserDto {
   @IsUUID()
-  branchId!: string;
+  tenantId!: string;
+
+  @IsOptional()
+  @IsUUID()
+  branchId?: string;
 
   @IsUUID()
   rolId!: string;
 
   @IsString()
   @MinLength(3)
-  @MaxLength(50)
+  @MaxLength(30)
   userName!: string;
 
   @IsEmail()
@@ -18,7 +32,7 @@ export class CreateUserDto {
   email!: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(12)
   @MaxLength(100)
   password!: string;
 
@@ -42,8 +56,7 @@ export class CreateUserDto {
   @Matches(/^[0-9+\-\s()]+$/, {
     message: "El teléfono contiene caracteres no válidos.",
   })
-
   @MinLength(7)
-  @MaxLength(20)
+  @MaxLength(15)
   phone!: string;
 }

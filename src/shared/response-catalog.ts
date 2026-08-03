@@ -39,7 +39,10 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1022': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La fecha de nacimiento no es válida.' },
     '1023': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El sexo del usuario no es válido.' },
     '1024': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El teléfono del usuario no es válido.' },
-
+    '1025': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El alcance del rol no es válido.' },
+    '1026': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un usuario con rol administrativo no puede pertenecer a una sucursal.' },
+    '1027': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un usuario con rol operativo debe pertenecer a una sucursal.' },
+    '1028': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre completo del usuario no es válido.'},
 
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El slug del tenant ya se encuentra registrado.' },

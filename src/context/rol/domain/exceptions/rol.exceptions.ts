@@ -44,3 +44,12 @@ export class RolNotFoundException extends DomainException {
         });
     }
 }
+
+export class InvalidRolScopeException extends DomainException {
+    constructor(reason: string) {
+        super({
+            code: "1025",
+            detail: `El alcance del rol es inválido ${reason}.`,
+        });
+    }
+}

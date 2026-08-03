@@ -1,5 +1,5 @@
 import { RolId, RolNotFoundException } from "@/context/rol/domain";
-import { RolRepository } from "@/context/rol/domain/rol.respository";
+import { RolRepository } from "@/context/rol/domain/rol.repository";
 import { RolResponse } from "@/context/rol/domain/types/rol-response";
 
 export class SearchRolUseCase {

@@ -1,18 +1,21 @@
 import {
-  UserAge,
+  UserBirthDate,
   UserEmail,
   UserEmailAlreadyExistsException,
   UserFullName,
+  UserHashedPassword,
   UserId,
   UserLastName,
   UserName,
   UserNameAlreadyExistsException,
   UserNotFoundException,
-  UserPassword,
   UserPhone,
+  UserPlainPassword,
   UserRepository,
   UserSex,
 } from "@/context/user/domain";
+
+import { PasswordHasher } from "../../ports/password-hasher";
 
 export interface UpdateUserParams {
   userName?: string;
@@ -26,52 +29,73 @@ export interface UpdateUserParams {
 }
 
 export class UpdateUserUseCase {
-  constructor(private readonly repository: UserRepository) {}
+  constructor(
+    private readonly repository: UserRepository,
+    private readonly passwordHasher: PasswordHasher,
+  ) {}
 
   public async execute(id: string, params: UpdateUserParams): Promise<void> {
-    const user = await this.repository.searchAggregateById(UserId.create(id));
+    const userId = UserId.create(id);
+
+    const user = await this.repository.searchAggregateById(userId);
 
     if (user === null) {
       throw new UserNotFoundException(id);
     }
 
-    let userName: UserName | undefined;
-    let email: UserEmail | undefined;
+    const current = user.toPrimitives();
 
-    if (params.userName !== undefined) {
-      userName = UserName.create(params.userName);
+    if (params.userName !== undefined || params.email !== undefined) {
+      const userName = UserName.create(params.userName ?? current.userName);
 
-      if (await this.repository.existsByUserName(userName)) {
-        throw new UserNameAlreadyExistsException(params.userName);
+      const email = UserEmail.create(params.email ?? current.email);
+
+      if (
+        params.userName !== undefined &&
+        params.userName !== current.userName
+      ) {
+        const exists = await this.repository.existsByUserName(userName, userId);
+
+        if (exists) {
+          throw new UserNameAlreadyExistsException(params.userName);
+        }
       }
+
+      if (params.email !== undefined && params.email !== current.email) {
+        const exists = await this.repository.existsByEmail(email, userId);
+
+        if (exists) {
+          throw new UserEmailAlreadyExistsException(params.email);
+        }
+      }
+
+      user.changeCredentials(email, userName);
     }
 
-    if (params.email !== undefined) {
-      email = UserEmail.create(params.email);
+    if (params.password !== undefined) {
+      const plainPassword = UserPlainPassword.create(params.password);
 
-      if (await this.repository.existsByEmail(email)) {
-        throw new UserEmailAlreadyExistsException(params.email);
-      }
+      const hash = await this.passwordHasher.hash(plainPassword);
+
+      const hashedPassword = UserHashedPassword.fromHash(hash);
+
+      user.changePassword(hashedPassword);
     }
 
-    user.update({
-      ...(userName ? { userName } : {}),
-      ...(email ? { email } : {}),
-      ...(params.password !== undefined
-        ? { password: UserPassword.create(params.password) }
-        : {}),
-      ...(params.fullName !== undefined
-        ? { fullName: UserFullName.create(params.fullName) }
-        : {}),
-      ...(params.lastName !== undefined
-        ? { lastName: UserLastName.create(params.lastName) }
-        : {}),
-      ...(params.age !== undefined ? { age: UserAge.create(params.age) } : {}),
-      ...(params.sex !== undefined ? { sex: UserSex.create(params.sex) } : {}),
-      ...(params.phone !== undefined
-        ? { phone: UserPhone.create(params.phone) }
-        : {}),
-    });
+    if (
+      params.fullName !== undefined ||
+      params.lastName !== undefined ||
+      params.age !== undefined ||
+      params.sex !== undefined ||
+      params.phone !== undefined
+    ) {
+      const fullName = UserFullName.create(params.fullName ?? current.fullName);
+      const lastName = UserLastName.create(params.lastName ?? current.lastName);
+      const birthDate = UserBirthDate.create(params.age ?? current.age);
+      const sex = UserSex.create(params.sex ?? current.sex);
+      const phone = UserPhone.create(params.phone ?? current.phone);
+      user.updateProfile(fullName, lastName, birthDate, sex, phone);
+    }
 
     await this.repository.update(user);
   }

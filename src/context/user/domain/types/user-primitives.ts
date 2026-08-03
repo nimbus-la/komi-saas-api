@@ -1,9 +1,12 @@
+import { UserRolScopeEnum } from "./user-rol-scope.enum";
 import { UserSexEnum } from "./user-sex.enum";
 
 export interface UserPrimitives {
     id: string;
-    branchId: string;
+    tenantId: string;
+    branchId: string | null;
     rolId: string;
+    rolScope: UserRolScopeEnum;
     userName: string;
     email: string;
     password: string;

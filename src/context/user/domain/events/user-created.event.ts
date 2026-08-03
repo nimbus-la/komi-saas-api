@@ -6,8 +6,10 @@ export class UserCreatedEvent extends DomainEvent {
   public readonly eventName = "user.created";
 
   public readonly userId: string;
-  public readonly branchId: string;
+  public readonly tenantId: string;
+  public readonly branchId: string | null;
   public readonly rolId: string;
+  public readonly rolScope: string;
   public readonly userName: string;
   public readonly email: string;
   public readonly fullName: string;
@@ -21,8 +23,10 @@ export class UserCreatedEvent extends DomainEvent {
     super();
 
     this.userId = props.userId;
+    this.tenantId = props.tenantId;
     this.branchId = props.branchId;
     this.rolId = props.rolId;
+    this.rolScope = props.rolScope;
     this.userName = props.userName;
     this.email = props.email;
     this.fullName = props.fullName;

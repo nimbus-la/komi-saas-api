@@ -1,4 +1,4 @@
-import { UserSexEnum } from "@/context/user/domain";
+import { UserRolScopeEnum, UserSexEnum } from "@/context/user/domain";
 import { Column, Entity, PrimaryColumn } from "typeorm";
 
 @Entity({ name: "users" })
@@ -6,19 +6,29 @@ export class UserEntity {
   @PrimaryColumn({ name: "user_id", type: "uuid" })
   id!: string;
 
-  @Column({ name: "branch_id", type: "uuid" })
-  branchId!: string;
+  @Column({ name: "tenant_id" })
+  tenantId!: string;
+
+  @Column({ name: "branch_id", type: "uuid", nullable: true })
+  branchId!: string | null;
 
   @Column({ name: "rol_id", type: "uuid" })
   rolId!: string;
 
+  @Column({
+    name: "rol_scope",
+    type: "varchar",
+    length: 20,
+  })
+  rolScope!: UserRolScopeEnum;
+  
   @Column({ name: "user_name", type: "varchar", length: 50 })
   userName!: string;
 
   @Column({ name: "user_email", type: "varchar", length: 120 })
   email!: string;
 
-  @Column({ name: "user_password", type: "varchar", length: 100 })
+  @Column({ name: "user_password", type: "varchar", length: 255 })
   password!: string;
 
   @Column({ name: "user_full_name", type: "varchar", length: 120 })
@@ -27,10 +37,10 @@ export class UserEntity {
   @Column({ name: "user_last_name", type: "varchar", length: 120 })
   lastName!: string;
 
-  @Column({ name: "user_age", type: "date" })
+  @Column({ name: "user_birth_date", type: "date" })
   age!: Date;
 
-  @Column({ name: "user_sex", type: "enum", enum: UserSexEnum, })
+  @Column({ name: "user_sex", type: "enum", enum: UserSexEnum })
   sex!: UserSexEnum;
 
   @Column({ name: "user_phone", type: "varchar", length: 20 })

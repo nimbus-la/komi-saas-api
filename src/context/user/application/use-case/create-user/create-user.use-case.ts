@@ -1,48 +1,63 @@
-import { BranchId, BranchRepository } from "@/context/branch/domain";
-import { BranchNotFoundException } from "@/context/inventory";
-import { RolId, RolNotFoundException } from "@/context/rol/domain";
-import { RolRepository } from "@/context/rol/domain/rol.respository";
 import {
   CreateUserApplicationParams,
-  UserAge,
+  UserBirthDate,
   UserAggregate,
   UserBranchId,
   UserEmail,
   UserEmailAlreadyExistsException,
   UserFullName,
+  UserHashedPassword,
   UserLastName,
   UserName,
   UserNameAlreadyExistsException,
-  UserPassword,
   UserPhone,
+  UserPlainPassword,
   UserRepository,
   UserRolId,
+  UserTenantId,
   UserSex,
+  UserBranchNotFoundException,
+  UserTenantNotFoundException,
+  UserRolNotFoundException,
 } from "@/context/user/domain";
+
+import { PasswordHasher } from "../../ports/password-hasher";
+import { TenantChecker } from "../../ports/tenant-checker";
+import { BranchChecker } from "../../ports/branch-checker";
+import { RolFinder } from "../../ports/rol-finder";
+import { EventPublisher } from "@/shared";
 
 export class CreateUserUseCase {
   constructor(
     private readonly repository: UserRepository,
-    private readonly branchRepository: BranchRepository,
-    private readonly rolRepository: RolRepository,
+    private readonly tenantChecker: TenantChecker,
+    private readonly branchChecker: BranchChecker,
+    private readonly rolFinder: RolFinder,
+    private readonly passwordHasher: PasswordHasher,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   public async execute(params: CreateUserApplicationParams): Promise<void> {
-    const branchId = UserBranchId.create(params.branchId);
-    const rolId = UserRolId.create(params.rolId);
+    const tenantExists = await this.tenantChecker.exists(params.tenantId);
 
-    const branch = await this.branchRepository.searchById(
-      BranchId.create(branchId.value),
-    );
-
-    if (!branch) {
-      throw new BranchNotFoundException(params.branchId);
+    if (!tenantExists) {
+      throw new UserTenantNotFoundException(params.tenantId);
     }
 
-    const rol = await this.rolRepository.searchById(RolId.create(rolId.value));
+    if (params.branchId) {
+      const branchExists = await this.branchChecker.existsInTenant(
+        params.branchId,
+        params.tenantId,
+      );
 
-    if (!rol) {
-      throw new RolNotFoundException(params.rolId);
+      if (!branchExists) {
+        throw new UserBranchNotFoundException(params.branchId);
+      }
+    }
+    const rolScope = await this.rolFinder.findScopeById(params.rolId);
+
+    if (!rolScope) {
+      throw new UserRolNotFoundException(params.rolId);
     }
 
     const email = UserEmail.create(params.email);
@@ -57,19 +72,34 @@ export class CreateUserUseCase {
       throw new UserNameAlreadyExistsException(params.userName);
     }
 
+    const plainPassword = UserPlainPassword.create(params.password);
+
+    const hash = await this.passwordHasher.hash(plainPassword);
+
+    const hashedPassword = UserHashedPassword.fromHash(hash);
+
     const user = UserAggregate.create({
-      branchId,
-      rolId,
+      tenantId: UserTenantId.create(params.tenantId),
+
+      branchId: params.branchId ? UserBranchId.create(params.branchId) : null,
+
+      rolId: UserRolId.create(params.rolId),
+
+      rolScope,
+
       userName,
       email,
-      password: UserPassword.create(params.password),
+      password: hashedPassword,
       fullName: UserFullName.create(params.fullName),
       lastName: UserLastName.create(params.lastName),
-      age: UserAge.create(params.age),
+      age: UserBirthDate.create(params.age),
       sex: UserSex.create(params.sex),
       phone: UserPhone.create(params.phone),
     });
 
     await this.repository.save(user);
+
+    await this.eventPublisher.publish(user.getDomainEvents());
+    user.clearDomainEvents();
   }
 }

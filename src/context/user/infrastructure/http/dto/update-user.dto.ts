@@ -5,12 +5,31 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
 } from "class-validator";
 
+export enum UpdateUserAction {
+  ACTIVATE = "ACTIVATE",
+  DEACTIVATE = "DEACTIVATE",
+  REASSIGN = "REASSIGN",
+}
+
 export class UpdateUserDto {
+  @IsOptional()
+  @IsEnum(UpdateUserAction)
+  action?: UpdateUserAction;
+
+  @IsOptional()
+  @IsUUID()
+  rolId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  branchId?: string | null;
+
   @IsOptional()
   @IsString()
   @MinLength(3)

@@ -1,7 +1,8 @@
 import { InvalidUserEmailException } from "../exceptions/user-exceptions";
 
 export class UserEmail {
-  private static readonly MAX_LENGTH = 100;
+  private static readonly MAX_LENGTH = 120;
+  private static readonly PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
   private constructor(public readonly value: string) {}
 
@@ -18,6 +19,9 @@ export class UserEmail {
       );
     }
 
+    if (!this.PATTERN.test(value)) {
+      throw new InvalidUserEmailException("porque no tiene un formato válido");
+    }
     return new UserEmail(value);
   }
 

@@ -9,8 +9,9 @@ export class RolMapper {
             id: entity.id,
             code: entity.code,
             name: entity.name,
-            created_at: entity.createdAt,
-            updated_at: entity.updatedAt,
+            scope: entity.scope,
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt,
         };
     }
 
@@ -19,8 +20,13 @@ export class RolMapper {
             id: entity.id,
             code: entity.code,
             name: entity.name,
+            scope: entity.scope,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
         });
     }
+
+    public static toResponseList(entities: RolEntity[]): RolResponse[] {
+    return entities.map(RolMapper.toResponse);
+  }
 };

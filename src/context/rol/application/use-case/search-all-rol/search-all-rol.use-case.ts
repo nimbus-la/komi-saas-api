@@ -1,4 +1,4 @@
-import { RolRepository } from "@/context/rol/domain/rol.respository";
+import { RolRepository } from "@/context/rol/domain/rol.repository";
 import { RolResponse } from "@/context/rol/domain/types/rol-response";
 
 export class SearchAllRolUseCase {
