@@ -36,6 +36,230 @@ CREATE TABLE IF NOT EXISTS branches (
         ON DELETE RESTRICT
 );
 
+-- ============================================
+-- TABLA DE ROLES
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS roles (
+    rol_id UUID PRIMARY KEY,
+    rol_code VARCHAR(20) NOT NULL UNIQUE,
+    rol_name VARCHAR(50) NOT NULL UNIQUE,
+    rol_scope VARCHAR(20) NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT ck_roles_scope
+        CHECK (rol_scope IN ('ADMINISTRATIVE', 'OPERATIONAL'))
+);
+
+
+-- ============================================
+-- ROLES FIJOS DEL SISTEMA
+-- ============================================
+INSERT INTO roles (
+    rol_id,
+    rol_code,
+    rol_name,
+    rol_scope
+)
+VALUES
+(
+    '550e8400-e29b-41d4-a716-446655440001',
+    'OWNER',
+    'OWNER',
+    'ADMINISTRATIVE'
+),
+(
+    '550e8400-e29b-41d4-a716-446655440002',
+    'ADMIN',
+    'ADMIN',
+    'ADMINISTRATIVE'
+),
+(
+    '550e8400-e29b-41d4-a716-446655440003',
+    'SUPERVISOR',
+    'SUPERVISOR',
+    'ADMINISTRATIVE'
+),
+(
+    '550e8400-e29b-41d4-a716-446655440004',
+    'MANAGER',
+    'MANAGER',
+    'OPERATIONAL'
+),
+(
+    '550e8400-e29b-41d4-a716-446655440005',
+    'CASHIER',
+    'CASHIER',
+    'OPERATIONAL'
+),
+(
+    '550e8400-e29b-41d4-a716-446655440006',
+    'WAITER',
+    'WAITER',
+    'OPERATIONAL'
+),
+(
+    '550e8400-e29b-41d4-a716-446655440007',
+    'KITCHEN',
+    'KITCHEN',
+    'OPERATIONAL'
+);
+
+ON CONFLICT (rol_id) DO NOTHING;
+
+
+-- ============================================
+-- CLAVE COMPUESTA PARA VALIDAR ROL + ALCANCE
+-- ============================================
+
+ALTER TABLE roles
+ADD CONSTRAINT uq_roles_id_scope
+UNIQUE (rol_id, rol_scope);
+
+
+-- ============================================
+-- TABLA DE USERS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id UUID PRIMARY KEY,
+
+    -- Tenant al que pertenece directamente el usuario
+    tenant_id UUID NOT NULL,
+
+    -- NULL para usuarios administrativos
+    branch_id UUID NULL,
+
+    rol_id UUID NOT NULL,
+
+    -- Alcance replicado para garantizar la regla
+    -- administrativo -> sin sucursal
+    -- operativo -> con sucursal
+    rol_scope VARCHAR(20) NOT NULL,
+
+    user_name VARCHAR(50) NOT NULL,
+    user_email VARCHAR(120) NOT NULL,
+
+    -- Hash de contraseña
+    user_password VARCHAR(255) NOT NULL,
+
+    user_full_name VARCHAR(120) NOT NULL,
+    user_last_name VARCHAR(120) NOT NULL,
+
+    user_birth_date DATE NOT NULL,
+    user_sex VARCHAR(20) NOT NULL,
+    user_phone VARCHAR(20) NOT NULL,
+
+    user_is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    user_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    user_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- ========================================
+    -- RELACIÓN CON TENANT
+    -- ========================================
+
+    CONSTRAINT fk_users_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tenants(tenant_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    -- ========================================
+    -- RELACIÓN CON SUCURSAL
+    -- ========================================
+
+    CONSTRAINT fk_users_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(branch_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    -- ========================================
+    -- RELACIÓN CON ROL
+    -- ========================================
+
+    CONSTRAINT fk_users_rol
+        FOREIGN KEY (rol_id)
+        REFERENCES roles(rol_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    -- ========================================
+    -- RELACIÓN ROL + ALCANCE
+    -- ========================================
+
+    CONSTRAINT fk_users_rol_scope
+        FOREIGN KEY (rol_id, rol_scope)
+        REFERENCES roles(rol_id, rol_scope),
+
+    -- ========================================
+    -- REGLA DE NEGOCIO R2
+    -- ========================================
+
+    CONSTRAINT ck_users_branch_matches_scope
+        CHECK (
+            (
+                rol_scope = 'ADMINISTRATIVE'
+                AND branch_id IS NULL
+            )
+            OR
+            (
+                rol_scope = 'OPERATIONAL'
+                AND branch_id IS NOT NULL
+            )
+        )
+);
+
+
+-- ============================================
+-- ÍNDICES DE USERS
+-- ============================================
+
+-- Búsqueda de usuarios por tenant
+CREATE INDEX IF NOT EXISTS idx_users_tenant
+ON users (tenant_id);
+
+
+-- Búsqueda de usuarios por sucursal
+CREATE INDEX IF NOT EXISTS idx_users_branch
+ON users (branch_id);
+
+
+-- Búsqueda de usuarios por rol
+CREATE INDEX IF NOT EXISTS idx_users_rol
+ON users (rol_id);
+
+
+-- Usuarios activos de una sucursal
+CREATE INDEX IF NOT EXISTS idx_users_tenant_branch_active
+ON users (tenant_id, branch_id)
+WHERE user_is_active;
+
+
+-- ============================================
+-- UNICIDAD POR TENANT
+-- ============================================
+
+-- El email es único dentro de cada tenant,
+-- sin distinguir mayúsculas/minúsculas.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_tenant_lower
+ON users (
+    tenant_id,
+    LOWER(user_email)
+);
+
+
+-- El username es único dentro de cada tenant,
+-- sin distinguir mayúsculas/minúsculas.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_name_tenant_lower
+ON users (
+    tenant_id,
+    LOWER(user_name)
+);
+
 
 -- --------------------------------------------------------------------------
 -- Secuencia para el consecutivo del SKU (INV-0001, INV-0002, ...)

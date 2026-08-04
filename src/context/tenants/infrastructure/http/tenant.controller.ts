@@ -23,7 +23,7 @@ export class TenantController {
         @Body() dto: CreateTenantDto
     ) {
         await this.createTenant.execute({
-            accountId: dto.accountId,
+           // accountId: dto.accountId,
             name: dto.name,
             description: dto.description,
             slug: dto.slug,

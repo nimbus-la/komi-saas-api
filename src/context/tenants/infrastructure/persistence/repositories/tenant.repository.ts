@@ -17,7 +17,7 @@ export class TenantService implements TenantRepository {
 
         const row = this.tenantRepository.create({
             id: primitives.id,
-            accountId: primitives.accountId,
+            //accountId: primitives.accountId,
             name: primitives.name,
             description: primitives.description,
             slug: primitives.slug,
@@ -43,7 +43,7 @@ export class TenantService implements TenantRepository {
 
         return {
             id: row.id,
-            accountId: row.accountId,
+            //accountId: row.accountId,
             name: row.name,
             description: row.description,
             slug: row.slug,
@@ -70,7 +70,7 @@ export class TenantService implements TenantRepository {
 
         return TenantAggregate.fromPrimitives({
             id: row.id,
-            accountId: row.accountId,
+            //accountId: row.accountId,
             name: row.name,
             description: row.description,
             slug: row.slug,
@@ -96,7 +96,7 @@ export class TenantService implements TenantRepository {
 
         return TenantAggregate.fromPrimitives({
             id: row.id,
-            accountId: row.accountId,
+            //accountId: row.accountId,
             name: row.name,
             description: row.description,
             slug: row.slug,

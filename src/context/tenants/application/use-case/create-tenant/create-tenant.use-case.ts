@@ -1,5 +1,5 @@
 import { TenantNameAlreadyExistsException, TenantNitAlreadyExistsException, TenantSlugAlreadyExistsException } from "@/context/tenants/domain/exceptions/tenant-exceptions";
-import { CreateTenantApplicationParams, TenantAccountId, TenantAggregate, TenantDescription, TenantName, TenantNit, TenantRepository, TenantSlug } from "../../../domain";
+import { CreateTenantApplicationParams, TenantAggregate, TenantDescription, TenantName, TenantNit, TenantRepository, TenantSlug } from "../../../domain";
 
 
 export class CreateTenantUseCase {
@@ -39,7 +39,7 @@ export class CreateTenantUseCase {
         }
 
         const newTenant = TenantAggregate.create({
-            accountId: TenantAccountId.create(params.accountId),
+            //accountId: TenantAccountId.create(params.accountId),
             name,
             description: TenantDescription.create(params.description),
             slug,

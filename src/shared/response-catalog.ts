@@ -12,6 +12,8 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '0001': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'No se encontraron resultados.' },
     '0002': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Sucursal no encontrada. ' },
     '0003': { status: ResponseStatus.Info, category: ErrorCategory.Validation, message: 'Tenant no encontrado ' },
+    '0004': { status: ResponseStatus.Success, category: ErrorCategory.Validation, message: 'Rol creado exitosamente.' },
+    '0005': { status: ResponseStatus.Success, category: ErrorCategory.Validation, message: 'Rol actualizado exitosamente.' },
 
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Los datos enviados no son válidos.' },
@@ -29,7 +31,19 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1014': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El identificador no es válido.' },
     '1015': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad ingresada no es válida.' },
     '1016': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio base del producto debe ser mayor que 0.' },
-
+    '1017': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El código del rol no es válido.' },
+    '1018': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del rol no es válido.' },
+    '1019': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de usuario no es válido.' },
+    '1020': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El correo electrónico no es válido.' },
+    '1021': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La contraseña no es válida.' },
+    '1022': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El apellido del usuario no es válido.' },
+    '1023': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La fecha de nacimiento no es válida.' },
+    '1024': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El sexo del usuario no es válido.' },
+    '1025': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El teléfono del usuario no es válido.' },
+    '1026': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El alcance del rol no es válido.' },
+    '1027': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un usuario con rol administrativo no puede pertenecer a una sucursal.' },
+    '1028': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un usuario con rol operativo debe pertenecer a una sucursal.' },
+    '1029': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre completo del usuario no es válido.' },
 
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El slug del tenant ya se encuentra registrado.' },
@@ -37,6 +51,14 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1205': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El tenant indicado no existe.' },
     '1206': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre de la sucursal ya se encuentra registrado.' },
     '1207': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal indicada no existe.' },
+    '1208': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El nombre del rol ya se encuentra registrado.' },
+    '1209': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El código del rol ya se encuentra registrado.' },
+    '1210': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El rol indicado no existe.' },
+    '1211': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El nombre de usuario ya se encuentra registrado.' },
+    '1212': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El correo electrónico ya se encuentra registrado.' },
+    '1213': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra activo.' },
+    '1214': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra inactivo.' },
+    '1215': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra inactivo.' },
 
     // 13xx — estándar de errores de INVENTARIO (1300-1399)
     //   1300-1309 Item (catálogo) · 1310-1319 Lote · 1320-1329 Movimientos de stock

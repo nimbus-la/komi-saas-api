@@ -2,13 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import {
-    BranchAggregate,
-    BranchId,
-    BranchName,
-    BranchRepository,
-    BranchResponse,
-} from "../../../domain";
+import { BranchAggregate, BranchId, BranchName, BranchRepository, BranchResponse, } from "../../../domain";
 
 import { BranchEntity } from "../models/branch.entity";
 import { BranchMapper } from "../mappers/branch.mapper";

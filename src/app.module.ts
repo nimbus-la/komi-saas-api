@@ -6,6 +6,8 @@ import { TenantModule } from './context/tenants/tenant.module';
 import { ProductsModule } from './context/products/products.module';
 import { InventoryModule } from './context/inventory/inventory-item.module';
 import { InventoryMovementModule } from './context/inventory-movements';
+import { RolModule } from './context/rol/rol.module';
+import { UserModule } from './context/user/user.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { InventoryMovementModule } from './context/inventory-movements';
     InventoryMovementModule,
     TenantModule,
     ProductsModule,
+    RolModule,
+    UserModule,
   ],
 })
 

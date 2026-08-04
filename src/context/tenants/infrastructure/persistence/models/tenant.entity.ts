@@ -6,8 +6,8 @@ export class TenantEntity {
     @PrimaryColumn({ name: 'tenant_id', type: 'uuid' })
     id!: string;
 
-    @Column({name: 'account_id', type: 'uuid'})
-    accountId!: string;
+    //@Column({name: 'account_id', type: 'uuid'})
+    //accountId!: string;
 
     @Column({ name: 'tenant_name', type: 'varchar', length: 120 })
     name!: string;

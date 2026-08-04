@@ -1,10 +1,10 @@
 import { AggregateRoot } from "@/shared";
-import { TenantAccountId, TenantDescription, TenantId, TenantName, TenantNit, TenantSlug} from "./value-object";
+import { TenantDescription, TenantId, TenantName, TenantNit, TenantSlug} from "./value-object";
 import { TenantPrimitives } from "./types";
 import { TenantCreatedEvent } from "./events/tenant-created.event";
 
 export class TenantAggregate extends AggregateRoot<TenantId> {
-    private readonly accountId: TenantAccountId;
+    //private readonly accountId: TenantAccountId;
     private name: TenantName;
     private description: TenantDescription;
     private slug: TenantSlug;
@@ -17,7 +17,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
 
     private constructor(
         id: TenantId,
-        accountId: TenantAccountId,
+       // accountId: TenantAccountId,
         name: TenantName,
         description: TenantDescription,
         slug: TenantSlug,
@@ -28,7 +28,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
     ) {
         super(id);
 
-        this.accountId = accountId;
+        //this.accountId = accountId;
         this.name = name;
         this.description = description;
         this.slug = slug;
@@ -43,7 +43,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
     }
 
     public static create(params: {
-        accountId: TenantAccountId;
+       // accountId: TenantAccountId;
         name: TenantName;
         description: TenantDescription;
         slug: TenantSlug;
@@ -54,7 +54,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
 
         const tenant = new TenantAggregate(
             TenantId.generate(),
-            params.accountId,
+          //  params.accountId,
             params.name,
             params.description,
             params.slug,
@@ -67,7 +67,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
         tenant.registerEvent(
             new TenantCreatedEvent({
                 tenantId: tenant.id.value,
-                accountId: tenant.accountId.value,
+               // accountId: tenant.accountId.value,
                 name: tenant.name.value,
                 description: tenant.description.value,
                 slug: tenant.slug.value,
@@ -81,7 +81,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
     public toPrimitives(): TenantPrimitives {
         return {
             id: this.id.value,
-            accountId: this.accountId.value,
+           // accountId: this.accountId.value,
             name: this.name.value,
             description: this.description.value,
             slug: this.slug.value,
@@ -96,7 +96,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
     public static fromPrimitives(primitives: TenantPrimitives): TenantAggregate {
         return new TenantAggregate(
             TenantId.create(primitives.id),
-            TenantAccountId.create(primitives.accountId),
+           // TenantAccountId.create(primitives.accountId),
             TenantName.create(primitives.name),
             TenantDescription.create(primitives.description),
             TenantSlug.create(primitives.slug),

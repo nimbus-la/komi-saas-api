@@ -5,7 +5,7 @@ export class TenantCreatedEvent extends DomainEvent {
     public readonly eventName = 'tenant.created';
 
     public readonly tenantId: string;
-    public readonly accountId: string;
+   // public readonly accountId: string;
     public readonly name: string;
     public readonly description: string;
     public readonly slug: string;
@@ -16,7 +16,7 @@ export class TenantCreatedEvent extends DomainEvent {
         super();
 
         this.tenantId = props.tenantId;
-        this.accountId = props.accountId;
+        //this.accountId = props.accountId;
         this.name = props.name;
         this.description = props.description;
         this.slug = props.slug;
