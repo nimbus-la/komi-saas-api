@@ -16,7 +16,7 @@ export interface UpdateCategoryApplicationParams {
     tenantId: string;
     name?: string;
     description?: string;
-    estado?: boolean;
+    isActive?: boolean;
 }
 
 @Injectable()
@@ -61,17 +61,17 @@ export class UpdateCategoryUseCase {
             description: params.description ?? category.toPrimitives().description,
         });
 
-        if (params.estado !== undefined) {
+        if (params.isActive !== undefined) {
             const currentState = category.toPrimitives().isActive;
 
-            if (params.estado === currentState) {
+            if (params.isActive === currentState) {
                 if (currentState) {
                     throw new ProductCategoryAlreadyActivatedException();
                 }
                 throw new ProductCategoryAlreadyDeactivatedException();
             }
 
-            if (params.estado) {
+            if (params.isActive) {
                 category.activate();
             } else {
                 category.deactivate();

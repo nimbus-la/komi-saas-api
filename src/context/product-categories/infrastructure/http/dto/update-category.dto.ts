@@ -15,5 +15,5 @@ export class UpdateCategoryDto {
 
     @IsOptional()
     @IsBoolean()
-    estado?: boolean;
+    isActive?: boolean;
 }

@@ -21,6 +21,8 @@ export class ProductCategoryMapper {
             name: entity.name,
             description: entity.description ?? undefined,
             isActive: entity.estado,
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt,
         });
     }
 }
@@ -33,7 +35,8 @@ export class ProductCategoryresponse {
             name: category.getName().value,
             description: category.getDescription(),
             isActive: category.getIsActive(),
-
+            createdAt: category.getCreatedAt(),
+            updatedAt: category.getUpdatedAt(),
         };
     }
 }

@@ -3,13 +3,18 @@ import { AggregateRoot } from "@/shared";
 import { CategoryId } from "./value-object/category-id.value-object";
 import { CategoryPrimitives } from "./types/product-primitives";
 import { CategoryName } from "./exceptions/InvalidCategoryNameException";
-import { ProductCategoryAlreadyActivatedException, ProductCategoryAlreadyDeactivatedException } from "./exceptions/product-category.exception";
+import {
+    ProductCategoryAlreadyActivatedException,
+    ProductCategoryAlreadyDeactivatedException,
+} from "./exceptions/product-category.exception";
 
 export class ProductCategory extends AggregateRoot<CategoryId> {
     private tenantId: string;
     private name: CategoryName;
     private description: string | undefined;
     private isActive: boolean;
+    private createdAt: Date;
+    private updatedAt: Date;
 
     private constructor(
         id: CategoryId,
@@ -17,6 +22,8 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         name: CategoryName,
         description: string | undefined,
         isActive: boolean,
+        createdAt: Date,
+        updatedAt: Date,
     ) {
         super(id);
 
@@ -24,6 +31,8 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         this.name = name;
         this.description = description;
         this.isActive = isActive;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public static create(params: {
@@ -31,12 +40,16 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         name: CategoryName;
         description: string | undefined;
     }): ProductCategory {
+        const now = new Date();
+
         return new ProductCategory(
             CategoryId.generate(),
             params.tenantId,
             params.name,
             params.description,
             true,
+            now,
+            now,
         );
     }
 
@@ -47,6 +60,8 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
             name: this.name.value,
             description: this.description,
             isActive: this.isActive,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
         };
     }
 
@@ -66,6 +81,14 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         return this.isActive;
     }
 
+    public getCreatedAt(): Date {
+        return this.createdAt;
+    }
+
+    public getUpdatedAt(): Date {
+        return this.updatedAt;
+    }
+
     public static fromPrimitives(
         primitives: CategoryPrimitives,
     ): ProductCategory {
@@ -75,6 +98,8 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
             CategoryName.create(primitives.name),
             primitives.description,
             primitives.isActive,
+            primitives.createdAt,
+            primitives.updatedAt,
         );
     }
 
@@ -84,6 +109,7 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         }
 
         this.isActive = true;
+        this.updatedAt = new Date();
     }
 
     public deactivate(): void {
@@ -92,6 +118,7 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         }
 
         this.isActive = false;
+        this.updatedAt = new Date();
     }
 
     public update(params: {
@@ -100,5 +127,6 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
     }): void {
         this.name = params.name;
         this.description = params.description;
+        this.updatedAt = new Date();
     }
 }

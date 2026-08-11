@@ -29,8 +29,12 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
     }
 
     async findById(id: string): Promise<ProductCategory | null> {
-        const row = await this.categoryRepository.findOne({ where: { id } });
-        return row ? ProductCategoryMapper.toDomain(row) : null;
+        const row = await this.categoryRepository.findOne({
+            where: { id },
+        });
+        return row
+            ? ProductCategoryMapper.toDomain(row)
+            : null;
     }
 
     async existsByName(
@@ -54,13 +58,22 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
 
     async search(params: {
         tenantId: string;
-
         text?: string;
         id?: string;
-        estado?: boolean;
+        isActive?: boolean;
         createdAt?: string;
         updatedAt?: string;
-    }): Promise<ProductCategory[]> {
+        page?: number;
+        limit?: number;
+    }): Promise<{
+        data: ProductCategory[];
+        total: number;
+    }> {
+        const page = params.page ?? 1;
+        const limit = params.limit ?? 10;
+
+        const skip = (page - 1) * limit;
+
         const query = this.categoryRepository
             .createQueryBuilder("category")
             .where(
@@ -90,20 +103,19 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
         if (params.text) {
             query.andWhere(
                 `(LOWER(category.name) LIKE LOWER(:text)
-            OR LOWER(category.description) LIKE LOWER(:text))`,
+          OR LOWER(category.description) LIKE LOWER(:text))`,
                 {
                     text: `%${params.text}%`,
                 },
             );
         }
 
-
         // Estado
-        if (params.estado !== undefined) {
+        if (params.isActive !== undefined) {
             query.andWhere(
-                "category.estado = :estado",
+                "category.estado = :isActive",
                 {
-                    estado: params.estado,
+                    isActive: params.isActive,
                 },
             );
         }
@@ -130,9 +142,15 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
             );
         }
 
+        query
+            .skip(skip)
+            .take(limit);
 
-        const rows = await query.getMany();
+        const [rows, total] = await query.getManyAndCount();
 
-        return rows.map(ProductCategoryMapper.toDomain);
+        return {
+            data: rows.map(ProductCategoryMapper.toDomain),
+            total,
+        };
     }
 }

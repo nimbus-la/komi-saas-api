@@ -15,11 +15,13 @@ export class ProductCategoryCheckerAdapter
         categoryId: string,
     ): Promise<boolean> {
 
-        const categories = await this.categories.search({
+        const result = await this.categories.search({
             tenantId,
             id: categoryId,
+            page: 1,
+            limit: 1,
         });
 
-        return categories.length > 0;
+        return result.data.length > 0;
     }
 }

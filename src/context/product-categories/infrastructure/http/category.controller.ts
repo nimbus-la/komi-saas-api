@@ -8,7 +8,7 @@ import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(AllExceptionsFilter)
 
-@Controller("categories")
+@Controller('products/categories')
 export class CategoryController {
     constructor(
         private readonly service: CategoryService,
@@ -37,12 +37,16 @@ export class CategoryController {
         @Query("text") text?: string,
         @Query("id") id?: string,
         @Query("estado") estado?: string,
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
     ) {
         const params: {
             tenantId: string;
             text?: string;
             id?: string;
             estado?: boolean;
+            page?: number;
+            limit?: number;
         } = {
             tenantId,
         };
@@ -57,6 +61,14 @@ export class CategoryController {
 
         if (estado !== undefined) {
             params.estado = estado === "true";
+        }
+
+        if (page !== undefined) {
+            params.page = Number(page);
+        }
+
+        if (limit !== undefined) {
+            params.limit = Number(limit);
         }
 
         return this.service.search(params);

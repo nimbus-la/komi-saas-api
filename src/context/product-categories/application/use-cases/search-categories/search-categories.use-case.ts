@@ -1,5 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { ProductCategoryRepository, TenantNotFoundException } from "../../../domain";
+import {
+    ProductCategoryRepository,
+    TenantNotFoundException,
+} from "../../../domain";
 import { TenantChecker } from "../../ports/tenant-checker";
 import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId_Exception";
 
@@ -15,9 +18,16 @@ export class SearchCategoriesUseCase {
         tenantId: string;
         text?: string;
         id?: string;
-        estado?: boolean;
+        isActive?: boolean;
+        createdAt?: string;
+        updatedAt?: string;
+        page?: number;
+        limit?: number;
     }) {
-        const categories = await this.repository.search(params);
+        if (!params.tenantId) {
+            throw new TenantIdRequiredForSearchException();
+        }
+
         const tenantExists = await this.tenantChecker.exists(
             params.tenantId,
         );
@@ -27,9 +37,26 @@ export class SearchCategoriesUseCase {
                 params.tenantId,
             );
         }
-        if (!params.tenantId) {
-            throw new TenantIdRequiredForSearchException();
-        }
-        return categories.map((category) => category.toPrimitives());
+
+        const page = params.page ?? 1;
+        const limit = params.limit ?? 10;
+
+        const result = await this.repository.search({
+            ...params,
+            page,
+            limit,
+        });
+
+        return {
+            data: result.data.map((category) =>
+                category.toPrimitives(),
+            ),
+            meta: {
+                page,
+                limit,
+                total: result.total,
+                totalPages: Math.ceil(result.total / limit),
+            },
+        };
     }
 }
