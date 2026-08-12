@@ -4,4 +4,6 @@ export interface CategoryPrimitives {
     name: string;
     description: string | undefined;
     isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }

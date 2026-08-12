@@ -1,10 +1,10 @@
 import {
-    IsBoolean,
     IsNotEmpty,
     IsOptional,
     IsString,
     IsUUID,
     MaxLength,
+    MinLength,
 } from "class-validator";
 
 export class CreateCategoryDto {
@@ -14,14 +14,11 @@ export class CreateCategoryDto {
 
     @IsString()
     @IsNotEmpty()
-    @MaxLength(150)
+    @MinLength(2)
+    @MaxLength(120)
     name!: string;
 
     @IsOptional()
     @IsString()
     description?: string;
-
-    @IsBoolean()
-    @IsOptional()
-    estado?: boolean;
 }

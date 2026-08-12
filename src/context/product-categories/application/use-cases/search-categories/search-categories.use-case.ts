@@ -1,35 +1,43 @@
-import { Injectable } from "@nestjs/common";
-import { ProductCategoryRepository, TenantNotFoundException } from "../../../domain";
-import { TenantChecker } from "../../ports/tenant-checker";
-import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId_Exception";
+import { Paginated, Pagination } from "@/interfaces";
 
-@Injectable()
+import {
+    CategoryPrimitives,
+    ProductCategoryRepository,
+    SearchCategoriesFilters,
+    TenantIdRequiredForSearchException,
+    TenantNotFoundException,
+} from "../../../domain";
+import { TenantChecker } from "../../ports/tenant-checker";
+
 export class SearchCategoriesUseCase {
     constructor(
         private readonly repository: ProductCategoryRepository,
         private readonly tenantChecker: TenantChecker,
-
     ) { }
 
-    async execute(params: {
-        tenantId: string;
-        text?: string;
-        id?: string;
-        estado?: boolean;
-    }) {
-        const categories = await this.repository.search(params);
-        const tenantExists = await this.tenantChecker.exists(
-            params.tenantId,
-        );
+    public async execute(
+        filters: SearchCategoriesFilters,
+        pagination: Pagination,
+    ): Promise<Paginated<CategoryPrimitives>> {
 
-        if (!tenantExists) {
-            throw new TenantNotFoundException(
-                params.tenantId,
-            );
-        }
-        if (!params.tenantId) {
+        if (!filters.tenantId) {
             throw new TenantIdRequiredForSearchException();
         }
-        return categories.map((category) => category.toPrimitives());
+
+        const tenantExists = await this.tenantChecker.exists(filters.tenantId);
+
+        if (!tenantExists) {
+            throw new TenantNotFoundException(filters.tenantId);
+        }
+
+        const { data, pageNumber, pageSize, total } =
+            await this.repository.search(filters, pagination);
+
+        return {
+            data: data.map((category) => category.toPrimitives()),
+            pageNumber,
+            pageSize,
+            total,
+        };
     }
 }

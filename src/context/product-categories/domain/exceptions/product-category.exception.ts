@@ -8,6 +8,7 @@ export class ProductCategoryNotFoundException extends DomainException {
     });
   }
 }
+
 export class ProductCategoryAlreadyExistsException extends DomainException {
   constructor(name: string) {
     super({
@@ -58,6 +59,15 @@ export class TenantNotFoundException extends DomainException {
     super({
       code: "1205",
       detail: `No se encontró el tenant con id ${tenantId}.`,
+    });
+  }
+}
+
+export class TenantIdRequiredForSearchException extends DomainException {
+  constructor() {
+    super({
+      code: "1409",
+      detail: "El tenantId es obligatorio para operar sobre categorías.",
     });
   }
 }

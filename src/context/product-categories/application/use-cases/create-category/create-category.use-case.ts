@@ -1,57 +1,48 @@
 import {
+    CategoryName,
+    CreateCategoryApplicationParams,
     ProductCategory,
     ProductCategoryAlreadyExistsException,
     ProductCategoryRepository,
     TenantNotFoundException,
 } from "../../../domain";
-import { CategoryName } from "@/context/product-categories/domain/exceptions/InvalidCategoryNameException";
 import { TenantChecker } from "../../ports/tenant-checker";
-
-export interface CreateCategoryApplicationParams {
-    tenantId: string;
-    name: string;
-    description?: string | undefined;
-
-}
 
 export class CreateCategoryUseCase {
     constructor(
         private readonly repository: ProductCategoryRepository,
         private readonly tenantChecker: TenantChecker,
-
     ) { }
 
-    async execute(
+    public async execute(
         params: CreateCategoryApplicationParams,
-    ): Promise<ProductCategory> {
+    ): Promise<void> {
 
-        const tenantExists =
-            await this.tenantChecker.exists(
-                params.tenantId,
-            );
-
+        const tenantExists = await this.tenantChecker.exists(params.tenantId);
 
         if (!tenantExists) {
-            throw new TenantNotFoundException(
-                params.tenantId,
-            );
+            throw new TenantNotFoundException(params.tenantId);
         }
 
-        const exists = await this.repository.existsByName(params.name, params.tenantId);
+        // Se normaliza antes de consultar: si no, "  Bebidas " esquiva el chequeo
+        // de duplicados y termina guardándose como "Bebidas".
+        const name = CategoryName.create(params.name);
+
+        const exists = await this.repository.existsByName(
+            name.value,
+            params.tenantId,
+        );
 
         if (exists) {
-            throw new ProductCategoryAlreadyExistsException(
-                params.name,
-            );
+            throw new ProductCategoryAlreadyExistsException(name.value);
         }
+
         const category = ProductCategory.create({
             tenantId: params.tenantId,
-            name: CategoryName.create(params.name),
+            name,
             description: params.description,
         });
 
         await this.repository.save(category);
-
-        return category;
     }
 }

@@ -1,29 +1,24 @@
 import { AggregateRoot } from "@/shared";
 
 import { CategoryId } from "./value-object/category-id.value-object";
-import { CategoryPrimitives } from "./types/product-primitives";
-import { CategoryName } from "./exceptions/InvalidCategoryNameException";
-import { ProductCategoryAlreadyActivatedException, ProductCategoryAlreadyDeactivatedException } from "./exceptions/product-category.exception";
+import { CategoryName } from "./value-object/category-name.value-object";
+import { CategoryPrimitives } from "./types/category-primitives";
+import {
+    ProductCategoryAlreadyActivatedException,
+    ProductCategoryAlreadyDeactivatedException,
+} from "./exceptions/product-category.exception";
 
 export class ProductCategory extends AggregateRoot<CategoryId> {
-    private tenantId: string;
-    private name: CategoryName;
-    private description: string | undefined;
-    private isActive: boolean;
-
     private constructor(
         id: CategoryId,
-        tenantId: string,
-        name: CategoryName,
-        description: string | undefined,
-        isActive: boolean,
+        private readonly tenantId: string,
+        private name: CategoryName,
+        private description: string | undefined,
+        private isActive: boolean,
+        private readonly createdAt: Date,
+        private updatedAt: Date,
     ) {
         super(id);
-
-        this.tenantId = tenantId;
-        this.name = name;
-        this.description = description;
-        this.isActive = isActive;
     }
 
     public static create(params: {
@@ -31,39 +26,17 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         name: CategoryName;
         description: string | undefined;
     }): ProductCategory {
+        const now = new Date();
+
         return new ProductCategory(
             CategoryId.generate(),
             params.tenantId,
             params.name,
             params.description,
             true,
+            now,
+            now,
         );
-    }
-
-    public toPrimitives(): CategoryPrimitives {
-        return {
-            id: this.id.value,
-            tenantId: this.tenantId,
-            name: this.name.value,
-            description: this.description,
-            isActive: this.isActive,
-        };
-    }
-
-    public getTenantId(): string {
-        return this.tenantId;
-    }
-
-    public getName(): CategoryName {
-        return this.name;
-    }
-
-    public getDescription(): string | undefined {
-        return this.description;
-    }
-
-    public getIsActive(): boolean {
-        return this.isActive;
     }
 
     public static fromPrimitives(
@@ -75,7 +48,46 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
             CategoryName.create(primitives.name),
             primitives.description,
             primitives.isActive,
+            primitives.createdAt,
+            primitives.updatedAt,
         );
+    }
+
+    public toPrimitives(): CategoryPrimitives {
+        return {
+            id: this.id.value,
+            tenantId: this.tenantId,
+            name: this.name.value,
+            description: this.description,
+            isActive: this.isActive,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
+        };
+    }
+
+    /** Aplica sólo los campos recibidos; los ausentes conservan su valor actual. */
+    public update(params: {
+        name?: CategoryName | undefined;
+        description?: string | undefined;
+    }): void {
+        let changed = false;
+
+        if (params.name !== undefined && params.name.value !== this.name.value) {
+            this.name = params.name;
+            changed = true;
+        }
+
+        if (
+            params.description !== undefined &&
+            params.description !== this.description
+        ) {
+            this.description = params.description;
+            changed = true;
+        }
+
+        if (changed) {
+            this.touch();
+        }
     }
 
     public activate(): void {
@@ -84,6 +96,7 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         }
 
         this.isActive = true;
+        this.touch();
     }
 
     public deactivate(): void {
@@ -92,13 +105,10 @@ export class ProductCategory extends AggregateRoot<CategoryId> {
         }
 
         this.isActive = false;
+        this.touch();
     }
 
-    public update(params: {
-        name: CategoryName;
-        description: string | undefined;
-    }): void {
-        this.name = params.name;
-        this.description = params.description;
+    private touch(): void {
+        this.updatedAt = new Date();
     }
 }
