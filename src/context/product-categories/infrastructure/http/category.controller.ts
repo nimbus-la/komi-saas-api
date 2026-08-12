@@ -33,16 +33,16 @@ export class CategoryController {
     ) { }
 
     @Post()
-    public async create(@Body() dto: CreateCategoryDto) {
-        return this.createCategory.execute(dto);
+    public async create(@Body() dto: CreateCategoryDto): Promise<void> {
+        await this.createCategory.execute(dto);
     }
 
     @Patch(':id')
     public async update(
         @Param('id') id: string,
         @Body() dto: UpdateCategoryDto,
-    ) {
-        return this.updateCategory.execute(id, dto);
+    ): Promise<void> {
+        await this.updateCategory.execute(id, dto);
     }
 
     @Get()

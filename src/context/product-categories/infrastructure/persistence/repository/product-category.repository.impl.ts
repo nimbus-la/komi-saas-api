@@ -78,19 +78,32 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
     async update(category: ProductCategory): Promise<void> {
         const primitives = category.toPrimitives();
 
-        // Update dirigido: el id, el tenant y la fecha de creación son inmutables,
-        // y el criterio incluye el tenant para no tocar filas de otro negocio.
-        await this.categoryRepository.update(
-            {
-                id: primitives.id,
-                tenantId: primitives.tenantId,
-            },
-            {
-                name: primitives.name,
-                description: primitives.description ?? null,
-                isActive: primitives.isActive,
-            },
-        );
+        try {
+            // Update dirigido: el id, el tenant y la fecha de creación son inmutables,
+            // y el criterio incluye el tenant para no tocar filas de otro negocio.
+            await this.categoryRepository.update(
+                {
+                    id: primitives.id,
+                    tenantId: primitives.tenantId,
+                },
+                {
+                    name: primitives.name,
+                    description: primitives.description ?? null,
+                    isActive: primitives.isActive,
+                },
+            );
+        } catch (error) {
+            // Igual que en save: el chequeo previo de nombre no es atómico y
+            // dos renombrados simultáneos los resuelve el índice único.
+            if (
+                error instanceof QueryFailedError &&
+                (error.driverError as { code?: string }).code === UNIQUE_VIOLATION
+            ) {
+                throw new ProductCategoryAlreadyExistsException(primitives.name);
+            }
+
+            throw error;
+        }
     }
 
     async search(

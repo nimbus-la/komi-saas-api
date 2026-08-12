@@ -1,6 +1,5 @@
 import {
     CategoryName,
-    CategoryPrimitives,
     ProductCategoryAlreadyExistsException,
     ProductCategoryNotFoundException,
     ProductCategoryRepository,
@@ -19,7 +18,7 @@ export class UpdateCategoryUseCase {
     public async execute(
         id: string,
         params: UpdateCategoryApplicationParams,
-    ): Promise<CategoryPrimitives> {
+    ): Promise<void> {
 
         if (!params.tenantId) {
             throw new TenantIdRequiredForSearchException();
@@ -77,7 +76,5 @@ export class UpdateCategoryUseCase {
         }
 
         await this.repository.update(category);
-
-        return category.toPrimitives();
     }
 }

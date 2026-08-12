@@ -1,6 +1,5 @@
 import {
     CategoryName,
-    CategoryPrimitives,
     CreateCategoryApplicationParams,
     ProductCategory,
     ProductCategoryAlreadyExistsException,
@@ -17,7 +16,7 @@ export class CreateCategoryUseCase {
 
     public async execute(
         params: CreateCategoryApplicationParams,
-    ): Promise<CategoryPrimitives> {
+    ): Promise<void> {
 
         const tenantExists = await this.tenantChecker.exists(params.tenantId);
 
@@ -45,7 +44,5 @@ export class CreateCategoryUseCase {
         });
 
         await this.repository.save(category);
-
-        return category.toPrimitives();
     }
 }
