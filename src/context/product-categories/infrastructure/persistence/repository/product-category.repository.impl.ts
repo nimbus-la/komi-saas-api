@@ -1,13 +1,21 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { ProductCategoryMapper } from "../mappers/products-categories-mapper";
+import { QueryFailedError, Repository, SelectQueryBuilder } from "typeorm";
+
+import { Paginated, Pagination } from "@/interfaces";
+
+import { ProductCategoryMapper } from "../mappers/product-category.mapper";
 import { ProductCategoryEntity } from "../models/product-category.entity";
 
 import {
     ProductCategory,
+    ProductCategoryAlreadyExistsException,
     ProductCategoryRepository,
+    SearchCategoriesFilters,
 } from "../../../domain";
+
+/** Violación de restricción única en PostgreSQL. */
+const UNIQUE_VIOLATION = "23505";
 
 @Injectable()
 export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
@@ -20,136 +28,127 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
 
     async save(category: ProductCategory): Promise<void> {
         const entity = ProductCategoryMapper.toEntity(category);
-        await this.categoryRepository.save(entity);
+
+        try {
+            await this.categoryRepository.insert(entity);
+        } catch (error) {
+            // El chequeo previo de nombre no es atómico: dos peticiones
+            // simultáneas lo pasan y el índice único es quien resuelve.
+            if (
+                error instanceof QueryFailedError &&
+                (error.driverError as { code?: string }).code === UNIQUE_VIOLATION
+            ) {
+                throw new ProductCategoryAlreadyExistsException(entity.name);
+            }
+
+            throw error;
+        }
     }
 
-    async findAll(): Promise<ProductCategory[]> {
-        const rows = await this.categoryRepository.find();
-        return rows.map(ProductCategoryMapper.toDomain);
-    }
-
-    async findById(id: string): Promise<ProductCategory | null> {
+    async findById(
+        id: string,
+        tenantId: string,
+    ): Promise<ProductCategory | null> {
         const row = await this.categoryRepository.findOne({
-            where: { id },
+            where: { id, tenantId },
         });
-        return row
-            ? ProductCategoryMapper.toDomain(row)
-            : null;
+
+        return row ? ProductCategoryMapper.toDomain(row) : null;
     }
 
     async existsByName(
         name: string,
         tenantId: string,
+        excludeId?: string,
     ): Promise<boolean> {
-        const count = await this.categoryRepository.count({
-            where: {
-                name,
-                tenantId,
-            },
-        });
+        const query = this.categoryRepository
+            .createQueryBuilder("category")
+            .where("category.tenantId = :tenantId", { tenantId })
+            .andWhere("LOWER(category.name) = LOWER(:name)", { name });
+
+        if (excludeId) {
+            query.andWhere("category.id != :excludeId", { excludeId });
+        }
+
+        const count = await query.getCount();
+
         return count > 0;
     }
 
     async update(category: ProductCategory): Promise<void> {
-        const entity = ProductCategoryMapper.toEntity(category);
+        const primitives = category.toPrimitives();
 
-        await this.categoryRepository.update(entity.id, entity);
+        // Update dirigido: el id, el tenant y la fecha de creación son inmutables,
+        // y el criterio incluye el tenant para no tocar filas de otro negocio.
+        await this.categoryRepository.update(
+            {
+                id: primitives.id,
+                tenantId: primitives.tenantId,
+            },
+            {
+                name: primitives.name,
+                description: primitives.description ?? null,
+                isActive: primitives.isActive,
+            },
+        );
     }
 
-    async search(params: {
-        tenantId: string;
-        text?: string;
-        id?: string;
-        isActive?: boolean;
-        createdAt?: string;
-        updatedAt?: string;
-        page?: number;
-        limit?: number;
-    }): Promise<{
-        data: ProductCategory[];
-        total: number;
-    }> {
-        const page = params.page ?? 1;
-        const limit = params.limit ?? 10;
+    async search(
+        filters: SearchCategoriesFilters,
+        pagination: Pagination,
+    ): Promise<Paginated<ProductCategory>> {
+        const query: SelectQueryBuilder<ProductCategoryEntity> =
+            this.categoryRepository
+                .createQueryBuilder("category")
+                .where("category.tenantId = :tenantId", {
+                    tenantId: filters.tenantId,
+                });
 
-        const skip = (page - 1) * limit;
-
-        const query = this.categoryRepository
-            .createQueryBuilder("category")
-            .where(
-                "category.tenantId = :tenantId",
-                {
-                    tenantId: params.tenantId,
-                },
-            );
-
-        if (params.tenantId) {
-            query.andWhere("category.tenantId = :tenantId", {
-                tenantId: params.tenantId,
-            });
+        if (filters.id) {
+            query.andWhere("category.id = :id", { id: filters.id });
         }
-
-        if (params.id) {
-            query.andWhere(
-                "category.id = :id",
-                {
-                    id: params.id,
-                },
-            );
-        }
-
 
         // Nombre o descripción
-        if (params.text) {
+        if (filters.text) {
             query.andWhere(
                 `(LOWER(category.name) LIKE LOWER(:text)
-          OR LOWER(category.description) LIKE LOWER(:text))`,
-                {
-                    text: `%${params.text}%`,
-                },
+                  OR LOWER(category.description) LIKE LOWER(:text))`,
+                { text: `%${filters.text}%` },
             );
         }
 
         // Estado
-        if (params.isActive !== undefined) {
-            query.andWhere(
-                "category.estado = :isActive",
-                {
-                    isActive: params.isActive,
-                },
-            );
+        if (filters.isActive !== undefined) {
+            query.andWhere("category.isActive = :isActive", {
+                isActive: filters.isActive,
+            });
         }
-
 
         // Fecha creación
-        if (params.createdAt) {
-            query.andWhere(
-                "DATE(category.createdAt) = :createdAt",
-                {
-                    createdAt: params.createdAt,
-                },
-            );
+        if (filters.createdAt) {
+            query.andWhere("DATE(category.createdAt) = :createdAt", {
+                createdAt: filters.createdAt,
+            });
         }
 
-
         // Fecha edición
-        if (params.updatedAt) {
-            query.andWhere(
-                "DATE(category.updatedAt) = :updatedAt",
-                {
-                    updatedAt: params.updatedAt,
-                },
-            );
+        if (filters.updatedAt) {
+            query.andWhere("DATE(category.updatedAt) = :updatedAt", {
+                updatedAt: filters.updatedAt,
+            });
         }
 
         query
-            .skip(skip)
-            .take(limit);
+            .orderBy("category.createdAt", "DESC")
+            .skip((pagination.pageNumber - 1) * pagination.pageSize)
+            .take(pagination.pageSize);
 
         const [rows, total] = await query.getManyAndCount();
 
         return {
             data: rows.map(ProductCategoryMapper.toDomain),
+            pageNumber: pagination.pageNumber,
+            pageSize: pagination.pageSize,
             total,
         };
     }

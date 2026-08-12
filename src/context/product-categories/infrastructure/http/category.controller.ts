@@ -1,76 +1,54 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
+import {
+    Body,
+    Controller,
+    Get,
+    Param,
+    Patch,
+    Post,
+    Query,
+    UseFilters,
+    UseInterceptors,
+} from "@nestjs/common";
+
+import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
 
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
-import { CategoryService } from "../persistence/services/category.service";
-import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
+import { SearchCategoriesDto } from "./dto/search-categories.dto";
+import {
+    CreateCategoryUseCase,
+    SearchCategoriesUseCase,
+    UpdateCategoryUseCase,
+} from "../../application";
 
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(AllExceptionsFilter)
 
-@Controller('products/categories')
+@Controller("products/categories")
 export class CategoryController {
     constructor(
-        private readonly service: CategoryService,
+        private readonly createCategory: CreateCategoryUseCase,
+        private readonly updateCategory: UpdateCategoryUseCase,
+        private readonly searchCategories: SearchCategoriesUseCase,
     ) { }
 
     @Post()
-    async create(@Body() dto: CreateCategoryDto) {
-        return this.service.create(dto);
+    public async create(@Body() dto: CreateCategoryDto) {
+        return this.createCategory.execute(dto);
     }
 
     @Patch(':id')
-    async update(
+    public async update(
         @Param('id') id: string,
-        @Body() dto: UpdateCategoryDto
+        @Body() dto: UpdateCategoryDto,
     ) {
-        const category = await this.service.update(id, dto);
-
-        return {
-            data: category.toPrimitives(),
-        };
+        return this.updateCategory.execute(id, dto);
     }
 
     @Get()
-    async search(
-        @Query("tenantId") tenantId: string,
-        @Query("text") text?: string,
-        @Query("id") id?: string,
-        @Query("estado") estado?: string,
-        @Query('page') page?: string,
-        @Query('limit') limit?: string,
-    ) {
-        const params: {
-            tenantId: string;
-            text?: string;
-            id?: string;
-            estado?: boolean;
-            page?: number;
-            limit?: number;
-        } = {
-            tenantId,
-        };
+    public async list(@Query() query: SearchCategoriesDto) {
+        const { pageNumber, pageSize, ...filters } = query;
 
-        if (text) {
-            params.text = text;
-        }
-
-        if (id) {
-            params.id = id;
-        }
-
-        if (estado !== undefined) {
-            params.estado = estado === "true";
-        }
-
-        if (page !== undefined) {
-            params.page = Number(page);
-        }
-
-        if (limit !== undefined) {
-            params.limit = Number(limit);
-        }
-
-        return this.service.search(params);
+        return this.searchCategories.execute(filters, { pageNumber, pageSize });
     }
 }

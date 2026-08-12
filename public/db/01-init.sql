@@ -407,9 +407,9 @@ CREATE TABLE IF NOT EXISTS product_category (
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
 
-    name VARCHAR(150) NOT NULL,
+    name VARCHAR(120) NOT NULL,
     description TEXT,
-    estado BOOLEAN NOT NULL DEFAULT TRUE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -418,8 +418,13 @@ CREATE TABLE IF NOT EXISTS product_category (
 CREATE INDEX IF NOT EXISTS idx_product_category_tenant
     ON product_category (tenant_id);
 
-CREATE INDEX IF NOT EXISTS idx_product_category_name
-    ON product_category (name);
+-- El nombre de la categoría es único dentro de cada tenant,
+-- sin distinguir mayúsculas/minúsculas.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_product_category_name_tenant_lower
+ON product_category (
+    tenant_id,
+    LOWER(name)
+);
 
 
 -- ============================================

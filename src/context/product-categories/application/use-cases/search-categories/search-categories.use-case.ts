@@ -1,62 +1,43 @@
-import { Injectable } from "@nestjs/common";
+import { Paginated, Pagination } from "@/interfaces";
+
 import {
+    CategoryPrimitives,
     ProductCategoryRepository,
+    SearchCategoriesFilters,
+    TenantIdRequiredForSearchException,
     TenantNotFoundException,
 } from "../../../domain";
 import { TenantChecker } from "../../ports/tenant-checker";
-import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId_Exception";
 
-@Injectable()
 export class SearchCategoriesUseCase {
     constructor(
         private readonly repository: ProductCategoryRepository,
         private readonly tenantChecker: TenantChecker,
-
     ) { }
 
-    async execute(params: {
-        tenantId: string;
-        text?: string;
-        id?: string;
-        isActive?: boolean;
-        createdAt?: string;
-        updatedAt?: string;
-        page?: number;
-        limit?: number;
-    }) {
-        if (!params.tenantId) {
+    public async execute(
+        filters: SearchCategoriesFilters,
+        pagination: Pagination,
+    ): Promise<Paginated<CategoryPrimitives>> {
+
+        if (!filters.tenantId) {
             throw new TenantIdRequiredForSearchException();
         }
 
-        const tenantExists = await this.tenantChecker.exists(
-            params.tenantId,
-        );
+        const tenantExists = await this.tenantChecker.exists(filters.tenantId);
 
         if (!tenantExists) {
-            throw new TenantNotFoundException(
-                params.tenantId,
-            );
+            throw new TenantNotFoundException(filters.tenantId);
         }
 
-        const page = params.page ?? 1;
-        const limit = params.limit ?? 10;
-
-        const result = await this.repository.search({
-            ...params,
-            page,
-            limit,
-        });
+        const { data, pageNumber, pageSize, total } =
+            await this.repository.search(filters, pagination);
 
         return {
-            data: result.data.map((category) =>
-                category.toPrimitives(),
-            ),
-            meta: {
-                page,
-                limit,
-                total: result.total,
-                totalPages: Math.ceil(result.total / limit),
-            },
+            data: data.map((category) => category.toPrimitives()),
+            pageNumber,
+            pageSize,
+            total,
         };
     }
 }

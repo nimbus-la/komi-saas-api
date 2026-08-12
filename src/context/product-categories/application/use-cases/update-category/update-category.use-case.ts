@@ -1,84 +1,83 @@
-import { Injectable } from "@nestjs/common";
-
 import {
-    ProductCategoryRepository,
+    CategoryName,
+    CategoryPrimitives,
+    ProductCategoryAlreadyExistsException,
     ProductCategoryNotFoundException,
-    ProductCategoryAlreadyActivatedException,
-    ProductCategoryAlreadyDeactivatedException,
-    ProductCategory,
+    ProductCategoryRepository,
+    TenantIdRequiredForSearchException,
+    TenantNotFoundException,
+    UpdateCategoryApplicationParams,
 } from "../../../domain";
-import { CategoryName } from "@/context/product-categories/domain/exceptions/InvalidCategoryNameException";
 import { TenantChecker } from "../../ports/tenant-checker";
-import { TenantNotFoundException } from "@/context/products";
-import { TenantIdRequiredForSearchException } from "@/context/product-categories/domain/exceptions/TenantId_Exception";
 
-export interface UpdateCategoryApplicationParams {
-    tenantId: string;
-    name?: string;
-    description?: string;
-    isActive?: boolean;
-}
-
-@Injectable()
 export class UpdateCategoryUseCase {
     constructor(
         private readonly repository: ProductCategoryRepository,
         private readonly tenantChecker: TenantChecker,
-
     ) { }
 
-    async execute(
+    public async execute(
         id: string,
         params: UpdateCategoryApplicationParams,
-    ): Promise<ProductCategory> {
-
+    ): Promise<CategoryPrimitives> {
 
         if (!params.tenantId) {
             throw new TenantIdRequiredForSearchException();
         }
 
-        const tenantExists = await this.tenantChecker.exists(
-            params.tenantId,
-        );
+        const tenantExists = await this.tenantChecker.exists(params.tenantId);
 
         if (!tenantExists) {
-            throw new TenantNotFoundException(
-                params.tenantId,
-            );
+            throw new TenantNotFoundException(params.tenantId);
         }
 
-
-        const category = await this.repository.findById(id);
+        // Acotado al tenant: sin esto, cualquier tenant podría editar
+        // la categoría de otro con sólo conocer su id.
+        const category = await this.repository.findById(id, params.tenantId);
 
         if (!category) {
             throw new ProductCategoryNotFoundException(id);
         }
 
-        category.update({
-            name: params.name
-                ? CategoryName.create(params.name)
-                : CategoryName.create(category.toPrimitives().name),
-            description: params.description ?? category.toPrimitives().description,
-        });
+        const changes: {
+            name?: CategoryName | undefined;
+            description?: string | undefined;
+        } = {};
 
-        if (params.isActive !== undefined) {
-            const currentState = category.toPrimitives().isActive;
+        if (params.name !== undefined) {
+            const name = CategoryName.create(params.name);
 
-            if (params.isActive === currentState) {
-                if (currentState) {
-                    throw new ProductCategoryAlreadyActivatedException();
-                }
-                throw new ProductCategoryAlreadyDeactivatedException();
+            const duplicated = await this.repository.existsByName(
+                name.value,
+                params.tenantId,
+                id,
+            );
+
+            if (duplicated) {
+                throw new ProductCategoryAlreadyExistsException(name.value);
             }
 
+            changes.name = name;
+        }
+
+        if (params.description !== undefined) {
+            changes.description = params.description;
+        }
+
+        category.update(changes);
+
+        // El agregado es quien decide si el cambio de estado es válido:
+        // activate()/deactivate() lanzan si ya se encuentra en ese estado.
+        if (params.isActive !== undefined) {
             if (params.isActive) {
                 category.activate();
             } else {
                 category.deactivate();
             }
         }
-        await this.repository.update(category);
-        return category;
 
+        await this.repository.update(category);
+
+        return category.toPrimitives();
     }
 }

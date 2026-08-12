@@ -1,12 +1,21 @@
-import { IsUUID, IsBoolean, IsOptional, IsString, MaxLength } from "class-validator";
+import {
+    IsBoolean,
+    IsOptional,
+    IsString,
+    IsUUID,
+    MaxLength,
+    MinLength,
+} from "class-validator";
 
 export class UpdateCategoryDto {
+
     @IsUUID()
     tenantId!: string;
 
     @IsOptional()
     @IsString()
-    @MaxLength(150)
+    @MinLength(2)
+    @MaxLength(120)
     name?: string;
 
     @IsOptional()
