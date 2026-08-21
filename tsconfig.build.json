@@ -1,7 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src"
+    "rootDir": "./src",
+    /* El build no compila specs: los globales de jest sobran aquí */
+    "types": ["node"]
   },
   "exclude": [
     "node_modules",

@@ -4,6 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppConfigModule, DatabaseModule } from './infrastructure';
 import { TenantModule } from './context/tenants/tenant.module';
 import { ProductsModule } from './context/products/products.module';
+import { CategoriesModule } from './context/product-categories/categories.module';
 import { InventoryModule } from './context/inventory/inventory-item.module';
 import { InventoryMovementModule } from './context/inventory-movements';
 import { RolModule } from './context/rol/rol.module';
@@ -18,6 +19,7 @@ import { UserModule } from './context/user/user.module';
     InventoryMovementModule,
     TenantModule,
     ProductsModule,
+    CategoriesModule,
     RolModule,
     UserModule,
   ],
