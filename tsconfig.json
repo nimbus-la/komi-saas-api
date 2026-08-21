@@ -24,6 +24,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    /* Globales disponibles sin import: runtime de Node y matchers de jest */
+    "types": ["node", "jest"],
 
     /* === Modo estricto === */
     "strict": true,

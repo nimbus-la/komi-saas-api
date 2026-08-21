@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
+import corsConfig from "./cors.config";
 import databaseConfig from "./database.config";
 import { validateEnv } from "./env.validation";
 
@@ -15,7 +16,7 @@ import { validateEnv } from "./env.validation";
             isGlobal: true,
             cache: true,
             envFilePath: ['.env'],
-            load: [databaseConfig],
+            load: [databaseConfig, corsConfig],
             validate: validateEnv,
         }),
     ],
