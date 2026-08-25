@@ -13,6 +13,7 @@ import {
   UserPlainPassword,
   UserRepository,
   UserSex,
+  UserTenantId,
 } from "@/context/user/domain";
 
 import { PasswordHasher } from "../../ports/password-hasher";
@@ -44,6 +45,7 @@ export class UpdateUserUseCase {
     }
 
     const current = user.toPrimitives();
+    const tenantId = UserTenantId.create(current.tenantId);
 
     if (params.userName !== undefined || params.email !== undefined) {
       const userName = UserName.create(params.userName ?? current.userName);
@@ -54,7 +56,11 @@ export class UpdateUserUseCase {
         params.userName !== undefined &&
         params.userName !== current.userName
       ) {
-        const exists = await this.repository.existsByUserName(userName, userId);
+        const exists = await this.repository.existsByUserName(
+          tenantId,
+          userName,
+          userId,
+        );
 
         if (exists) {
           throw new UserNameAlreadyExistsException(params.userName);
@@ -62,7 +68,11 @@ export class UpdateUserUseCase {
       }
 
       if (params.email !== undefined && params.email !== current.email) {
-        const exists = await this.repository.existsByEmail(email, userId);
+        const exists = await this.repository.existsByEmail(
+          tenantId,
+          email,
+          userId,
+        );
 
         if (exists) {
           throw new UserEmailAlreadyExistsException(params.email);
