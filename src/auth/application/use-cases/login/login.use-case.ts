@@ -1,11 +1,12 @@
 import { InvalidCredentialsException } from "../../../domain";
 
 import { LoginParams } from "../../dtos";
-import { AuthUserFinder } from "../../ports";
+import { AuthUserFinder, PasswordVerifier } from "../../ports";
 
 export class LoginUseCase {
     constructor(
-        private readonly userFinder: AuthUserFinder
+        private readonly userFinder: AuthUserFinder,
+        private readonly passwordVerifier: PasswordVerifier
     ) { }
 
 
@@ -20,9 +21,19 @@ export class LoginUseCase {
         const dataUser = await this.userFinder.findByUserName("019ff7ac-76bf-76ac-891e-ac1fc352d13e", params.username);
 
         if (!dataUser) {
-            throw new InvalidCredentialsException()
+            await this.passwordVerifier.verifyAgainstDummy(params.password);
+            throw new InvalidCredentialsException();
         }
-        
+
+        const passwordMatches = await this.passwordVerifier.verify(
+            params.password,
+            dataUser.passwordHash
+        );
+
+        if (!passwordMatches) {
+            throw new InvalidCredentialsException();
+        }
+
         console.log("datos del usuario: ", dataUser)
         console.log("params: ", params)
 

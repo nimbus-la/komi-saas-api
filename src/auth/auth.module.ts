@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 
-import { AuthController, AuthUserFinderAdapter } from "./infrastructure";
-import { AuthUserFinder, LoginUseCase } from "./application";
+import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter } from "./infrastructure";
+import { AuthUserFinder, LoginUseCase, PasswordVerifier } from "./application";
 import { UserModule } from "@/context/user/user.module";
 
 
@@ -17,9 +17,22 @@ import { UserModule } from "@/context/user/user.module";
         },
 
         {
+            provide: PasswordVerifier,
+            useClass: Argon2PasswordVerifier
+        },
+
+        {
             provide: LoginUseCase,
-            useFactory: (userFinder: AuthUserFinder) => new LoginUseCase(userFinder),
-            inject: [AuthUserFinder]
+
+            useFactory: (
+                userFinder: AuthUserFinder,
+                passwordVerifier: PasswordVerifier
+            ) => new LoginUseCase(userFinder, passwordVerifier),
+
+            inject: [
+                AuthUserFinder,
+                PasswordVerifier
+            ]
         }
     ],
     exports: []
