@@ -16,6 +16,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         [ErrorCategory.Validation]: HttpStatus.BAD_REQUEST,
         [ErrorCategory.NotFound]: HttpStatus.NOT_FOUND,
         [ErrorCategory.Conflict]: HttpStatus.CONFLICT,
+        [ErrorCategory.Unauthorized]: HttpStatus.UNAUTHORIZED,
         [ErrorCategory.Unavailable]: HttpStatus.SERVICE_UNAVAILABLE,
     };
 

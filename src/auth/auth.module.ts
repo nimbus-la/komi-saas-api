@@ -1,14 +1,26 @@
 import { Module } from "@nestjs/common";
 
-import { AuthController } from "./infrastructure";
-import { LoginUseCase } from "./application";
+import { AuthController, AuthUserFinderAdapter } from "./infrastructure";
+import { AuthUserFinder, LoginUseCase } from "./application";
+import { UserModule } from "@/context/user/user.module";
 
 
 @Module({
-    imports: [],
+    imports: [
+        UserModule
+    ],
     controllers: [AuthController],
     providers: [
-        LoginUseCase
+        {
+            provide: AuthUserFinder,
+            useClass: AuthUserFinderAdapter
+        },
+
+        {
+            provide: LoginUseCase,
+            useFactory: (userFinder: AuthUserFinder) => new LoginUseCase(userFinder),
+            inject: [AuthUserFinder]
+        }
     ],
     exports: []
 })

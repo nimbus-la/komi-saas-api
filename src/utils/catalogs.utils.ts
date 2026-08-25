@@ -11,6 +11,7 @@ export enum ErrorCategory {
     Validation = 'VALIDATION',
     NotFound = 'NOT_FOUND',
     Conflict = 'CONFLICT',
+    Unauthorized = 'UNAUTHORIZED',
     Unavailable = 'UNAVAILABLE',
 };
 
