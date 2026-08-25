@@ -60,15 +60,17 @@ export class CreateUserUseCase {
       throw new UserRolNotFoundException(params.rolId);
     }
 
+    const tenantId = UserTenantId.create(params.tenantId);
+
     const email = UserEmail.create(params.email);
 
-    if (await this.repository.existsByEmail(email)) {
+    if (await this.repository.existsByEmail(tenantId, email)) {
       throw new UserEmailAlreadyExistsException(params.email);
     }
 
     const userName = UserName.create(params.userName);
 
-    if (await this.repository.existsByUserName(userName)) {
+    if (await this.repository.existsByUserName(tenantId, userName)) {
       throw new UserNameAlreadyExistsException(params.userName);
     }
 
