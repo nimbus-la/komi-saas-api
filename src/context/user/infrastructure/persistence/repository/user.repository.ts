@@ -5,6 +5,7 @@ import {
   UserName,
   UserRepository,
   UserResponse,
+  UserTenantId,
 } from "@/context/user/domain";
 import { UserMapper } from "../mappers/user.mapper";
 import { Injectable } from "@nestjs/common";
@@ -58,6 +59,24 @@ export class TypeOrmUserRepository implements UserRepository {
     return UserMapper.toResponse(row);
   }
 
+  public async searchAggregateByUserName(
+    tenantId: UserTenantId,
+    userName: UserName,
+  ): Promise<UserAggregate | null> {
+    const row = await this.userRepository.findOne({
+      where: {
+        tenantId: tenantId.value,
+        userName: userName.value,
+      },
+    });
+
+    if (!row) {
+      return null;
+    }
+
+    return UserMapper.toAggregate(row);
+  }
+
   public async searchAggregateById(id: UserId): Promise<UserAggregate | null> {
     const row = await this.userRepository.findOne({
       where: {
@@ -105,12 +124,16 @@ export class TypeOrmUserRepository implements UserRepository {
   }
 
   public async existsByEmail(
+    tenantId: UserTenantId,
     email: UserEmail,
     exceptId?: UserId,
   ): Promise<boolean> {
     const query = this.userRepository
       .createQueryBuilder("user")
-      .where("LOWER(user.email) = LOWER(:email)", {
+      .where("user.tenant_id = :tenantId", {
+        tenantId: tenantId.value,
+      })
+      .andWhere("LOWER(user.user_email) = LOWER(:email)", {
         email: email.value,
       });
 
@@ -126,12 +149,16 @@ export class TypeOrmUserRepository implements UserRepository {
   }
 
   public async existsByUserName(
+    tenantId: UserTenantId,
     userName: UserName,
     exceptId?: UserId,
   ): Promise<boolean> {
     const query = this.userRepository
       .createQueryBuilder("user")
-      .where("LOWER(user.user_name) = LOWER(:userName)", {
+      .where("user.tenant_id = :tenantId", {
+        tenantId: tenantId.value,
+      })
+      .andWhere("LOWER(user.user_name) = LOWER(:userName)", {
         userName: userName.value,
       });
 

@@ -106,6 +106,32 @@ export class TenantService implements TenantRepository {
             updatedAt: row.updatedAt,
         });
     }
+
+    public async searchAggregateBySlug(
+        slug: TenantSlug
+    ): Promise<TenantAggregate | null> {
+        const row = await this.tenantRepository.findOne({
+            where: {
+                slug: slug.value,
+            },
+        });
+
+        if (!row) {
+            return null;
+        }
+
+        return TenantAggregate.fromPrimitives({
+            id: row.id,
+            //accountId: row.accountId,
+            name: row.name,
+            description: row.description,
+            slug: row.slug,
+            nit: row.nit,
+            isActive: row.isActive,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+        });
+    }
     
     public async existsByName(name: TenantName): Promise<boolean> {
         const count = await this.tenantRepository
