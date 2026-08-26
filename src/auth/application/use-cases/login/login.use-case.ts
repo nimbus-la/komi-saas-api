@@ -1,10 +1,11 @@
-import { InvalidCredentialsException } from "../../../domain";
+import { AuthTenantNotFoundException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
 
 import { LoginParams } from "../../dtos";
-import { AuthUserFinder, PasswordVerifier } from "../../ports";
+import { AuthUserFinder, PasswordVerifier, TenantResolver } from "../../ports";
 
 export class LoginUseCase {
     constructor(
+        private readonly tenantResolver: TenantResolver,
         private readonly userFinder: AuthUserFinder,
         private readonly passwordVerifier: PasswordVerifier
     ) { }
@@ -18,11 +19,25 @@ export class LoginUseCase {
          * *3. Guardar el registro de inicio de sesion en la base de datos
          */
 
-        const dataUser = await this.userFinder.findByUserName("019ff7ac-76bf-76ac-891e-ac1fc352d13e", params.username);
+        const tenantSlug = params.tenantSlug.trim().toLowerCase();
+
+        const tenant = await this.tenantResolver.findBySlug(tenantSlug);
+
+        if (tenant === null) {
+            throw new AuthTenantNotFoundException(tenantSlug);
+        }
+
+        if (!tenant.isActive) {
+            throw new InactiveTenantException(tenantSlug);
+        }
+
+        const identifier = params.username.trim();
+
+        const dataUser = await this.userFinder.findByUserName(tenant.id, identifier);
 
         if (!dataUser) {
             await this.passwordVerifier.verifyAgainstDummy(params.password);
-            throw new InvalidCredentialsException();
+            throw new InvalidCredentialsException(tenantSlug, identifier);
         }
 
         const passwordMatches = await this.passwordVerifier.verify(
@@ -31,7 +46,7 @@ export class LoginUseCase {
         );
 
         if (!passwordMatches) {
-            throw new InvalidCredentialsException();
+            throw new InvalidCredentialsException(tenantSlug, identifier);
         }
 
         console.log("datos del usuario: ", dataUser)
