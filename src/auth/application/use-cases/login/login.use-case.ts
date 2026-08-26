@@ -1,4 +1,4 @@
-import { AuthTenantNotFoundException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
+import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
 
 import { LoginParams } from "../../dtos";
 import { AuthUserFinder, PasswordVerifier, TenantResolver } from "../../ports";
@@ -35,7 +35,7 @@ export class LoginUseCase {
 
         const dataUser = await this.userFinder.findByUserName(tenant.id, identifier);
 
-        if (!dataUser) {
+        if (dataUser === null) {
             await this.passwordVerifier.verifyAgainstDummy(params.password);
             throw new InvalidCredentialsException(tenantSlug, identifier);
         }
@@ -47,6 +47,10 @@ export class LoginUseCase {
 
         if (!passwordMatches) {
             throw new InvalidCredentialsException(tenantSlug, identifier);
+        }
+
+        if (!dataUser.isActive) {
+            throw new InactiveAccountException(identifier);
         }
 
         console.log("datos del usuario: ", dataUser)
