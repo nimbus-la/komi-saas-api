@@ -1,6 +1,7 @@
 import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
 
 import { LoginParams } from "../../dtos";
+import { toUserResponse } from "../../mappers";
 import { AuthUserFinder, PasswordVerifier, TenantResolver } from "../../ports";
 
 export class LoginUseCase {
@@ -12,13 +13,6 @@ export class LoginUseCase {
 
 
     public async execute(params: LoginParams) {
-        /**
-         * TODO: Realizar los siguientes pasos de validacion:
-         * *1. Validar que el tenantId exita y este activo.
-         * *2. Validar que el usuario exita, username/correo y contraseña
-         * *3. Guardar el registro de inicio de sesion en la base de datos
-         */
-
         const tenantSlug = params.tenantSlug.trim().toLowerCase();
 
         const tenant = await this.tenantResolver.findBySlug(tenantSlug);
@@ -53,9 +47,10 @@ export class LoginUseCase {
             throw new InactiveAccountException(identifier);
         }
 
-        console.log("datos del usuario: ", dataUser)
-        console.log("params: ", params)
-
-        return dataUser;
+        return {
+            sesisonToken: "",
+            lastLogin: "",
+            user: toUserResponse(dataUser)
+        }
     }
 }
