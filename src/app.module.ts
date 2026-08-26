@@ -9,12 +9,14 @@ import { InventoryModule } from './context/inventory/inventory-item.module';
 import { InventoryMovementModule } from './context/inventory-movements';
 import { RolModule } from './context/rol/rol.module';
 import { UserModule } from './context/user/user.module';
+import { AuthModule } from './auth';
 
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
     AppConfigModule,
     DatabaseModule,
+    AuthModule,
     InventoryModule,
     InventoryMovementModule,
     TenantModule,

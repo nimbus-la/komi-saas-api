@@ -124,6 +124,10 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1469': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se encontró el ítem de inventario.' },
     '1470': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado no está disponible para este negocio.' },
 
+
+    // 15xx - Autenticación
+    '1500': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'Usuario o contraseña incorrectos.'},
+
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El recurso solicitado no existe.' },
     '2001': { status: ResponseStatus.Warn, category: ErrorCategory.Conflict, message: 'El item ya se encuentra registrado.' },
