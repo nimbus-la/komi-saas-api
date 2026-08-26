@@ -1,4 +1,4 @@
-import { DomainException } from "@/shared";
+import { DomainException } from "@/shared/domain/domain.exception";
 
 export class InvalidUserNameException extends DomainException {
   constructor(reason: string) {
