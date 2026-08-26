@@ -3,10 +3,12 @@ export interface CreateUserApplicationParams {
   branchId?: string | null;
   rolId: string;
   userName: string;
-  email: string;
+  email?: string | null;
   password: string;
-  fullName: string;
-  lastName: string;
+  firstName: string;
+  secondName?: string | null;
+  firstLastName: string;
+  secondLastName?: string | null;
   age: Date;
   sex: string;
   phone: string;

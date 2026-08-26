@@ -3,9 +3,7 @@ import {
   UserBirthDate,
   UserBranchId,
   UserEmail,
-  UserFullName,
   UserId,
-  UserLastName,
   UserName,
   UserHashedPassword,
   UserPhone,
@@ -29,10 +27,12 @@ export class UserAggregate extends AggregateRoot<UserId> {
   private rolId: UserRolId;
   private rolScope: UserRolScope;
   private userName: UserName;
-  private email: UserEmail;
+  private email: UserEmail | null;
   private password: UserHashedPassword;
-  private fullName: UserFullName;
-  private lastName: UserLastName;
+  private firstName: string;
+  private secondName: string | null;
+  private firstLastName: string;
+  private secondLastName: string | null;
   private age: UserBirthDate;
   private sex: UserSex;
   private phone: UserPhone;
@@ -47,10 +47,12 @@ export class UserAggregate extends AggregateRoot<UserId> {
     rolId: UserRolId,
     rolScope: UserRolScope,
     userName: UserName,
-    email: UserEmail,
+    email: UserEmail | null,
     password: UserHashedPassword,
-    fullName: UserFullName,
-    lastName: UserLastName,
+    firstName: string,
+    secondName: string | null,
+    firstLastName: string,
+    secondLastName: string | null,
     age: UserBirthDate,
     sex: UserSex,
     phone: UserPhone,
@@ -67,8 +69,10 @@ export class UserAggregate extends AggregateRoot<UserId> {
     this.userName = userName;
     this.email = email;
     this.password = password;
-    this.fullName = fullName;
-    this.lastName = lastName;
+    this.firstName = firstName;
+    this.secondName = secondName;
+    this.firstLastName = firstLastName;
+    this.secondLastName = secondLastName;
     this.age = age;
     this.sex = sex;
     this.phone = phone;
@@ -87,10 +91,12 @@ export class UserAggregate extends AggregateRoot<UserId> {
     rolId: UserRolId;
     rolScope: UserRolScope;
     userName: UserName;
-    email: UserEmail;
+    email: UserEmail | null;
     password: UserHashedPassword;
-    fullName: UserFullName;
-    lastName: UserLastName;
+    firstName: string;
+    secondName?: string | null;
+    firstLastName: string;
+    secondLastName?: string | null;
     age: UserBirthDate;
     sex: UserSex;
     phone: UserPhone;
@@ -108,8 +114,10 @@ export class UserAggregate extends AggregateRoot<UserId> {
       params.userName,
       params.email,
       params.password,
-      params.fullName,
-      params.lastName,
+      params.firstName,
+      params.secondName ?? null,
+      params.firstLastName,
+      params.secondLastName ?? null,
       params.age,
       params.sex,
       params.phone,
@@ -126,9 +134,11 @@ export class UserAggregate extends AggregateRoot<UserId> {
         rolId: user.rolId.value,
         rolScope: user.rolScope.value,
         userName: user.userName.value,
-        email: user.email.value,
-        fullName: user.fullName.value,
-        lastName: user.lastName.value,
+        email: user.email?.value ?? null,
+        firstName: user.firstName,
+        secondName: user.secondName,
+        firstLastName: user.firstLastName,
+        secondLastName: user.secondLastName,
         age: user.age.value,
         sex: user.sex.value,
         phone: user.phone.value,
@@ -159,10 +169,12 @@ export class UserAggregate extends AggregateRoot<UserId> {
       rolId: this.rolId.value,
       rolScope: this.rolScope.value,
       userName: this.userName.value,
-      email: this.email.value,
+      email: this.email?.value ?? null,
       password: this.password.value,
-      fullName: this.fullName.value,
-      lastName: this.lastName.value,
+      firstName: this.firstName,
+      secondName: this.secondName,
+      firstLastName: this.firstLastName,
+      secondLastName: this.secondLastName,
       age: this.age.value,
       sex: this.sex.value,
       phone: this.phone.value,
@@ -180,10 +192,12 @@ export class UserAggregate extends AggregateRoot<UserId> {
       UserRolId.create(primitives.rolId),
       UserRolScope.create(primitives.rolScope),
       UserName.create(primitives.userName),
-      UserEmail.create(primitives.email),
+      primitives.email ? UserEmail.create(primitives.email) : null,
       UserHashedPassword.fromHash(primitives.password),
-      UserFullName.create(primitives.fullName),
-      UserLastName.create(primitives.lastName),
+      primitives.firstName,
+      primitives.secondName,
+      primitives.firstLastName,
+      primitives.secondLastName,
       UserBirthDate.create(primitives.age),
       UserSex.create(primitives.sex),
       UserPhone.create(primitives.phone),
@@ -199,7 +213,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
     }
   }
 
-  public changeCredentials(email: UserEmail, userName: UserName): void {
+  public changeCredentials(email: UserEmail | null, userName: UserName): void {
     this.ensureActive();
 
     this.email = email;
@@ -217,16 +231,20 @@ export class UserAggregate extends AggregateRoot<UserId> {
   }
 
   public updateProfile(
-    fullName: UserFullName,
-    lastName: UserLastName,
+    firstName: string,
+    secondName: string | null,
+    firstLastName: string,
+    secondLastName: string | null,
     age: UserBirthDate,
     sex: UserSex,
     phone: UserPhone,
   ): void {
     this.ensureActive();
 
-    this.fullName = fullName;
-    this.lastName = lastName;
+    this.firstName = firstName;
+    this.secondName = secondName;
+    this.firstLastName = firstLastName;
+    this.secondLastName = secondLastName;
     this.age = age;
     this.sex = sex;
     this.phone = phone;

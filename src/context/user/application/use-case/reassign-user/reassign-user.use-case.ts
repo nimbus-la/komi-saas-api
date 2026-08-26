@@ -29,9 +29,9 @@ export class ReassignUserUseCase {
       throw new UserNotFoundException(id);
     }
 
-    const rolScope = await this.rolFinder.findScopeById(params.rolId);
+    const rol = await this.rolFinder.findById(params.rolId);
 
-    if (rolScope === null) {
+    if (rol === null) {
       throw new UserRolNotFoundException(params.rolId);
     }
 
@@ -50,7 +50,7 @@ export class ReassignUserUseCase {
       branchId = UserBranchId.create(params.branchId);
     }
 
-    user.reassign(rolScope, UserRolId.create(params.rolId), branchId);
+    user.reassign(rol.scope, UserRolId.create(params.rolId), branchId);
 
     await this.repository.update(user);
   }

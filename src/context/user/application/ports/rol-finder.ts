@@ -1,5 +1,10 @@
 import { UserRolScope } from "../../domain";
 
+export interface RolFinderResult {
+  name: string;
+  scope: UserRolScope;
+}
+
 export abstract class RolFinder {
-  abstract findScopeById(rolId: string): Promise<UserRolScope | null>;
+  abstract findById(rolId: string): Promise<RolFinderResult | null>;
 }
