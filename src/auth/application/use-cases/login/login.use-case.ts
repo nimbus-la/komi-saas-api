@@ -48,7 +48,7 @@ export class LoginUseCase {
         }
 
         return {
-            sesisonToken: "",
+            sessionToken: "",
             lastLogin: "",
             user: toUserResponse(dataUser)
         }
