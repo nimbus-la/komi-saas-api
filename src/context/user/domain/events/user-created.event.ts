@@ -11,9 +11,11 @@ export class UserCreatedEvent extends DomainEvent {
   public readonly rolId: string;
   public readonly rolScope: string;
   public readonly userName: string;
-  public readonly email: string;
-  public readonly fullName: string;
-  public readonly lastName: string;
+  public readonly email: string | null;
+  public readonly firstName: string;
+  public readonly secondName: string | null;
+  public readonly firstLastName: string;
+  public readonly secondLastName: string | null;
   public readonly age: Date;
   public readonly sex: UserSexEnum;
   public readonly phone: string;
@@ -29,8 +31,10 @@ export class UserCreatedEvent extends DomainEvent {
     this.rolScope = props.rolScope;
     this.userName = props.userName;
     this.email = props.email;
-    this.fullName = props.fullName;
-    this.lastName = props.lastName;
+    this.firstName = props.firstName;
+    this.secondName = props.secondName;
+    this.firstLastName = props.firstLastName;
+    this.secondLastName = props.secondLastName;
     this.age = props.age;
     this.sex = props.sex;
     this.phone = props.phone;

@@ -1,4 +1,5 @@
 import { UserSexEnum } from "@/context/user/domain";
+
 import {
   IsDateString,
   IsEmail,
@@ -27,9 +28,10 @@ export class CreateUserDto {
   @MaxLength(30)
   userName!: string;
 
+  @IsOptional()
   @IsEmail()
   @MaxLength(120)
-  email!: string;
+  email?: string;
 
   @IsString()
   @MinLength(12)
@@ -38,13 +40,25 @@ export class CreateUserDto {
 
   @IsString()
   @MinLength(2)
-  @MaxLength(120)
-  fullName!: string;
+  @MaxLength(50)
+  firstName!: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  secondName?: string;
 
   @IsString()
   @MinLength(2)
-  @MaxLength(120)
-  lastName!: string;
+  @MaxLength(50)
+  firstLastName!: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  secondLastName?: string;
 
   @IsDateString()
   age!: Date;
