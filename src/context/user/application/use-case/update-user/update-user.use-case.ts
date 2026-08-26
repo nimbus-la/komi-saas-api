@@ -2,10 +2,8 @@ import {
   UserBirthDate,
   UserEmail,
   UserEmailAlreadyExistsException,
-  UserFullName,
   UserHashedPassword,
   UserId,
-  UserLastName,
   UserName,
   UserNameAlreadyExistsException,
   UserNotFoundException,
@@ -20,10 +18,12 @@ import { PasswordHasher } from "../../ports/password-hasher";
 
 export interface UpdateUserParams {
   userName?: string;
-  email?: string;
+  email?: string | null;
   password?: string;
-  fullName?: string;
-  lastName?: string;
+  firstName?: string;
+  secondName?: string | null;
+  firstLastName?: string;
+  secondLastName?: string | null;
   age?: Date;
   sex?: string;
   phone?: string;
@@ -50,7 +50,14 @@ export class UpdateUserUseCase {
     if (params.userName !== undefined || params.email !== undefined) {
       const userName = UserName.create(params.userName ?? current.userName);
 
-      const email = UserEmail.create(params.email ?? current.email);
+      const email =
+        params.email === null
+          ? null
+          : params.email !== undefined
+            ? UserEmail.create(params.email)
+            : current.email
+              ? UserEmail.create(current.email)
+              : null;
 
       if (
         params.userName !== undefined &&
@@ -67,7 +74,11 @@ export class UpdateUserUseCase {
         }
       }
 
-      if (params.email !== undefined && params.email !== current.email) {
+      if (
+        email !== null &&
+        params.email !== undefined &&
+        params.email !== current.email
+      ) {
         const exists = await this.repository.existsByEmail(
           tenantId,
           email,
@@ -75,7 +86,7 @@ export class UpdateUserUseCase {
         );
 
         if (exists) {
-          throw new UserEmailAlreadyExistsException(params.email);
+          throw new UserEmailAlreadyExistsException(email.value);
         }
       }
 
@@ -93,18 +104,34 @@ export class UpdateUserUseCase {
     }
 
     if (
-      params.fullName !== undefined ||
-      params.lastName !== undefined ||
+      params.firstName !== undefined ||
+      params.secondName !== undefined ||
+      params.firstLastName !== undefined ||
+      params.secondLastName !== undefined ||
       params.age !== undefined ||
       params.sex !== undefined ||
       params.phone !== undefined
     ) {
-      const fullName = UserFullName.create(params.fullName ?? current.fullName);
-      const lastName = UserLastName.create(params.lastName ?? current.lastName);
+      const firstName =
+        params.firstName ?? current.firstName;
+
+      const secondName =
+        params.secondName !== undefined
+          ? params.secondName
+          : current.secondName;
+
+      const firstLastName =
+        params.firstLastName ?? current.firstLastName;
+
+      const secondLastName =
+        params.secondLastName !== undefined
+          ? params.secondLastName
+          : current.secondLastName;
+
       const birthDate = UserBirthDate.create(params.age ?? current.age);
       const sex = UserSex.create(params.sex ?? current.sex);
       const phone = UserPhone.create(params.phone ?? current.phone);
-      user.updateProfile(fullName, lastName, birthDate, sex, phone);
+      user.updateProfile(firstName, secondName, firstLastName, secondLastName, birthDate, sex, phone);
     }
 
     await this.repository.update(user);

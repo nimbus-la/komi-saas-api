@@ -1,12 +1,28 @@
-import { UserRepository, UserResponse } from "@/context/user/domain";
+import {
+  UserRepository,
+  UserResponse,
+} from "@/context/user/domain";
+
+import { RolFinder } from "../../ports/rol-finder";
 
 export class SearchAllUsersUseCase {
+  constructor(
+    private readonly repository: UserRepository,
+    private readonly rolFinder: RolFinder,
+  ) {}
 
-    constructor(
-        private readonly repository: UserRepository,
-    ) {}
+  public async execute(): Promise<UserResponse[]> {
+    const users = await this.repository.searchAll();
 
-    public async execute(): Promise<UserResponse[]> {
-        return this.repository.searchAll();
-    }
+    return Promise.all(
+      users.map(async (user) => {
+        const rol = await this.rolFinder.findById(user.rolId);
+
+        return {
+          ...user,
+          rolName: rol?.name ?? "",
+        };
+      }),
+    );
+  }
 }

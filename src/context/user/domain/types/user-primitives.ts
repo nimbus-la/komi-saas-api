@@ -8,10 +8,12 @@ export interface UserPrimitives {
     rolId: string;
     rolScope: UserRolScopeEnum;
     userName: string;
-    email: string;
+    email: string | null;
     password: string;
-    fullName: string;
-    lastName: string;
+    firstName: string;
+    secondName: string | null;
+    firstLastName: string;
+    secondLastName: string | null;
     age: Date;
     sex: UserSexEnum;
     phone: string;

@@ -5,9 +5,7 @@ import {
   UserBranchId,
   UserEmail,
   UserEmailAlreadyExistsException,
-  UserFullName,
   UserHashedPassword,
-  UserLastName,
   UserName,
   UserNameAlreadyExistsException,
   UserPhone,
@@ -54,18 +52,23 @@ export class CreateUserUseCase {
         throw new UserBranchNotFoundException(params.branchId);
       }
     }
-    const rolScope = await this.rolFinder.findScopeById(params.rolId);
+    const rol = await this.rolFinder.findById(params.rolId);
 
-    if (!rolScope) {
+    if (!rol) {
       throw new UserRolNotFoundException(params.rolId);
     }
-
+    
     const tenantId = UserTenantId.create(params.tenantId);
 
-    const email = UserEmail.create(params.email);
+    const email = params.email
+      ? UserEmail.create(params.email)
+      : null;
 
-    if (await this.repository.existsByEmail(tenantId, email)) {
-      throw new UserEmailAlreadyExistsException(params.email);
+    if (
+      email &&
+      await this.repository.existsByEmail(tenantId, email)
+    ) {
+      throw new UserEmailAlreadyExistsException(email.value);
     }
 
     const userName = UserName.create(params.userName);
@@ -82,18 +85,16 @@ export class CreateUserUseCase {
 
     const user = UserAggregate.create({
       tenantId: UserTenantId.create(params.tenantId),
-
       branchId: params.branchId ? UserBranchId.create(params.branchId) : null,
-
       rolId: UserRolId.create(params.rolId),
-
-      rolScope,
-
+      rolScope: rol.scope,
       userName,
       email,
       password: hashedPassword,
-      fullName: UserFullName.create(params.fullName),
-      lastName: UserLastName.create(params.lastName),
+      firstName: params.firstName,
+      secondName: params.secondName ?? null,
+      firstLastName: params.firstLastName,
+      secondLastName: params.secondLastName ?? null,
       age: UserBirthDate.create(params.age),
       sex: UserSex.create(params.sex),
       phone: UserPhone.create(params.phone),

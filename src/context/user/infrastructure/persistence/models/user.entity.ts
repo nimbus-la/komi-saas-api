@@ -21,21 +21,45 @@ export class UserEntity {
     length: 20,
   })
   rolScope!: UserRolScopeEnum;
-  
+
   @Column({ name: "user_name", type: "varchar", length: 50 })
   userName!: string;
 
-  @Column({ name: "user_email", type: "varchar", length: 120 })
-  email!: string;
+  @Column({ name: "user_email", type: "varchar", length: 120, nullable: true })
+  email!: string | null;
 
   @Column({ name: "user_password", type: "varchar", length: 255 })
   password!: string;
 
-  @Column({ name: "user_full_name", type: "varchar", length: 120 })
-  fullName!: string;
+  @Column({
+    name: "user_first_name",
+    type: "varchar",
+    length: 50,
+  })
+  firstName!: string;
 
-  @Column({ name: "user_last_name", type: "varchar", length: 120 })
-  lastName!: string;
+  @Column({
+    name: "user_second_name",
+    type: "varchar",
+    length: 50,
+    nullable: true,
+  })
+  secondName!: string | null;
+
+  @Column({
+    name: "user_first_last_name",
+    type: "varchar",
+    length: 50,
+  })
+  firstLastName!: string;
+
+  @Column({
+    name: "user_second_last_name",
+    type: "varchar",
+    length: 50,
+    nullable: true,
+  })
+  secondLastName!: string | null;
 
   @Column({ name: "user_birth_date", type: "date" })
   age!: Date;

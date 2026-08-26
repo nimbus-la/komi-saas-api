@@ -1,4 +1,4 @@
 export enum UserSexEnum {
-    MASCULINO = "MASCULINO",
-    FEMENINO = "FEMENINO",
+    MALE = "MALE",
+    FEMALE = "FEMALE",
 }
