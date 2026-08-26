@@ -1,16 +1,23 @@
 import { Module } from "@nestjs/common";
 
-import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter } from "./infrastructure";
-import { AuthUserFinder, LoginUseCase, PasswordVerifier } from "./application";
+import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, TenantResolverAdapter } from "./infrastructure";
+import { AuthUserFinder, LoginUseCase, PasswordVerifier, TenantResolver } from "./application";
 import { UserModule } from "@/context/user/user.module";
+import { TenantModule } from "@/context/tenants/tenant.module";
 
 
 @Module({
     imports: [
-        UserModule
+        UserModule,
+        TenantModule
     ],
     controllers: [AuthController],
     providers: [
+        {
+            provide: TenantResolver,
+            useClass: TenantResolverAdapter
+        },
+
         {
             provide: AuthUserFinder,
             useClass: AuthUserFinderAdapter
@@ -25,13 +32,15 @@ import { UserModule } from "@/context/user/user.module";
             provide: LoginUseCase,
 
             useFactory: (
+                tenantResolver: TenantResolver,
                 userFinder: AuthUserFinder,
-                passwordVerifier: PasswordVerifier
-            ) => new LoginUseCase(userFinder, passwordVerifier),
+                passwordVerifier: PasswordVerifier,
+            ) => new LoginUseCase(tenantResolver, userFinder, passwordVerifier),
 
             inject: [
+                TenantResolver,
                 AuthUserFinder,
-                PasswordVerifier
+                PasswordVerifier,
             ]
         }
     ],

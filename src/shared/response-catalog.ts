@@ -45,6 +45,13 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1028': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un usuario con rol operativo debe pertenecer a una sucursal.' },
     '1029': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre completo del usuario no es válido.' },
 
+
+    // 11xx - Autenticación
+    '1100': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'Las credenciales proporcionadas no son válidas.' },
+    '1101': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La cuenta se encuentra inactiva. Ponte en contacto con un administrador.' },
+    '1102': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'El negocio se encuentra inactivo. Ponte en contacto con un administrador.' },
+    '1103': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El negocio indicado no existe.' },
+
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El slug del tenant ya se encuentra registrado.' },
     '1204': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre del tenant ya se encuentra registrado.' },
@@ -124,9 +131,6 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1469': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se encontró el ítem de inventario.' },
     '1470': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado no está disponible para este negocio.' },
 
-
-    // 15xx - Autenticación
-    '1500': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'Usuario o contraseña incorrectos.'},
 
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El recurso solicitado no existe.' },
