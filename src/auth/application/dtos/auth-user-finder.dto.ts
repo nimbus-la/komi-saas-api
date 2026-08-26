@@ -9,8 +9,10 @@ export interface AuthUserCredentials {
     rolId: string;
     rolScope: string;
     userName: string;
-    fullName: string;
-    lastName: string;
+    firstName: string;
+    secondName: string | null;
+    firstLastName: string;
+    secondLastName: string | null;
     sex: string;
     passwordHash: string;
     isActive: boolean;

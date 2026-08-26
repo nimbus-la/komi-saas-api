@@ -120,6 +120,23 @@ UNIQUE (rol_id, rol_scope);
 
 
 -- ============================================
+-- TIPO ENUM PARA EL SEXO DEL USUARIO
+-- ============================================
+
+-- El nombre del tipo sigue la convención de TypeORM
+-- (<tabla>_<columna>_enum) para que coincida con la entidad.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type WHERE typname = 'users_user_sex_enum'
+    ) THEN
+        CREATE TYPE users_user_sex_enum AS ENUM ('MALE', 'FEMALE');
+    END IF;
+END
+$$;
+
+
+-- ============================================
 -- TABLA DE USERS
 -- ============================================
 
@@ -140,16 +157,22 @@ CREATE TABLE IF NOT EXISTS users (
     rol_scope VARCHAR(20) NOT NULL,
 
     user_name VARCHAR(50) NOT NULL,
-    user_email VARCHAR(120) NOT NULL,
+
+    -- El email es opcional
+    user_email VARCHAR(120) NULL,
 
     -- Hash de contraseña
     user_password VARCHAR(255) NOT NULL,
 
-    user_full_name VARCHAR(120) NOT NULL,
-    user_last_name VARCHAR(120) NOT NULL,
+    -- Nombres y apellidos por separado
+    -- (el segundo nombre y el segundo apellido son opcionales)
+    user_first_name VARCHAR(50) NOT NULL,
+    user_second_name VARCHAR(50) NULL,
+    user_first_last_name VARCHAR(50) NOT NULL,
+    user_second_last_name VARCHAR(50) NULL,
 
     user_birth_date DATE NOT NULL,
-    user_sex VARCHAR(20) NOT NULL,
+    user_sex users_user_sex_enum NOT NULL,
     user_phone VARCHAR(20) NOT NULL,
 
     user_is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -245,11 +268,13 @@ WHERE user_is_active;
 
 -- El email es único dentro de cada tenant,
 -- sin distinguir mayúsculas/minúsculas.
+-- Al ser opcional, sólo se indexan los usuarios que tienen email.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_tenant_lower
 ON users (
     tenant_id,
     LOWER(user_email)
-);
+)
+WHERE user_email IS NOT NULL;
 
 
 -- El username es único dentro de cada tenant,
