@@ -4,6 +4,14 @@ import { Injectable, Logger } from "@nestjs/common";
 
 import { PasswordVerifier } from "../../application";
 
+/**
+ * Verificador de contraseñas con argon2, el mismo algoritmo con el que se
+ * guardan al crear un usuario.
+ *
+ * Los parámetros de verificación no se configuran aquí: argon2 los lee del propio
+ * hash, así que contraseñas guardadas con distinta configuración siguen
+ * funcionando sin tocar nada.
+ */
 @Injectable()
 export class Argon2PasswordVerifier implements PasswordVerifier {
     private readonly logger = new Logger(Argon2PasswordVerifier.name);
@@ -26,6 +34,11 @@ export class Argon2PasswordVerifier implements PasswordVerifier {
     }
 
 
+    /**
+     * Compara contra un hash de mentira solo para gastar el mismo tiempo que una
+     * verificación de verdad. Nunca lanza: si argon2 se cae, el login igual tiene
+     * que terminar respondiendo que las credenciales son inválidas.
+     */
     public async verifyAgainstDummy(plain: string): Promise<void> {
         try {
             await argon2.verify(await this.getDummyHash(), plain);
@@ -44,6 +57,8 @@ export class Argon2PasswordVerifier implements PasswordVerifier {
     private getDummyHash(): Promise<string> {
         if (this.dummyHash === null) {
             this.dummyHash = argon2
+                // El contenido da igual, nadie lo va a adivinar ni le hace falta:
+                // lo único que se busca es un hash válido contra el cual gastar tiempo.
                 .hash(randomBytes(32).toString("hex"), { type: argon2.argon2id })
                 .catch((error: unknown) => {
                     this.dummyHash = null;

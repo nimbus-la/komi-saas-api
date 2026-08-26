@@ -1,5 +1,18 @@
 import { DomainException } from "@/shared/domain/domain.exception";
 
+/**
+ * Errores del inicio de sesión. Todos usan códigos de la familia 11xx.
+ *
+ * El detalle que llevan es para los logs y para quien tenga que revisar qué pasó;
+ * lo que ve el cliente lo decide el filtro de excepciones, que no devuelve estos
+ * textos tal cual.
+ */
+
+/**
+ * El usuario no existe o la contraseña no coincide. A propósito es la misma
+ * excepción para los dos casos: separarlas dejaría averiguar qué nombres de
+ * usuario están registrados probando uno por uno.
+ */
 export class InvalidCredentialsException extends DomainException {
     constructor(tenantSlug: string, username: string) {
         super({
@@ -11,6 +24,10 @@ export class InvalidCredentialsException extends DomainException {
 
 
 
+/**
+ * Las credenciales estaban bien pero la cuenta está deshabilitada. Solo puede
+ * salir después de verificar la contraseña, nunca antes.
+ */
 export class InactiveAccountException extends DomainException {
     constructor(username: string) {
         super({
@@ -22,6 +39,10 @@ export class InactiveAccountException extends DomainException {
 
 
 
+/**
+ * El negocio existe pero está deshabilitado, así que ninguno de sus usuarios
+ * puede entrar por más que sus credenciales sean correctas.
+ */
 export class InactiveTenantException extends DomainException {
     constructor(tenantSlug: string) {
         super({
@@ -33,6 +54,10 @@ export class InactiveTenantException extends DomainException {
 
 
 
+/**
+ * No hay ningún negocio con ese slug. También cubre el caso del slug mal escrito,
+ * porque el resolutor devuelve lo mismo para ambos.
+ */
 export class AuthTenantNotFoundException extends DomainException {
     constructor(tenantSlug: string) {
         super({

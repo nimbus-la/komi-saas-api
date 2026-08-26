@@ -4,6 +4,17 @@ import * as argon2 from 'argon2';
 import { Argon2PasswordVerifier } from './argon2-password-verifier';
 
 
+/**
+ * Pruebas del verificador de contraseñas.
+ *
+ * argon2 va mockeado entero: hashear de verdad tarda cientos de milisegundos por
+ * llamada y aquí no interesa si el algoritmo funciona (eso ya es problema de la
+ * librería), sino cuándo se lo llama, cuántas veces y qué pasa cuando falla.
+ *
+ * El grueso de la suite gira alrededor del hash dummy, que es la pieza que ya dio
+ * un problema en producción y la que sostiene la defensa contra los ataques por
+ * tiempos.
+ */
 jest.mock('argon2', () => ({
     argon2id: 2,
     hash: jest.fn(),
@@ -13,6 +24,7 @@ jest.mock('argon2', () => ({
 const hashMock = argon2.hash as unknown as jest.Mock;
 const verifyMock = argon2.verify as unknown as jest.Mock;
 
+/** Un hash con pinta de argon2 real. Nunca se verifica de verdad, alcanza con la forma. */
 const DUMMY = '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$dummy';
 
 /** Espera a que se vacíen las microtasks y pase un turno del event loop. */
@@ -30,6 +42,11 @@ describe('Argon2PasswordVerifier', () => {
     });
 
 
+    /**
+     * Cuándo nace el hash dummy y cuántas veces. Se calcula tarde y una sola vez:
+     * tarde para no dejar promesas sueltas al arrancar, una sola vez porque
+     * hashear en cada login sería tirar tiempo a la basura.
+     */
     describe('cálculo del hash dummy', () => {
         it('no lo calcula en el constructor', () => {
             const verifier = new Argon2PasswordVerifier();
@@ -45,6 +62,8 @@ describe('Argon2PasswordVerifier', () => {
          * rechazada sin que nadie la atrapara y Node mata el proceso.
          */
         it('no emite unhandledRejection aunque argon2 falle al arrancar', async () => {
+            // Se engancha el listener a mano porque un unhandledRejection no hace
+            // fallar al test por sí solo, hay que ir a buscarlo.
             const rejections: unknown[] = [];
             const onRejection = (reason: unknown): void => { rejections.push(reason); };
 
@@ -61,6 +80,8 @@ describe('Argon2PasswordVerifier', () => {
         });
 
 
+        // Dos llamadas, un solo hash. El verify sí corre las dos veces porque es
+        // justamente el que tiene que gastar el tiempo.
         it('lo calcula una sola vez y lo reutiliza entre llamadas', async () => {
             hashMock.mockResolvedValue(DUMMY);
             verifyMock.mockResolvedValue(false);
@@ -75,6 +96,8 @@ describe('Argon2PasswordVerifier', () => {
         });
 
 
+        // Dos instancias distintas para comprobar que el valor sale de randomBytes
+        // y no de una constante escrita en el código.
         it('lo calcula con argon2id sobre un valor aleatorio', async () => {
             hashMock.mockResolvedValue(DUMMY);
             verifyMock.mockResolvedValue(false);
@@ -91,6 +114,11 @@ describe('Argon2PasswordVerifier', () => {
     });
 
 
+    /**
+     * El método que se llama cuando el usuario no existe. Su contrato es raro a
+     * propósito: no devuelve nada, no le importa el resultado y no puede fallar.
+     * Lo único que tiene que garantizar es haber tardado.
+     */
     describe('verifyAgainstDummy', () => {
         it('nunca lanza cuando el hash dummy falla', async () => {
             hashMock.mockRejectedValue(new Error('argon2 no disponible'));
@@ -128,6 +156,9 @@ describe('Argon2PasswordVerifier', () => {
         });
 
 
+        // La otra cara del test anterior: argon2 pide 64MB y a veces no los
+        // consigue. Cuando el problema pasa, la siguiente llamada tiene que volver
+        // a funcionar sola, sin reiniciar nada.
         it('se recupera solo cuando el fallo era transitorio', async () => {
             hashMock
                 .mockRejectedValueOnce(new Error('sin memoria'))
@@ -145,7 +176,10 @@ describe('Argon2PasswordVerifier', () => {
     });
 
 
+    /** La verificación de verdad, la que corre cuando el usuario sí existe. */
     describe('verify', () => {
+        // Ojo con el orden de los argumentos: argon2.verify recibe primero el hash
+        // y después la contraseña, al revés que nuestro puerto.
         it('devuelve true cuando la contraseña coincide', async () => {
             verifyMock.mockResolvedValue(true);
 
@@ -161,6 +195,8 @@ describe('Argon2PasswordVerifier', () => {
         });
 
 
+        // Un hash roto en la base no puede tumbar el login con un 500. Es un
+        // intento fallido y punto.
         it('devuelve false cuando el hash almacenado es ilegible', async () => {
             verifyMock.mockRejectedValue(new Error('hash corrupto'));
 
@@ -168,6 +204,8 @@ describe('Argon2PasswordVerifier', () => {
         });
 
 
+        // Los logins normales no tienen por qué pagar el costo de hashear el dummy;
+        // ese gasto es solo de la rama del usuario inexistente.
         it('no toca el hash dummy', async () => {
             verifyMock.mockResolvedValue(true);
 
