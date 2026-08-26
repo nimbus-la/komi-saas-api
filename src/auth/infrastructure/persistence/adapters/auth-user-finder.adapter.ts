@@ -4,6 +4,14 @@ import { UserAggregate, UserName, UserRepository, UserTenantId } from "@/context
 import { AuthUserCredentials, AuthUserFinder } from "../../../application";
 
 
+/**
+ * Conecta el login con el módulo de usuarios.
+ *
+ * Su trabajo es traducir en las dos direcciones: convierte los textos crudos que
+ * maneja el login en los value objects que exige el dominio de usuarios, y
+ * devuelve el agregado aplanado en la vista mínima que el login necesita. Gracias
+ * a esto la capa de aplicación de auth no conoce el agregado de usuario.
+ */
 @Injectable()
 export class AuthUserFinderAdapter implements AuthUserFinder {
     constructor(
@@ -36,6 +44,11 @@ export class AuthUserFinderAdapter implements AuthUserFinder {
     }
 
 
+    /**
+     * Aplana el agregado a la vista que usa el login. Se copian solo los campos
+     * que hacen falta para autenticar; todo lo demás del usuario se queda en su
+     * propio módulo.
+     */
     private toUserCredentials(user: UserAggregate): AuthUserCredentials {
         const primitives = user.toPrimitives();
 

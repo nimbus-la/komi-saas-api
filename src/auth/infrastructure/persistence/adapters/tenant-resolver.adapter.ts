@@ -3,6 +3,13 @@ import { ResolvedTenant, TenantResolver } from "../../../application";
 import { Injectable } from "@nestjs/common";
 
 
+/**
+ * Conecta el login con el módulo de negocios.
+ *
+ * Igual que el buscador de usuarios: arma el value object del slug, va al
+ * repositorio y devuelve el agregado aplanado, para que auth no dependa de cómo
+ * está construido el agregado de tenant.
+ */
 @Injectable()
 export class TenantResolverAdapter implements TenantResolver {
     constructor(
