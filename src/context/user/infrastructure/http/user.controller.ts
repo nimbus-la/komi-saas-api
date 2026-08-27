@@ -52,12 +52,12 @@ export class UserController {
     await this.updateUser.execute(id, body);
   }
 
-  @Patch(":id/status")
+  @Patch("status/:id")
   public async toggleStatus(@Param("id") id: string): Promise<void> {
     await this.toggleUserStatus.execute(id);
   }
 
-  @Patch(":id/reassign")
+  @Patch("reassign/:id")
   public async reassign(
     @Param("id") id: string,
     @Body() body: ReassignUserDto,
