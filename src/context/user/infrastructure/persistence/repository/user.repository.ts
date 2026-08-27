@@ -104,7 +104,7 @@ export class TypeOrmUserRepository implements UserRepository {
     });
 
     return {
-      data: UserMapper.toResponseList(rows),
+      rows: UserMapper.toResponseList(rows),
       pageNumber: pagination.pageNumber,
       pageSize: pagination.pageSize,
       total,

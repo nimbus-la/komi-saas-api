@@ -159,7 +159,7 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
         const [rows, total] = await query.getManyAndCount();
 
         return {
-            data: rows.map(ProductCategoryMapper.toDomain),
+            rows: rows.map(ProductCategoryMapper.toDomain),
             pageNumber: pagination.pageNumber,
             pageSize: pagination.pageSize,
             total,

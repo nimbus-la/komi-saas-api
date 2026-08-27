@@ -47,7 +47,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 code: exception.code,
                 httpStatus: AllExceptionsFilter.CATEGORY_TO_HTTP[entry.category],
                 message: entry.message,
-                data: null
+                content: null
             };
         };
 
@@ -64,7 +64,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 code: RESPONSE_CODE.VALIDATION_ERROR,
                 httpStatus,
                 message: entry.message,
-                data: null
+                content: null
             };
         };
 
@@ -77,7 +77,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
             code: RESPONSE_CODE.INTERNAL_ERROR,
             httpStatus: HttpStatus.INTERNAL_SERVER_ERROR,
             message: entry.message,
-            data: null
+            content: null
         };
     };
 };

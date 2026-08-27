@@ -23,13 +23,15 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
             map((data) => {
                 // Consulta exitosa cuyo resultado viene vacío: no es un error,
                 // pero se marca como INFO para que el cliente lo distinga.
+                // El sobre se anula siempre: ni un arreglo vacío ni los
+                // metadatos de página sueltos le aportan algo al cliente.
                 if (ResponseInterceptor.isEmptyResult(data)) {
                     return {
                         status: ResponseStatus.Info,
                         code: RESPONSE_CODE.NO_CONTENT,
                         httpStatus,
                         message: 'No se encontraron resultados.',
-                        data: (data ?? null) as T | null,
+                        content: null,
                     };
                 };
 
@@ -38,7 +40,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
                     code: RESPONSE_CODE.SUCCESS,
                     httpStatus,
                     message,
-                    data: (data ?? null) as T | null,
+                    content: (data ?? null) as T | null,
                 };
             })
         );
@@ -51,11 +53,17 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
             return data.length === 0;
         };
 
-        if (data !== null && typeof data === 'object' && 'data' in data) {
-            const inner = (data as { data: unknown }).data;
-            return Array.isArray(inner) && inner.length === 0;
+        return ResponseInterceptor.isEmptyPaginated(data);
+    };
+
+
+    /** Resultado paginado (`rows` + metadatos) que no trajo ninguna fila. */
+    private static isEmptyPaginated(data: unknown): boolean {
+        if (data === null || typeof data !== 'object' || !('rows' in data)) {
+            return false;
         };
 
-        return false;
+        const rows = (data as { rows: unknown }).rows;
+        return Array.isArray(rows) && rows.length === 0;
     };
 };

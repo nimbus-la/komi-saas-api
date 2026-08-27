@@ -5,7 +5,7 @@ export interface ApiResponse<T = unknown> {
     code: string;
     httpStatus: number;
     message: string;
-    data: T | null;
+    content: T | null;
 };
 
 
@@ -18,7 +18,7 @@ export interface Pagination {
 
 
 export interface Paginated<T> {
-    data: T[];
+    rows: T[];
     pageNumber: number;
     pageSize: number;
     total: number;

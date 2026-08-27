@@ -10,11 +10,11 @@ export class SearchInventoryItemsUseCase {
     ) { };
 
     public async execute(tenantId: string, pagination: Pagination, branchId?: string): Promise<Paginated<InventoryItemResponse>> {
-        const { data, pageNumber, pageSize, total } = await this.repository.search(tenantId, pagination, branchId);
+        const { rows, pageNumber, pageSize, total } = await this.repository.search(tenantId, pagination, branchId);
         const now = new Date();
 
         return {
-            data: data.map((item) =>
+            rows: rows.map((item) =>
                 toInventoryItemResponse(item, {
                     date: now,
                     ...(branchId !== undefined ? { branchId } : {}),
