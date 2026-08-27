@@ -20,6 +20,13 @@ export class UserEntity {
     type: "varchar",
     length: 20,
   })
+  @Column({
+    name: "rol_name",
+    type: "varchar",
+    length: 50,
+  })
+  rolName!: string;
+
   rolScope!: UserRolScopeEnum;
 
   @Column({ name: "user_name", type: "varchar", length: 50 })

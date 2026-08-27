@@ -2,18 +2,33 @@
 -- ============================================
 -- TABLA DE TENANTS
 -- ============================================
+
 CREATE TABLE IF NOT EXISTS tenants (
+
     tenant_id UUID PRIMARY KEY,
     account_id UUID NOT NULL,
     tenant_name VARCHAR(120) NOT NULL,
     tenant_description VARCHAR(225) NOT NULL,
-    tenant_slug VARCHAR(120) NOT NULL UNIQUE,
-    tenant_nit VARCHAR(20) NOT NULL UNIQUE,
+    tenant_slug VARCHAR(120) NOT NULL,
+    tenant_nit VARCHAR(20) NOT NULL,
     tenant_is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    tenant_is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     tenant_created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     tenant_updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+
 );
 
+-- ============================================
+-- ÍNDICES ÚNICOS PARA TENANTS NO ELIMINADOS
+-- ============================================
+
+CREATE UNIQUE INDEX tenants_tenant_slug_unique_active
+ON tenants (tenant_slug)
+WHERE tenant_is_deleted = FALSE;
+
+CREATE UNIQUE INDEX tenants_tenant_nit_unique_active
+ON tenants (tenant_nit)
+WHERE tenant_is_deleted = FALSE;
 -- ============================================
 -- TABLA DE BRANCHES
 -- ============================================
@@ -151,6 +166,9 @@ CREATE TABLE IF NOT EXISTS users (
 
     rol_id UUID NOT NULL,
 
+    -- Nombre del rol replicado en el usuario
+    rol_name VARCHAR(50) NOT NULL,
+    
     -- Alcance replicado para garantizar la regla
     -- administrativo -> sin sucursal
     -- operativo -> con sucursal

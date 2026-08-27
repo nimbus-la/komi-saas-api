@@ -12,6 +12,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { UserEntity } from "../models/user.entity";
 import { Repository } from "typeorm";
+import { Paginated, Pagination } from "@/interfaces";
 
 @Injectable()
 export class TypeOrmUserRepository implements UserRepository {
@@ -28,6 +29,7 @@ export class TypeOrmUserRepository implements UserRepository {
       tenantId: primitives.tenantId,
       branchId: primitives.branchId,
       rolId: primitives.rolId,
+      rolName: primitives.rolName,
       rolScope: primitives.rolScope,
       userName: primitives.userName,
       email: primitives.email,
@@ -93,10 +95,20 @@ export class TypeOrmUserRepository implements UserRepository {
     return UserMapper.toAggregate(row);
   }
 
-  public async searchAll(): Promise<UserResponse[]> {
-    const rows = await this.userRepository.find();
+  public async searchAll(
+    pagination: Pagination,
+  ): Promise<Paginated<UserResponse>> {
+    const [rows, total] = await this.userRepository.findAndCount({
+      skip: (pagination.pageNumber - 1) * pagination.pageSize,
+      take: pagination.pageSize,
+    });
 
-    return UserMapper.toResponseList(rows);
+    return {
+      data: UserMapper.toResponseList(rows),
+      pageNumber: pagination.pageNumber,
+      pageSize: pagination.pageSize,
+      total,
+    };
   }
 
   public async update(user: UserAggregate): Promise<void> {
@@ -109,6 +121,7 @@ export class TypeOrmUserRepository implements UserRepository {
       {
         tenantId: primitives.tenantId,
         branchId: primitives.branchId,
+        rolName: primitives.rolName,
         rolId: primitives.rolId,
         rolScope: primitives.rolScope,
         userName: primitives.userName,

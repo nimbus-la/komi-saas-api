@@ -21,8 +21,11 @@ export class TenantEntity {
     @Column({ name: 'tenant_nit', type: 'varchar', length: 20, unique: true })
     nit!: string;
 
-    @Column({ name: "tenant_is_active", type: "boolean", default: true })
-    isActive!: boolean;
+    @Column({ name: "tenant_is_active", type: "boolean", default: true, }) 
+    isActive!: boolean; 
+    
+    @Column({ name: "tenant_is_deleted", type: "boolean", default: false, }) 
+    isDeleted!: boolean;
 
     @Column({ name: 'tenant_created_at', type: 'timestamptz' })
     createdAt!: Date;

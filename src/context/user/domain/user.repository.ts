@@ -1,3 +1,4 @@
+import { Paginated, Pagination } from "@/interfaces";
 import { UserResponse } from "./types/user-response";
 import { UserAggregate } from "./user.aggregate";
 import { UserEmail, UserId, UserName, UserTenantId } from "./value-object";
@@ -8,10 +9,11 @@ export abstract class UserRepository {
   abstract searchById(id: UserId): Promise<UserResponse | null>;
   abstract searchAggregateById(id: UserId): Promise<UserAggregate | null>;
   abstract searchAggregateByUserName(
-  tenantId: UserTenantId,
-  userName: UserName,
-): Promise<UserAggregate | null>;
-  abstract searchAll(): Promise<UserResponse[]>;
+    tenantId: UserTenantId,
+    userName: UserName,
+  ): Promise<UserAggregate | null>;
+  abstract searchAll(pagination: Pagination): Promise<Paginated<UserResponse>>;
+
   abstract existsByUserName(
     tenantId: UserTenantId,
     userName: UserName,
@@ -22,4 +24,4 @@ export abstract class UserRepository {
     email: UserEmail,
     exceptId?: UserId,
   ): Promise<boolean>;
-};
+}

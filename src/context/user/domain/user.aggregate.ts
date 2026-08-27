@@ -25,6 +25,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
   private tenantId: UserTenantId;
   private branchId: UserBranchId | null;
   private rolId: UserRolId;
+  private rolName: string;
   private rolScope: UserRolScope;
   private userName: UserName;
   private email: UserEmail | null;
@@ -45,6 +46,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
     tenantId: UserTenantId,
     branchId: UserBranchId | null,
     rolId: UserRolId,
+    rolName: string,
     rolScope: UserRolScope,
     userName: UserName,
     email: UserEmail | null,
@@ -65,6 +67,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
     this.tenantId = tenantId;
     this.branchId = branchId;
     this.rolId = rolId;
+    this.rolName = rolName;
     this.rolScope = rolScope;
     this.userName = userName;
     this.email = email;
@@ -89,6 +92,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
     tenantId: UserTenantId;
     branchId?: UserBranchId | null;
     rolId: UserRolId;
+    rolName: string;
     rolScope: UserRolScope;
     userName: UserName;
     email: UserEmail | null;
@@ -110,6 +114,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
       params.tenantId,
       branchId,
       params.rolId,
+      params.rolName,
       params.rolScope,
       params.userName,
       params.email,
@@ -167,6 +172,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
       tenantId: this.tenantId.value,
       branchId: this.branchId?.value ?? null,
       rolId: this.rolId.value,
+      rolName: this.rolName,
       rolScope: this.rolScope.value,
       userName: this.userName.value,
       email: this.email?.value ?? null,
@@ -190,6 +196,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
       UserTenantId.create(primitives.tenantId),
       primitives.branchId ? UserBranchId.create(primitives.branchId) : null,
       UserRolId.create(primitives.rolId),
+      primitives.rolName,
       UserRolScope.create(primitives.rolScope),
       UserName.create(primitives.userName),
       primitives.email ? UserEmail.create(primitives.email) : null,
@@ -255,6 +262,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
   public reassign(
     scope: UserRolScope,
     rolId: UserRolId,
+    rolName: string,
     branchId: UserBranchId | null,
   ): void {
     this.ensureActive();
@@ -262,6 +270,7 @@ export class UserAggregate extends AggregateRoot<UserId> {
     UserAggregate.ensureBranchMatchesRolScope(scope, branchId);
 
     this.rolId = rolId;
+    this.rolName = rolName;
     this.rolScope = scope;
     this.branchId = branchId;
 

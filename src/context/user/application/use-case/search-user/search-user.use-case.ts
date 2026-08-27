@@ -5,12 +5,9 @@ import {
   UserResponse,
 } from "@/context/user/domain";
 
-import { RolFinder } from "../../ports/rol-finder";
-
 export class SearchUserUseCase {
   constructor(
     private readonly repository: UserRepository,
-    private readonly rolFinder: RolFinder,
   ) {}
 
   public async execute(id: string): Promise<UserResponse> {
@@ -22,11 +19,6 @@ export class SearchUserUseCase {
       throw new UserNotFoundException(id);
     }
 
-    const rol = await this.rolFinder.findById(user.rolId);
-
-    return {
-      ...user,
-      rolName: rol?.name ?? "",
-    };
+    return user;
   }
 }
