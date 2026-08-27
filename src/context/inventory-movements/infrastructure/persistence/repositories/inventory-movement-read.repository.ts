@@ -31,7 +31,7 @@ export class TypeOrmInventoryMovementReadRespository implements InventoryMovemen
         });
 
         return {
-            data: InventoryMovementPersistenceMapper.movementResponse(rows),
+            rows: InventoryMovementPersistenceMapper.movementResponse(rows),
             pageNumber: pagination.pageNumber,
             pageSize: pagination.pageSize,
             total

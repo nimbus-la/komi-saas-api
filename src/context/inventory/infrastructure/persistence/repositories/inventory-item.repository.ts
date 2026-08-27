@@ -95,7 +95,7 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
         });
 
         if (rows.length === 0) {
-            return { data: [], pageNumber: pagination.pageNumber, pageSize: pagination.pageSize, total };
+            return { rows: [], pageNumber: pagination.pageNumber, pageSize: pagination.pageSize, total };
         };
 
         const batchRows = await this.activeBatchesOf(rows.map((r) => r.id), branchId);
@@ -112,7 +112,7 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
             ),
         );
 
-        return { data, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize, total };
+        return { rows: data, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize, total };
     };
 
 

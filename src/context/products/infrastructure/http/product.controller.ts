@@ -44,9 +44,7 @@ export class ProductController {
         limit: 1,
       });
 
-    return {
-      data: response[0],
-    };
+    return response[0];
   }
 
   @Patch(":id")
@@ -72,9 +70,7 @@ export class ProductController {
         limit: 1,
       });
 
-    return {
-      data: response[0],
-    };
+    return response[0];
   }
 
   @Get()
@@ -106,9 +102,7 @@ export class ProductController {
     const products =
       await this.searchProductsUseCase.execute(params);
 
-    return {
-      data: products,
-    };
+    return products;
   }
 }
 

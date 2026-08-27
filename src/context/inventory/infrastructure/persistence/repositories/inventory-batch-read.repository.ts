@@ -37,7 +37,7 @@ export class TypeOrmInventoryBatchReadRepository implements InventoryBatchReadRe
         const now = new Date();
 
         return {
-            data: rows.map((b): InventoryBatchView => ({
+            rows: rows.map((b): InventoryBatchView => ({
                 id: b.id,
                 quantityReceived: b.quantityReceived,
                 quantityRemaining: b.quantityRemaining,

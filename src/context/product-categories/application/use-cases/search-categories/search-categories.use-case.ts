@@ -30,11 +30,11 @@ export class SearchCategoriesUseCase {
             throw new TenantNotFoundException(filters.tenantId);
         }
 
-        const { data, pageNumber, pageSize, total } =
+        const { rows, pageNumber, pageSize, total } =
             await this.repository.search(filters, pagination);
 
         return {
-            data: data.map((category) => category.toPrimitives()),
+            rows: rows.map((category) => category.toPrimitives()),
             pageNumber,
             pageSize,
             total,

@@ -20,6 +20,6 @@ export class ProductCategoryCheckerAdapter
             { pageNumber: 1, pageSize: 1 },
         );
 
-        return result.data.length > 0;
+        return result.rows.length > 0;
     }
 }
