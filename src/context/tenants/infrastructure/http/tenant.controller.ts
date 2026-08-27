@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -69,13 +70,13 @@ export class TenantController {
     await this.updateTenant.execute(id, dto);
   }
 
-  @Patch(":id/status")
+  @Patch("status/:id")
   @ResponseMessage("Estado del tenant actualizado exitosamente.")
   public async toggleStatus(@Param("id") id: string): Promise<void> {
     await this.toggleTenantStatus.execute(id);
   }
 
-  @Patch(":id/delete")
+  @Delete("delete/:id")
   @ResponseMessage("Tenant eliminado exitosamente.")
   public async delete(@Param("id") id: string): Promise<void> {
     await this.deleteTenant.execute(id);
