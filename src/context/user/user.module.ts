@@ -2,16 +2,15 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { BranchModule } from "../branch/branch.module";
 import { RolModule } from "../rol/rol.module";
 import {
-  ActivateUserUseCase,
   BranchChecker,
   CreateUserUseCase,
-  DeactivateUserUseCase,
   PasswordHasher,
   ReassignUserUseCase,
   RolFinder,
   SearchAllUsersUseCase,
   SearchUserUseCase,
   TenantChecker,
+  ToggleUserStatusUseCase,
   UpdateUserUseCase,
 } from "./application";
 import { UserRepository } from "./domain";
@@ -108,16 +107,9 @@ import { EventEmitterPublisher } from "@/infrastructure";
     },
 
     {
-      provide: ActivateUserUseCase,
+      provide: ToggleUserStatusUseCase,
       useFactory: (repository: UserRepository) =>
-        new ActivateUserUseCase(repository),
-      inject: [UserRepository],
-    },
-
-    {
-      provide: DeactivateUserUseCase,
-      useFactory: (repository: UserRepository) =>
-        new DeactivateUserUseCase(repository),
+        new ToggleUserStatusUseCase(repository),
       inject: [UserRepository],
     },
 
@@ -135,8 +127,7 @@ import { EventEmitterPublisher } from "@/infrastructure";
       provide: SearchUserUseCase,
       useFactory: (
         repository: UserRepository,
-        rolFinder: RolFinder,
-      ) => new SearchUserUseCase(repository, rolFinder),
+      ) => new SearchUserUseCase(repository),
       inject: [
         UserRepository,
         RolFinder,
@@ -147,8 +138,7 @@ import { EventEmitterPublisher } from "@/infrastructure";
       provide: SearchAllUsersUseCase,
       useFactory: (
         repository: UserRepository,
-        rolFinder: RolFinder,
-      ) => new SearchAllUsersUseCase(repository, rolFinder),
+      ) => new SearchAllUsersUseCase(repository),
       inject: [
         UserRepository,
         RolFinder,

@@ -2,20 +2,19 @@ import { TenantNotFoundException } from "@/context/tenants/domain/exceptions/ten
 import { TenantId, TenantRepository } from "../../../domain";
 
 export class DeleteTenantUseCases {
-    constructor(
-        private readonly repository: TenantRepository
-    ) {}
+  constructor(private readonly repository: TenantRepository) {}
 
-    public async execute(id: string): Promise<void> {
-        const tenant = await this.repository.searchAggregateById(
-            TenantId.create(id)
-        );
-         if(!tenant){
-            throw new TenantNotFoundException(id)
-         };
+  public async execute(id: string): Promise<void> {
+    const tenant = await this.repository.searchAggregateById(
+      TenantId.create(id),
+    );
 
-        tenant.desactivate();
+    if (!tenant) {
+      throw new TenantNotFoundException(id);
+    }
 
-        await this.repository.update(tenant);
-    };
-};
+    tenant.delete();
+
+    await this.repository.update(tenant);
+  }
+}

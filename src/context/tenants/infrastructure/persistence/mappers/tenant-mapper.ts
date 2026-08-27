@@ -26,6 +26,7 @@ export class TenantMapper {
             slug: entity.slug,
             nit: entity.nit,
             isActive: entity.isActive,
+            isDeleted: entity.isDeleted,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
         });

@@ -87,6 +87,7 @@ export class CreateUserUseCase {
       tenantId: UserTenantId.create(params.tenantId),
       branchId: params.branchId ? UserBranchId.create(params.branchId) : null,
       rolId: UserRolId.create(params.rolId),
+      rolName: rol.name,
       rolScope: rol.scope,
       userName,
       email,

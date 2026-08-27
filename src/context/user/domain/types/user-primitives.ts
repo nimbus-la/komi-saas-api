@@ -7,6 +7,7 @@ export interface UserPrimitives {
     branchId: string | null;
     rolId: string;
     rolScope: UserRolScopeEnum;
+    rolName: string;
     userName: string;
     email: string | null;
     password: string;

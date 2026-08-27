@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseFilters,
   UseInterceptors,
 } from "@nestjs/common";
@@ -14,16 +15,16 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
 
 import {
-  ActivateUserUseCase,
   CreateUserUseCase,
-  DeactivateUserUseCase,
   ReassignUserUseCase,
   SearchAllUsersUseCase,
   SearchUserUseCase,
+  ToggleUserStatusUseCase,
   UpdateUserUseCase,
 } from "../../application";
 
 import { ReassignUserDto } from "./dto/reassign-user.dto";
+import { SearchUsersDto } from "./dto/search-users.dto";
 
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(AllExceptionsFilter)
@@ -32,8 +33,7 @@ export class UserController {
   constructor(
     private readonly createUser: CreateUserUseCase,
     private readonly updateUser: UpdateUserUseCase,
-    private readonly activateUser: ActivateUserUseCase,
-    private readonly deactivateUser: DeactivateUserUseCase,
+    private readonly toggleUserStatus: ToggleUserStatusUseCase,
     private readonly reassignUser: ReassignUserUseCase,
     private readonly searchById: SearchUserUseCase,
     private readonly searchAll: SearchAllUsersUseCase,
@@ -52,14 +52,9 @@ export class UserController {
     await this.updateUser.execute(id, body);
   }
 
-  @Patch(":id/activate")
-  public async activate(@Param("id") id: string): Promise<void> {
-    await this.activateUser.execute(id);
-  }
-
-  @Patch(":id/deactivate")
-  public async deactivate(@Param("id") id: string): Promise<void> {
-    await this.deactivateUser.execute(id);
+  @Patch(":id/status")
+  public async toggleStatus(@Param("id") id: string): Promise<void> {
+    await this.toggleUserStatus.execute(id);
   }
 
   @Patch(":id/reassign")
@@ -71,8 +66,13 @@ export class UserController {
   }
 
   @Get()
-  public async searchAllUsers() {
-    return this.searchAll.execute();
+  public async searchAllUsers(@Query() query: SearchUsersDto) {
+    const { pageNumber, pageSize } = query;
+
+    return this.searchAll.execute({
+      pageNumber,
+      pageSize,
+    });
   }
 
   @Get(":id")

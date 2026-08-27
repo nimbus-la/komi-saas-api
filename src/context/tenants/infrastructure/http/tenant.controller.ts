@@ -1,7 +1,27 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseFilters, UseInterceptors } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseFilters,
+  UseInterceptors,
+} from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
-import { CreateTenantUseCase, DeleteTenantUseCases, SearchAllTenantsUseCase, SearchTenantUseCase, UpdateTenantUseCase } from "../../application";
+import {
+  AllExceptionsFilter,
+  ResponseInterceptor,
+  ResponseMessage,
+} from "@/infrastructure";
+import {
+  CreateTenantUseCase,
+  DeleteTenantUseCases,
+  SearchAllTenantsUseCase,
+  SearchTenantUseCase,
+  ToggleTenantStatusUseCase,
+  UpdateTenantUseCase,
+} from "../../application";
 import { CreateTenantDto } from "./dto/create-tenant.dto";
 import { UpdateTenantDto } from "./dto/update-tenant.dto";
 
@@ -9,55 +29,55 @@ import { UpdateTenantDto } from "./dto/update-tenant.dto";
 @UseFilters(AllExceptionsFilter)
 @Controller("tenant")
 export class TenantController {
-    constructor (
-        private readonly createTenant: CreateTenantUseCase,
-        private readonly searchTenantById: SearchTenantUseCase,
-        private readonly searchAllTenants: SearchAllTenantsUseCase,
-        private readonly updateTenant: UpdateTenantUseCase,
-        private readonly deleteTenant: DeleteTenantUseCases
-    ) { }
+  constructor(
+    private readonly createTenant: CreateTenantUseCase,
+    private readonly searchTenantById: SearchTenantUseCase,
+    private readonly searchAllTenants: SearchAllTenantsUseCase,
+    private readonly updateTenant: UpdateTenantUseCase,
+    private readonly toggleTenantStatus: ToggleTenantStatusUseCase,
+    private readonly deleteTenant: DeleteTenantUseCases,
+  ) {}
 
-    @Post()
-    @ResponseMessage('Tenant creado exitosamente.')
-    public async create(
-        @Body() dto: CreateTenantDto
-    ) {
-        await this.createTenant.execute({
-           // accountId: dto.accountId,
-            name: dto.name,
-            description: dto.description,
-            slug: dto.slug,
-            nit: dto.nit
-        });
-    };
+  @Post()
+  @ResponseMessage("Tenant creado exitosamente.")
+  public async create(@Body() dto: CreateTenantDto) {
+    await this.createTenant.execute({
+      // accountId: dto.accountId,
+      name: dto.name,
+      description: dto.description,
+      slug: dto.slug,
+      nit: dto.nit,
+    });
+  }
 
-    @Get()
-    public async findAll() {
-        return await this.searchAllTenants.execute();
-    }
+  @Get()
+  public async findAll() {
+    return await this.searchAllTenants.execute();
+  }
 
-    @Get(':id')
-    public async findOne(
-        @Param('id') id: string,
-    ) { 
-        return await this.searchTenantById.execute(id);
-    };
+  @Get(":id")
+  public async findOne(@Param("id") id: string) {
+    return await this.searchTenantById.execute(id);
+  }
 
-    @Patch(':id')
-    @ResponseMessage('Tenant actualizado exitosamente.')
-    public async update(
-        @Param('id') id:string,
-        @Body()dto: UpdateTenantDto,
-    ) : Promise<void> {
-        await this.updateTenant.execute(id, dto);
-    }
+  @Patch(":id")
+  @ResponseMessage("Tenant actualizado exitosamente.")
+  public async update(
+    @Param("id") id: string,
+    @Body() dto: UpdateTenantDto,
+  ): Promise<void> {
+    await this.updateTenant.execute(id, dto);
+  }
 
-    @Delete(':id')
-    @ResponseMessage('Tenant desactivado exitosamente.')
-    public async delete(
-        @Param('id') id:string
-    ) {
-        await this.deleteTenant.execute(id);
-    }
+  @Patch(":id/status")
+  @ResponseMessage("Estado del tenant actualizado exitosamente.")
+  public async toggleStatus(@Param("id") id: string): Promise<void> {
+    await this.toggleTenantStatus.execute(id);
+  }
 
-};
+  @Patch(":id/delete")
+  @ResponseMessage("Tenant eliminado exitosamente.")
+  public async delete(@Param("id") id: string): Promise<void> {
+    await this.deleteTenant.execute(id);
+  }
+}

@@ -10,6 +10,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
     private slug: TenantSlug;
     private nit: TenantNit;
     private isActive: boolean;
+    private isDeleted: boolean;
     private createdAt: Date;
     private updatedAt: Date;
 
@@ -23,6 +24,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
         slug: TenantSlug,
         nit: TenantNit,
         isActive: boolean,
+        isDeleted: boolean,
         createdAt: Date,
         updatedAt: Date,
     ) {
@@ -34,6 +36,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
         this.slug = slug;
         this.nit = nit;
         this.isActive = isActive;
+        this.isDeleted = isDeleted;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     };
@@ -60,6 +63,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
             params.slug,
             params.nit,
             true,
+            false,
             now,
             now
         ); 
@@ -87,6 +91,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
             slug: this.slug.value,
             nit: this.nit.value,
             isActive: this.isActive,
+            isDeleted: this.isDeleted,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
         }
@@ -102,6 +107,7 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
             TenantSlug.create(primitives.slug),
             TenantNit.create(primitives.nit),
             primitives.isActive,
+            primitives.isDeleted,
             primitives.createdAt,
             primitives.updatedAt,
         );
@@ -135,20 +141,32 @@ export class TenantAggregate extends AggregateRoot<TenantId> {
     
     public desactivate(): void {
         if (!this.isActive) {
-            throw new Error('El tenant se encuentra desactivado.');
-        };
+            throw new Error("El tenant se encuentra desactivado.");
+        }
 
-        this.isActive = false;
-    };
+    this.isActive = false;
+    }
 
     public activate(): void {
         if (this.isActive) {
-            throw new Error('El tenant se encuentra activado.');
+            throw new Error("El tenant se encuentra activado.");
         }
 
         this.isActive = true;
-    };
+    }
+
+    public delete(): void { 
+        if (this.isDeleted) { 
+            throw new Error("El tenant ya se encuentra eliminado."); 
+        } 
+        this.isDeleted = true; this.isActive = false; this.touch();
+    }
+
     public get active(): boolean {
         return this.isActive;
+    }
+
+    public get deleted(): boolean { 
+        return this.isDeleted; 
     }
 };

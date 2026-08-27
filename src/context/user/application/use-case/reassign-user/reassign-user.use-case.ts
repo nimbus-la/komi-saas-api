@@ -50,7 +50,7 @@ export class ReassignUserUseCase {
       branchId = UserBranchId.create(params.branchId);
     }
 
-    user.reassign(rol.scope, UserRolId.create(params.rolId), branchId);
+    user.reassign(rol.scope, UserRolId.create(params.rolId), rol.name, branchId);
 
     await this.repository.update(user);
   }
