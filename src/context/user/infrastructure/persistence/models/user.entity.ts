@@ -16,17 +16,17 @@ export class UserEntity {
   rolId!: string;
 
   @Column({
-    name: "rol_scope",
-    type: "varchar",
-    length: 20,
-  })
-  @Column({
     name: "rol_name",
     type: "varchar",
     length: 50,
   })
   rolName!: string;
 
+  @Column({
+    name: "rol_scope",
+    type: "varchar",
+    length: 20,
+  })
   rolScope!: UserRolScopeEnum;
 
   @Column({ name: "user_name", type: "varchar", length: 50 })
