@@ -16,6 +16,8 @@ const ALLOWED_HEADERS = [
     'Accept',
     'X-Requested-With',
     'X-Tenant-Id',
+    // Permite que el front mande su propio identificador de petición.
+    'X-Request-Id',
 ];
 
 /**
@@ -26,6 +28,10 @@ const EXPOSED_HEADERS = [
     'X-Total-Count',
     'X-Page',
     'X-Limit',
+    // Sin esta línea el navegador oculta el header y `res.headers.get(...)`
+    // devuelve null, sin ningún error. En Postman y en curl sí se ve, que es
+    // lo que hace tan difícil de diagnosticar el olvido.
+    'X-Request-Id',
 ];
 
 const METHODS = ['GET', 'HEAD', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'];

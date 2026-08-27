@@ -12,5 +12,6 @@ export * from './events/event-emitter.publisher';
 
 export * from './http/all-exceptions.filter';
 export * from './http/cors.factory';
+export * from './http/request-id.middleware';
 export * from './http/response-message.decorator';
 export * from './http/response.interceptor';

@@ -1,9 +1,16 @@
-import { Response } from "express";
+import { inspect } from "node:util";
+
+import { Request, Response } from "express";
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common";
 
-import { DomainException, RESPONSE_CATALOG } from "@/shared";
+// Por ruta directa y no desde el barrel `@/shared`: ese índice exporta también
+// los value objects, que importan `uuid` (ESM puro) y hacen que Jest no pueda
+// cargar este archivo en una prueba unitaria.
+import { DomainException } from "@/shared/domain/domain.exception";
+import { RESPONSE_CATALOG } from "@/shared/response-catalog";
 import { CatalogEntryResponse, ErrorCategory, RESPONSE_CODE } from "@/utils";
 import { ApiResponse } from "@/interfaces";
+import { createRequestId, RequestWithId } from "./request-id.middleware";
 
 
 
@@ -21,11 +28,45 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
 
+    /** Profundidad suficiente para ver el driverError de TypeORM y sus metadatos. */
+    private static readonly INSPECT_DEPTH = 5;
+
+
     public catch(exception: unknown, host: ArgumentsHost): void {
-        const response = host.switchToHttp().getResponse<Response>();
-        const envelope = this.toEnvelope(exception);
+        const http = host.switchToHttp();
+        const response = http.getResponse<Response>();
+        const request = http.getRequest<RequestWithId>();
+
+        // El identificador lo puso `requestIdMiddleware` al entrar la petición,
+        // así que es el mismo que ya viajó en el header `X-Request-Id` y el que
+        // llevan las demás líneas de log de esta petición. El respaldo cubre el
+        // caso de que el filtro se use sin ese middleware delante.
+        const traceId = request?.requestId ?? createRequestId();
+        const origin = AllExceptionsFilter.describeRequest(request);
+
+        const envelope = this.toEnvelope(exception, traceId, origin);
 
         response.status(envelope.httpStatus).json(envelope);
+    };
+
+
+    /** Método y ruta, para saber qué petición produjo el error. */
+    private static describeRequest(request: Request | undefined): string {
+        if (request === undefined) {
+            return 'petición no disponible';
+        };
+
+        return `${request.method ?? '?'} ${request.originalUrl ?? request.url ?? '?'}`;
+    };
+
+
+    /**
+     * Cabecera + el objeto de error ÍNTEGRO. `inspect` atraviesa el
+     * `driverError` anidado de TypeORM y saca a la luz `query`, `parameters`,
+     * el SQLSTATE, la tabla y la restricción, además del stack.
+     */
+    private static dump(header: string, exception: unknown): string {
+        return `${header}\n${inspect(exception, { depth: AllExceptionsFilter.INSPECT_DEPTH, breakLength: 120 })}`;
     };
 
 
@@ -35,41 +76,63 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
 
-    private toEnvelope(exception: unknown): ApiResponse<unknown> {
+    private toEnvelope(exception: unknown, traceId: string, origin: string): ApiResponse<unknown> {
         if (exception instanceof DomainException) {
             const entry = this.resolveEntry(exception.code);
+            const httpStatus = AllExceptionsFilter.CATEGORY_TO_HTTP[entry.category];
 
-            // el DETALLE técnico va SOLO al log, nunca a la respuesta
-            this.logger.warn(`[${exception.code}] ${exception.detail}`);
+            // Regla de negocio violada: se sabe qué pasó, basta una línea.
+            // El DETALLE técnico va SOLO al log, nunca a la respuesta.
+            this.logger.warn(`[${traceId}] [${exception.code}] ${origin} → HTTP ${httpStatus} · ${exception.detail}`);
 
             return {
                 status: entry.status,
                 code: exception.code,
-                httpStatus: AllExceptionsFilter.CATEGORY_TO_HTTP[entry.category],
+                httpStatus,
                 message: entry.message,
-                content: null
+                content: null,
+                traceId
             };
         };
 
 
         if (exception instanceof HttpException) {
             const httpStatus = exception.getStatus();
-
-            this.logger.warn(`[HTTP ${httpStatus}] ${JSON.stringify(exception.getResponse())}`);
-
             const entry = this.resolveEntry(RESPONSE_CODE.VALIDATION_ERROR);
+            const header = `[${traceId}] [HTTP ${httpStatus}] ${origin}`;
+
+            if (httpStatus >= HttpStatus.INTERNAL_SERVER_ERROR) {
+                // Un 5xx del framework no es un rechazo esperado: es un fallo
+                // nuestro, y necesita el mismo volcado que el resto de errores
+                // ajenos al dominio. Sin el stack no hay forma de ubicarlo.
+                this.logger.error(AllExceptionsFilter.dump(header, exception));
+            } else {
+                // Un 4xx sí es un rechazo deliberado de un guard o un pipe:
+                // el payload de Nest ya dice todo lo que hay que saber.
+                this.logger.warn(`${header} · ${JSON.stringify(exception.getResponse())}`);
+            };
 
             return {
                 status: entry.status,
                 code: RESPONSE_CODE.VALIDATION_ERROR,
                 httpStatus,
                 message: entry.message,
-                content: null
+                content: null,
+                traceId
             };
         };
 
 
-        this.logger.error(exception);
+        // Todo lo ajeno al dominio —TypeORM, el driver de Postgres, la red, un
+        // bug de JavaScript— cae aquí. El cliente recibe el mensaje genérico;
+        // la consola recibe el error ÍNTEGRO: stack, y en el caso de TypeORM
+        // también `query`, `parameters` y el `driverError` con su SQLSTATE,
+        // tabla y restricción. Sin eso, un 9999 es imposible de diagnosticar.
+        this.logger.error(AllExceptionsFilter.dump(
+            `[${traceId}] [${RESPONSE_CODE.INTERNAL_ERROR}] ${origin} | HTTP ${HttpStatus.INTERNAL_SERVER_ERROR}`,
+            exception,
+        ));
+
         const entry = this.resolveEntry(RESPONSE_CODE.INTERNAL_ERROR);
 
         return {
@@ -77,7 +140,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
             code: RESPONSE_CODE.INTERNAL_ERROR,
             httpStatus: HttpStatus.INTERNAL_SERVER_ERROR,
             message: entry.message,
-            content: null
+            content: null,
+            traceId
         };
     };
 };
