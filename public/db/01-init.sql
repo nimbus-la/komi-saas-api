@@ -6,7 +6,6 @@
 CREATE TABLE IF NOT EXISTS tenants (
 
     tenant_id UUID PRIMARY KEY,
-    account_id UUID NOT NULL,
     tenant_name VARCHAR(120) NOT NULL,
     tenant_description VARCHAR(225) NOT NULL,
     tenant_slug VARCHAR(120) NOT NULL,
@@ -120,7 +119,7 @@ VALUES
     'KITCHEN',
     'KITCHEN',
     'OPERATIONAL'
-);
+)
 
 ON CONFLICT (rol_id) DO NOTHING;
 
