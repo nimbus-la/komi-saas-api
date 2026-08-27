@@ -143,6 +143,11 @@ describe('buildCorsOptions', () => {
             expect(options.allowedHeaders).toContain('Authorization');
             expect(options.allowedHeaders).toContain('X-Tenant-Id');
             expect(options.exposedHeaders).toContain('X-Total-Count');
+            // Sin exponerlo, el navegador oculta el header y el front no puede
+            // leer el identificador de la petición.
+            expect(options.exposedHeaders).toContain('X-Request-Id');
+            // Sin permitirlo, el preflight falla cuando el front manda el suyo.
+            expect(options.allowedHeaders).toContain('X-Request-Id');
             expect(options.methods).toEqual(
                 expect.arrayContaining(['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'])
             );
