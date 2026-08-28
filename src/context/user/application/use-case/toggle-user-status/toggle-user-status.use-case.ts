@@ -1,13 +1,22 @@
-import { UserId, UserNotFoundException, UserRepository } from "@/context/user/domain";
+import {
+  UserId,
+  UserNotFoundException,
+  UserRepository,
+  UserTenantId,
+} from "@/context/user/domain";
 
 export class ToggleUserStatusUseCase {
   constructor(
     private readonly repository: UserRepository,
   ) {}
 
-  public async execute(id: string): Promise<void> {
+  public async execute(tenantId: string, id: string): Promise<void> {
+    const tenant = UserTenantId.create(tenantId);
+    const userId = UserId.create(id);
+
     const user = await this.repository.searchAggregateById(
-      UserId.create(id),
+      tenant,
+      userId,
     );
 
     if (user === null) {
@@ -20,6 +29,6 @@ export class ToggleUserStatusUseCase {
       user.activate();
     }
 
-    await this.repository.update(user);
+    await this.repository.update(tenant, user);
   }
-};
+}

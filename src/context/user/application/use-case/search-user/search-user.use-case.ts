@@ -3,6 +3,7 @@ import {
   UserNotFoundException,
   UserRepository,
   UserResponse,
+  UserTenantId,
 } from "@/context/user/domain";
 
 export class SearchUserUseCase {
@@ -10,8 +11,9 @@ export class SearchUserUseCase {
     private readonly repository: UserRepository,
   ) {}
 
-  public async execute(id: string): Promise<UserResponse> {
+  public async execute(tenantId: string, id: string): Promise<UserResponse> {
     const user = await this.repository.searchById(
+      UserTenantId.create(tenantId),
       UserId.create(id),
     );
 

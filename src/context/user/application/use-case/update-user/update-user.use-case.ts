@@ -35,17 +35,21 @@ export class UpdateUserUseCase {
     private readonly passwordHasher: PasswordHasher,
   ) {}
 
-  public async execute(id: string, params: UpdateUserParams): Promise<void> {
+  public async execute(
+    tenantId: string,
+    id: string,
+    params: UpdateUserParams,
+  ): Promise<void> {
+    const tenant = UserTenantId.create(tenantId);
     const userId = UserId.create(id);
 
-    const user = await this.repository.searchAggregateById(userId);
+    const user = await this.repository.searchAggregateById(tenant, userId);
 
     if (user === null) {
       throw new UserNotFoundException(id);
     }
 
     const current = user.toPrimitives();
-    const tenantId = UserTenantId.create(current.tenantId);
 
     if (params.userName !== undefined || params.email !== undefined) {
       const userName = UserName.create(params.userName ?? current.userName);
@@ -64,7 +68,7 @@ export class UpdateUserUseCase {
         params.userName !== current.userName
       ) {
         const exists = await this.repository.existsByUserName(
-          tenantId,
+          tenant,
           userName,
           userId,
         );
@@ -80,7 +84,7 @@ export class UpdateUserUseCase {
         params.email !== current.email
       ) {
         const exists = await this.repository.existsByEmail(
-          tenantId,
+          tenant,
           email,
           userId,
         );
@@ -112,16 +116,14 @@ export class UpdateUserUseCase {
       params.sex !== undefined ||
       params.phone !== undefined
     ) {
-      const firstName =
-        params.firstName ?? current.firstName;
+      const firstName = params.firstName ?? current.firstName;
 
       const secondName =
         params.secondName !== undefined
           ? params.secondName
           : current.secondName;
 
-      const firstLastName =
-        params.firstLastName ?? current.firstLastName;
+      const firstLastName = params.firstLastName ?? current.firstLastName;
 
       const secondLastName =
         params.secondLastName !== undefined
@@ -129,11 +131,22 @@ export class UpdateUserUseCase {
           : current.secondLastName;
 
       const birthDate = UserBirthDate.create(params.age ?? current.age);
+
       const sex = UserSex.create(params.sex ?? current.sex);
+
       const phone = UserPhone.create(params.phone ?? current.phone);
-      user.updateProfile(firstName, secondName, firstLastName, secondLastName, birthDate, sex, phone);
+
+      user.updateProfile(
+        firstName,
+        secondName,
+        firstLastName,
+        secondLastName,
+        birthDate,
+        sex,
+        phone,
+      );
     }
 
-    await this.repository.update(user);
+    await this.repository.update(tenant, user);
   }
 }

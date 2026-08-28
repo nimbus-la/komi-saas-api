@@ -39,44 +39,61 @@ export class UserController {
     private readonly searchAll: SearchAllUsersUseCase,
   ) {}
 
-  @Post()
-  public async create(@Body() body: CreateUserDto): Promise<void> {
-    await this.createUser.execute(body);
+  @Post(":tenantId")
+  public async create(
+    @Param("tenantId") tenantId: string,
+    @Body() body: CreateUserDto,
+  ): Promise<void> {
+    await this.createUser.execute({
+      ...body,
+      tenantId,
+    });
   }
 
-  @Patch(":id")
+  @Patch(":tenantId/:id")
   public async update(
+    @Param("tenantId") tenantId: string,
     @Param("id") id: string,
     @Body() body: UpdateUserDto,
   ): Promise<void> {
-    await this.updateUser.execute(id, body);
+    await this.updateUser.execute(tenantId, id, body);
   }
 
-  @Patch("status/:id")
-  public async toggleStatus(@Param("id") id: string): Promise<void> {
-    await this.toggleUserStatus.execute(id);
+  @Patch("status/:tenantId/:id")
+  public async toggleStatus(
+    @Param("tenantId") tenantId: string,
+    @Param("id") id: string,
+  ): Promise<void> {
+    await this.toggleUserStatus.execute(tenantId, id);
   }
 
-  @Patch("reassign/:id")
+  @Patch("reassign/:tenantId/:id")
   public async reassign(
+    @Param("tenantId") tenantId: string,
     @Param("id") id: string,
     @Body() body: ReassignUserDto,
   ): Promise<void> {
-    await this.reassignUser.execute(id, body);
+    await this.reassignUser.execute(tenantId, id, body);
   }
 
-  @Get()
-  public async searchAllUsers(@Query() query: SearchUsersDto) {
+  @Get(":tenantId")
+  public async searchAllUsers(
+    @Param("tenantId") tenantId: string,
+    @Query() query: SearchUsersDto,
+  ) {
     const { pageNumber, pageSize } = query;
 
-    return this.searchAll.execute({
+    return this.searchAll.execute(tenantId, {
       pageNumber,
       pageSize,
     });
   }
 
-  @Get(":id")
-  public async searchUserById(@Param("id") id: string) {
-    return this.searchById.execute(id);
+  @Get(":tenantId/:id")
+  public async searchUserById(
+    @Param("tenantId") tenantId: string,
+    @Param("id") id: string,
+  ) {
+    return this.searchById.execute(tenantId, id);
   }
 }

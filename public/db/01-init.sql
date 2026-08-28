@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS branches (
         ON DELETE RESTRICT
 );
 
+
+
 -- ============================================
 -- TABLA DE ROLES
 -- ============================================
@@ -64,73 +66,12 @@ CREATE TABLE IF NOT EXISTS roles (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT ck_roles_scope
-        CHECK (rol_scope IN ('ADMINISTRATIVE', 'OPERATIONAL'))
+        CHECK (rol_scope IN ('ADMINISTRATIVE', 'OPERATIONAL')),
+
+    -- Clave compuesta que permite validar rol + alcance desde users
+    CONSTRAINT uq_roles_id_scope
+        UNIQUE (rol_id, rol_scope)
 );
-
-
--- ============================================
--- ROLES FIJOS DEL SISTEMA
--- ============================================
-INSERT INTO roles (
-    rol_id,
-    rol_code,
-    rol_name,
-    rol_scope
-)
-VALUES
-(
-    '550e8400-e29b-41d4-a716-446655440001',
-    'OWNER',
-    'OWNER',
-    'ADMINISTRATIVE'
-),
-(
-    '550e8400-e29b-41d4-a716-446655440002',
-    'ADMIN',
-    'ADMIN',
-    'ADMINISTRATIVE'
-),
-(
-    '550e8400-e29b-41d4-a716-446655440003',
-    'SUPERVISOR',
-    'SUPERVISOR',
-    'ADMINISTRATIVE'
-),
-(
-    '550e8400-e29b-41d4-a716-446655440004',
-    'MANAGER',
-    'MANAGER',
-    'OPERATIONAL'
-),
-(
-    '550e8400-e29b-41d4-a716-446655440005',
-    'CASHIER',
-    'CASHIER',
-    'OPERATIONAL'
-),
-(
-    '550e8400-e29b-41d4-a716-446655440006',
-    'WAITER',
-    'WAITER',
-    'OPERATIONAL'
-),
-(
-    '550e8400-e29b-41d4-a716-446655440007',
-    'KITCHEN',
-    'KITCHEN',
-    'OPERATIONAL'
-)
-
-ON CONFLICT (rol_id) DO NOTHING;
-
-
--- ============================================
--- CLAVE COMPUESTA PARA VALIDAR ROL + ALCANCE
--- ============================================
-
-ALTER TABLE roles
-ADD CONSTRAINT uq_roles_id_scope
-UNIQUE (rol_id, rol_scope);
 
 
 -- ============================================
