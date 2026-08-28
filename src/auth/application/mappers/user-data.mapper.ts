@@ -8,12 +8,13 @@ import { AuthUserCredentials, ResponseLoginDto } from "../dtos";
  * se cuela solo en la respuesta: hay que venir a agregarlo aquí.
  */
 export const toUserResponse = (user: AuthUserCredentials): ResponseLoginDto => {
-    const { tenantId, branchId, userId, rolScope, userName, firstName, secondName, firstLastName, secondLastName, sex } = user;
+    const { tenantId, branchId, userId, rolName, rolScope, userName, firstName, secondName, firstLastName, secondLastName, sex } = user;
 
     return {
         tenantId,
         branchId,
         userId,
+        rolName,
         rolScope,
         userName,
         firstName,
