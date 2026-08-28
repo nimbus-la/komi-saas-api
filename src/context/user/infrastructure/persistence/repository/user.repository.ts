@@ -126,7 +126,8 @@ export class TypeOrmUserRepository implements UserRepository {
         tenantId: tenantId.value,
       },
       {
-        tenantId: primitives.tenantId,
+        // El tenantId no se escribe: ya es el filtro del WHERE y un usuario no
+        // cambia de negocio. Dejarlo en el SET sería la única vía para moverlo.
         branchId: primitives.branchId,
         rolName: primitives.rolName,
         rolId: primitives.rolId,

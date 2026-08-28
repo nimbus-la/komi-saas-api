@@ -13,9 +13,6 @@ import {
 } from "class-validator";
 
 export class CreateUserDto {
-  @IsUUID()
-  tenantId!: string;
-
   @IsOptional()
   @IsUUID()
   branchId?: string;

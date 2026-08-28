@@ -12,10 +12,6 @@ export class BranchCheckerAdapter implements BranchChecker {
     branchId: string,
     tenantId: string,
   ): Promise<boolean> {
-    const branch = await this.branches.searchById(
-      BranchId.create(branchId),
-    );
-
-    return branch !== null && branch.tenantId === tenantId;
+    return this.branches.existsInTenant(BranchId.create(branchId), tenantId);
   }
 }

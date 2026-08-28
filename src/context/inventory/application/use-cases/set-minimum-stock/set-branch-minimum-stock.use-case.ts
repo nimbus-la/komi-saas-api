@@ -32,7 +32,10 @@ export class SetBranchMinimumStockUseCase {
         };
 
         for (const entry of params.branches) {
-            const exists = await this.branchChecker.exists(entry.branchId);
+            const exists = await this.branchChecker.existsInTenant(
+                entry.branchId,
+                params.tenantId,
+            );
 
             if (!exists) {
                 throw new BranchNotFoundException(entry.branchId);

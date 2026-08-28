@@ -96,6 +96,18 @@ export class BranchService implements BranchRepository {
         return count > 0;
     }
 
+    public async existsInTenant(id: BranchId, tenantId: string): Promise<boolean> {
+
+        const count = await this.branchRepository.count({
+            where: {
+                id: id.value,
+                tenantId,
+            },
+        });
+
+        return count > 0;
+    }
+
     public async searchAll(): Promise<BranchResponse[]> {
 
         const rows = await this.branchRepository.find();

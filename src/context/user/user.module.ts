@@ -125,24 +125,14 @@ import { EventEmitterPublisher } from "@/infrastructure";
 
     {
       provide: SearchUserUseCase,
-      useFactory: (
-        repository: UserRepository,
-      ) => new SearchUserUseCase(repository),
-      inject: [
-        UserRepository,
-        RolFinder,
-      ],
+      useFactory: (repository: UserRepository) => new SearchUserUseCase(repository),
+      inject: [UserRepository],
     },
 
     {
       provide: SearchAllUsersUseCase,
-      useFactory: (
-        repository: UserRepository,
-      ) => new SearchAllUsersUseCase(repository),
-      inject: [
-        UserRepository,
-        RolFinder,
-      ],
+      useFactory: (repository: UserRepository) => new SearchAllUsersUseCase(repository),
+      inject: [UserRepository],
     },
   ],
 
