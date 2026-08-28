@@ -9,8 +9,7 @@ export class BranchCheckerAdapter implements BranchChecker {
         private readonly branches: BranchRepository,
     ) { };
 
-    public async exists(branchId: string): Promise<boolean> {
-        const branch = await this.branches.searchById(BranchId.create(branchId));
-        return branch !== null;
+    public async existsInTenant(branchId: string, tenantId: string): Promise<boolean> {
+        return this.branches.existsInTenant(BranchId.create(branchId), tenantId);
     };
 };

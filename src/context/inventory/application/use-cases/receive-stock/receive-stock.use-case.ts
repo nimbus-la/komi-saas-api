@@ -12,7 +12,7 @@ export class ReceiveStockUseCase {
     ) { };
 
     public async execute(params: ReceiveStockParams) {
-        if (!(await this.branchCheker.exists(params.branchId))) {
+        if (!(await this.branchCheker.existsInTenant(params.branchId, params.tenantId))) {
             throw new BranchNotFoundException(params.branchId);
         };
 
