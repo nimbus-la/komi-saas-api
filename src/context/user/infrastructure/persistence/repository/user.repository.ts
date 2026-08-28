@@ -49,10 +49,11 @@ export class TypeOrmUserRepository implements UserRepository {
     await this.userRepository.save(row);
   }
 
-  public async searchById(id: UserId): Promise<UserResponse | null> {
+  public async searchById( tenantId: UserTenantId, id: UserId): Promise<UserResponse | null> {
     const row = await this.userRepository.findOne({
       where: {
         id: id.value,
+        tenantId: tenantId.value,
       },
     });
 
@@ -81,9 +82,10 @@ export class TypeOrmUserRepository implements UserRepository {
     return UserMapper.toAggregate(row);
   }
 
-  public async searchAggregateById(id: UserId): Promise<UserAggregate | null> {
+  public async searchAggregateById(tenantId: UserTenantId, id: UserId): Promise<UserAggregate | null> {
     const row = await this.userRepository.findOne({
       where: {
+        tenantId: tenantId.value,
         id: id.value,
       },
     });
@@ -96,9 +98,13 @@ export class TypeOrmUserRepository implements UserRepository {
   }
 
   public async searchAll(
+    tenantId: UserTenantId,
     pagination: Pagination,
   ): Promise<Paginated<UserResponse>> {
     const [rows, total] = await this.userRepository.findAndCount({
+      where: {
+        tenantId: tenantId.value,
+      },
       skip: (pagination.pageNumber - 1) * pagination.pageSize,
       take: pagination.pageSize,
     });
@@ -111,12 +117,13 @@ export class TypeOrmUserRepository implements UserRepository {
     };
   }
 
-  public async update(user: UserAggregate): Promise<void> {
+  public async update( tenantId: UserTenantId, user: UserAggregate): Promise<void> {
     const primitives = user.toPrimitives();
 
     await this.userRepository.update(
       {
         id: primitives.id,
+        tenantId: tenantId.value,
       },
       {
         tenantId: primitives.tenantId,

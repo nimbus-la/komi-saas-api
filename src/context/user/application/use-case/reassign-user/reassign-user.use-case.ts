@@ -6,6 +6,7 @@ import {
   UserRepository,
   UserRolId,
   UserRolNotFoundException,
+  UserTenantId,
 } from "@/context/user/domain";
 import { BranchChecker } from "../../ports/branch-checker";
 import { RolFinder } from "../../ports/rol-finder";
@@ -22,8 +23,15 @@ export class ReassignUserUseCase {
     private readonly branchChecker: BranchChecker,
   ) {}
 
-  public async execute(id: string, params: ReassignUserParams): Promise<void> {
-    const user = await this.repository.searchAggregateById(UserId.create(id));
+  public async execute(
+    tenantId: string,
+    id: string,
+    params: ReassignUserParams,
+  ): Promise<void> {
+    const tenant = UserTenantId.create(tenantId);
+    const userId = UserId.create(id);
+
+    const user = await this.repository.searchAggregateById(tenant, userId);
 
     if (user === null) {
       throw new UserNotFoundException(id);
@@ -40,7 +48,7 @@ export class ReassignUserUseCase {
     if (params.branchId !== undefined && params.branchId !== null) {
       const branchExists = await this.branchChecker.existsInTenant(
         params.branchId,
-        user.toPrimitives().tenantId,
+        tenantId,
       );
 
       if (!branchExists) {
@@ -50,8 +58,13 @@ export class ReassignUserUseCase {
       branchId = UserBranchId.create(params.branchId);
     }
 
-    user.reassign(rol.scope, UserRolId.create(params.rolId), rol.name, branchId);
+    user.reassign(
+      rol.scope,
+      UserRolId.create(params.rolId),
+      rol.name,
+      branchId,
+    );
 
-    await this.repository.update(user);
+    await this.repository.update(tenant, user);
   }
 }

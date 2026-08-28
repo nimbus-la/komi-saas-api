@@ -2,7 +2,6 @@ export enum RolCodeEnum {
   OWNER = "OWNER",
   ADMIN = "ADMIN",
   SUPERVISOR = "SUPERVISOR",
-  MANAGER = "MANAGER",
   CASHIER = "CASHIER",
   WAITER = "WAITER",
   KITCHEN = "KITCHEN",
