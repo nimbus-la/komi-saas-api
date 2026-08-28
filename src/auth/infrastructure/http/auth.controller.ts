@@ -3,6 +3,7 @@ import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/inf
 
 import { UserLoginPayloadDto } from "./dto/user-payload.dto";
 import { LoginUseCase } from "@/auth/application";
+import { Public } from "../decorators";
 
 
 /**
@@ -23,6 +24,7 @@ export class AuthController {
      * El DTO ya viene validado, y sus campos calzan uno a uno con LoginParams, así
      * que se pasa derecho al caso de uso sin armar nada intermedio.
      */
+    @Public()
     @Post("login")
     @ResponseMessage("Inicio de sesión exitoso")
     public async signIn(@Body() dto: UserLoginPayloadDto) {

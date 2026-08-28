@@ -1,9 +1,10 @@
+import { APP_GUARD } from "@nestjs/core";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { Module } from "@nestjs/common";
 
 import { JwtConfig } from "@/interfaces";
-import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtTokenIssuer, TenantResolverAdapter } from "./infrastructure";
+import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, TenantResolverAdapter } from "./infrastructure";
 import { AuthUserFinder, LoginUseCase, PasswordVerifier, TenantResolver, TokenIssuer } from "./application";
 import { UserModule } from "@/context/user/user.module";
 import { TenantModule } from "@/context/tenants/tenant.module";
@@ -32,6 +33,11 @@ import { TenantModule } from "@/context/tenants/tenant.module";
     providers: [
         // Cada puerto se registra usando la clase abstracta como token. Así el caso
         // de uso pide el puerto y recibe el adaptador sin enterarse de cuál es.
+        {
+            provide: APP_GUARD,
+            useClass: JwtAuthGuard
+        },
+
         {
             provide: TenantResolver,
             useClass: TenantResolverAdapter
