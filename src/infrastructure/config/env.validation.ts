@@ -67,6 +67,17 @@ class EnviromentVariables {
     @IsInt()
     @Min(0)
     CORS_MAX_AGE?: number;
+
+
+    @IsString()
+    @MinLength(32)
+    JWT_SECRET!: string;
+
+
+    @IsOptional()
+    @IsInt()
+    @Min(60)
+    JWT_ACCESS_TTL?: number;
 }
 
 
