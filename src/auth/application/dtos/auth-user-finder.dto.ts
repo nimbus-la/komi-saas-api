@@ -15,7 +15,7 @@ export interface AuthUserCredentials {
     /** Sucursal asignada, o null si el usuario no está atado a una sola sede. */
     branchId: string | null;
 
-    rolId: string;
+    rolName: string;
 
     /** Alcance del rol. Es lo único del rol que viaja hasta la respuesta. */
     rolScope: string;

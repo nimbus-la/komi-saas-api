@@ -56,7 +56,7 @@ export class AuthUserFinderAdapter implements AuthUserFinder {
             userId: primitives.id,
             tenantId: primitives.tenantId,
             branchId: primitives.branchId,
-            rolId: primitives.rolId,
+            rolName: primitives.rolName,
             rolScope: primitives.rolScope,
             userName: primitives.userName,
             firstName: primitives.firstName,

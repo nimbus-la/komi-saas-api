@@ -12,6 +12,8 @@ export interface ResponseLoginDto {
     /** Sucursal asignada. Va en null cuando el usuario trabaja a nivel de todo el negocio. */
     branchId: string | null;
 
+    rolName: string;
+    
     /** Alcance del rol (por ejemplo BRANCH o TENANT). El front lo usa para pintar el menú. */
     rolScope: string;
 
