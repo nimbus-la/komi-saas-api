@@ -1,8 +1,9 @@
+import { generateUUID } from "@/shared";
 import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
 
 import { LoginParams } from "../../dtos";
 import { toUserResponse } from "../../mappers";
-import { AuthUserFinder, PasswordVerifier, TenantResolver } from "../../ports";
+import { AuthUserFinder, PasswordVerifier, TenantResolver, TokenIssuer } from "../../ports";
 
 /**
  * Inicio de sesión de un usuario dentro de un negocio.
@@ -20,7 +21,8 @@ export class LoginUseCase {
     constructor(
         private readonly tenantResolver: TenantResolver,
         private readonly userFinder: AuthUserFinder,
-        private readonly passwordVerifier: PasswordVerifier
+        private readonly passwordVerifier: PasswordVerifier,
+        private readonly tokenIssuer: TokenIssuer
     ) { }
 
 
@@ -72,10 +74,21 @@ export class LoginUseCase {
             throw new InactiveAccountException(identifier);
         }
 
+        const sessionId = generateUUID();
+
+        const issued = await this.tokenIssuer.issue({
+            userId: dataUser.userId,
+            tenantId: dataUser.tenantId,
+            branchId: dataUser.branchId,
+            rolScope: dataUser.rolScope,
+            sessionId
+        });
+
         return {
             // Pendientes: van vacíos hasta que se implemente la emisión del token
             // de sesión y el registro del último ingreso.
-            sessionToken: "",
+            sessionToken: issued.accessToken,
+            expiredAt: issued.expiresAt.toISOString(),
             lastLogin: "",
             user: toUserResponse(dataUser)
         }
