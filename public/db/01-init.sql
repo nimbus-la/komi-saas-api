@@ -51,6 +51,29 @@ CREATE TABLE IF NOT EXISTS branches (
 );
 
 
+
+-- ============================================
+-- TABLA DE ROLES
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS roles (
+    rol_id UUID PRIMARY KEY,
+    rol_code VARCHAR(20) NOT NULL UNIQUE,
+    rol_name VARCHAR(50) NOT NULL UNIQUE,
+    rol_scope VARCHAR(20) NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT ck_roles_scope
+        CHECK (rol_scope IN ('ADMINISTRATIVE', 'OPERATIONAL')),
+
+    -- Clave compuesta que permite validar rol + alcance desde users
+    CONSTRAINT uq_roles_id_scope
+        UNIQUE (rol_id, rol_scope)
+);
+
+
 -- ============================================
 -- TIPO ENUM PARA EL SEXO DEL USUARIO
 -- ============================================
