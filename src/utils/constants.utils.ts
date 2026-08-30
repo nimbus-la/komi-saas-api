@@ -7,3 +7,9 @@ export const RESPONSE_CODE = {
     CONFLICT: '2001',
     INTERNAL_ERROR: '9999',
 } as const;
+
+
+
+export const DEFAULT_SESSION_TTL_DAYS = 7;
+// En segundos, igual que JWT_ACCESS_TTL: 15 minutos.
+export const DEFAULT_ACCESS_TTL_SECONDS = 900;

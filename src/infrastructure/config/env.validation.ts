@@ -74,10 +74,21 @@ class EnviromentVariables {
     JWT_SECRET!: string;
 
 
+    /** Vida del access token, en segundos (900 = 15 minutos). */
     @IsOptional()
     @IsInt()
     @Min(60)
     JWT_ACCESS_TTL?: number;
+
+
+    /**
+     * Días que vive una sesión. Es el mismo valor que
+     * gobernara el refresh token, por eso conserva el nombre.
+     */
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    JWT_REFRESH_TTL_DAYS?: number;
 }
 
 
