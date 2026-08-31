@@ -66,3 +66,19 @@ export class AuthTenantNotFoundException extends DomainException {
         });
     }
 }
+
+
+
+/**
+ * La petición viene firmada por un negocio pero apunta a otro. El token es
+ * válido, así que no es un 401: es alguien autenticado tocando donde no le
+ * corresponde, y eso merece quedar registrado con los dos identificadores.
+ */
+export class CrossTenantAccessException extends DomainException {
+    constructor(tokenTenantId: string, requestedTenantId: string) {
+        super({
+            code: "1107",
+            detail: `Un usuario del negocio '${tokenTenantId}' intentó operar sobre el negocio '${requestedTenantId}'`
+        });
+    }
+}

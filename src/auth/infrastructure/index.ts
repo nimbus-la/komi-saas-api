@@ -1,6 +1,7 @@
 export * from './decorators/current-user.decorator';
 export * from './decorators/public.decorator';
 export * from './guards/jwt-auth.guard';
+export * from './guards/tenant-scope.guard';
 export * from './http/auth.controller';
 export * from './http/session-context.factory';
 export * from './security/argon2-password-verifier';

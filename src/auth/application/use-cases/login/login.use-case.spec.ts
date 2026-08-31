@@ -131,6 +131,7 @@ const buildHarness = (options: {
     const save = jest.fn().mockResolvedValue(undefined);
     const findByRefreshTokenHash = jest.fn().mockResolvedValue(null);
     const revokeAllByUser = jest.fn().mockResolvedValue(undefined);
+    const rotate = jest.fn().mockResolvedValue(true);
 
     const issue = jest.fn().mockResolvedValue(ISSUED_ACCESS);
     const generate = jest.fn().mockReturnValue(GENERATED_REFRESH);
@@ -141,7 +142,7 @@ const buildHarness = (options: {
         { findByUserName, findByUserId },
         { verify, verifyAgainstDummy },
         { issue },
-        { save, findByRefreshTokenHash, revokeAllByUser },
+        { save, findByRefreshTokenHash, revokeAllByUser, rotate },
         { generate, hash },
         REFRESH_TTL_DAYS,
     );

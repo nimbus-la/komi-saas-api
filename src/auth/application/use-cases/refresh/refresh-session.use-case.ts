@@ -5,6 +5,15 @@ import { ExpiredRefreshTokenException, InvalidRefreshTokenException, RefreshToke
 import { AuthTokens, SessionContext } from "../../dtos";
 import { AuthUserFinder, RefreshTokenGenerator, TokenIssuer } from "../../ports";
 
+
+/**
+ * Cuánto se tolera que un refresh recién canjeado vuelva a aparecer antes de
+ * tratarlo como robado. Cubre reintentos y peticiones en vuelo del mismo
+ * cliente; un reúso malicioso llega mucho más tarde que esto.
+ */
+const ROTATION_GRACE_MS = 10_000;
+
+
 export class RefreshSessionUseCase {
     constructor(
         private readonly sessions: SessionRepository,
@@ -13,6 +22,15 @@ export class RefreshSessionUseCase {
         private readonly refreshGenerator: RefreshTokenGenerator,
         private readonly refreshTtlDays: number,
     ) { };
+
+
+    /** Si el canje fue hace nada, quien repite es el propio cliente, no un ladrón. */
+    private wasJustRotated(session: Session, now: Date = new Date()): boolean {
+        const revokedAt = session.getRevokedAt();
+
+        return revokedAt !== null
+            && now.getTime() - revokedAt.getTime() < ROTATION_GRACE_MS;
+    }
 
 
     public async execute(refreshToken: string, context: SessionContext): Promise<AuthTokens> {
@@ -32,6 +50,20 @@ export class RefreshSessionUseCase {
             // del usuario en todos sus dispositivos por, por ejemplo, un logout y un
             // refresh en vuelo desde otra pestaña.
             if (session.getRevocationReason() !== SessionRevocationReason.Rotated) {
+                throw new InvalidRefreshTokenException();
+            }
+
+            // Recién canjeado: casi siempre es el mismo cliente repitiendo, no un
+            // ladrón. Un doble clic, un reintento por timeout o dos pestañas que
+            // renuevan a la vez mandan el mismo token dos veces con milisegundos de
+            // diferencia, y la copia que llega tarde encuentra la sesión ya rotada.
+            // Dar la alarma ahí cerraría todas las sesiones del usuario por usar la
+            // aplicación con normalidad.
+            //
+            // Se pierde poco: quien llega dentro de la ventana tampoco obtiene
+            // sesión, solo se ahorra el escándalo. Un ladrón de verdad se presenta
+            // mucho después de que la víctima ya renovó, y ahí sí salta la alarma.
+            if (this.wasJustRotated(session)) {
                 throw new InvalidRefreshTokenException();
             }
 
@@ -76,10 +108,18 @@ export class RefreshSessionUseCase {
             userAgent: context.userAgent
         });
 
-        await this.sessions.save(successor);
-
         session.rotateTo(successor.getID());
-        await this.sessions.save(session);
+
+        const rotated = await this.sessions.rotate(session, successor);
+
+        // Perder aquí significa que otra petición canjeó este mismo refresh en el
+        // mismo instante. No se trata como robo: el token se usó UNA vez, que es
+        // justo su límite, y quien pierde simplemente se queda sin sesión. Si de
+        // verdad había dos copias, la segunda se presentará más tarde contra una
+        // sesión ya marcada ROTATED y ahí sí saltará la detección de reúso.
+        if (!rotated) {
+            throw new InvalidRefreshTokenException();
+        }
 
         const issued = await this.tokenIssuer.issue({
             userId: user.userId,

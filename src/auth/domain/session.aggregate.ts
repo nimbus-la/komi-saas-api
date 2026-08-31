@@ -83,6 +83,12 @@ export class Session extends AggregateRoot<SessionId> {
     }
 
 
+    /** Cuándo dejó de servir, o null si sigue viva. */
+    public getRevokedAt(): Date | null {
+        return this.revokedAt;
+    }
+
+
     public revoke(reason: SessionRevocationReason, now: Date = new Date()): void {
         if (this.revokedAt !== null) return;
 

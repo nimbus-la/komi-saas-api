@@ -9,7 +9,7 @@ import { UserModule } from "@/context/user/user.module";
 import { TenantModule } from "@/context/tenants/tenant.module";
 
 import { SessionRepository } from "./domain";
-import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository } from "./infrastructure";
+import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, TenantScopeGuard, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository } from "./infrastructure";
 import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshSessionUseCase, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "./application";
 
 
@@ -35,13 +35,20 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
     ],
     controllers: [AuthController],
     providers: [
-        // Cada puerto se registra usando la clase abstracta como token. Así el caso
-        // de uso pide el puerto y recibe el adaptador sin enterarse de cuál es.
+        // El orden importa: los guards globales corren en el orden en que se
+        // registran, y el de tenant necesita el request.user que deja el de JWT.
         {
             provide: APP_GUARD,
             useClass: JwtAuthGuard
         },
 
+        {
+            provide: APP_GUARD,
+            useClass: TenantScopeGuard
+        },
+
+        // Cada puerto se registra usando la clase abstracta como token. Así el caso
+        // de uso pide el puerto y recibe el adaptador sin enterarse de cuál es.
         {
             provide: TenantResolver,
             useClass: TenantResolverAdapter
