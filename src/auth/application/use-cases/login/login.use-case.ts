@@ -1,9 +1,8 @@
-import { generateUUID } from "@/shared";
-import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
+import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException, Session, SessionRepository } from "../../../domain";
 
-import { LoginParams } from "../../dtos";
+import { LoginParams, SessionContext } from "../../dtos";
 import { toUserResponse } from "../../mappers";
-import { AuthUserFinder, PasswordVerifier, TenantResolver, TokenIssuer } from "../../ports";
+import { AuthUserFinder, PasswordVerifier, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "../../ports";
 
 /**
  * Inicio de sesión de un usuario dentro de un negocio.
@@ -22,11 +21,14 @@ export class LoginUseCase {
         private readonly tenantResolver: TenantResolver,
         private readonly userFinder: AuthUserFinder,
         private readonly passwordVerifier: PasswordVerifier,
-        private readonly tokenIssuer: TokenIssuer
+        private readonly tokenIssuer: TokenIssuer,
+        private readonly sessions: SessionRepository,
+        private readonly refreshGenerator: RefreshTokenGenerator,
+        private readonly refreshTtlSeconds: number,
     ) { }
 
 
-    public async execute(params: LoginParams) {
+    public async execute(params: LoginParams, context: SessionContext) {
         // Los slugs se guardan en minúsculas, así que aquí se acomoda lo que
         // escribió el usuario en vez de rechazarlo por una mayúscula de más.
         const tenantSlug = params.tenantSlug.trim().toLowerCase();
@@ -74,21 +76,33 @@ export class LoginUseCase {
             throw new InactiveAccountException(identifier);
         }
 
-        const sessionId = generateUUID();
+        const generated = this.refreshGenerator.generate();
+        const refreshExpiresAt = new Date(Date.now() + this.refreshTtlSeconds * 1000);
+
+        const session = Session.create({
+            userId: dataUser.userId,
+            tenantId: dataUser.tenantId,
+            refreshTokenHash: generated.hash,
+            expiresAt: refreshExpiresAt,
+            ipAddress: context.ipAddress,
+            userAgent: context.userAgent
+        });
+
+        await this.sessions.save(session);
 
         const issued = await this.tokenIssuer.issue({
             userId: dataUser.userId,
             tenantId: dataUser.tenantId,
             branchId: dataUser.branchId,
             rolScope: dataUser.rolScope,
-            sessionId
+            sessionId: session.getID().value
         });
 
         return {
-            // Pendientes: van vacíos hasta que se implemente la emisión del token
-            // de sesión y el registro del último ingreso.
             sessionToken: issued.accessToken,
             expiredAt: issued.expiresAt.toISOString(),
+            refreshToken: generated.plain,
+            refreshExpiresAt: refreshExpiresAt.toISOString(),
             lastLogin: "",
             user: toUserResponse(dataUser)
         }

@@ -1,9 +1,13 @@
-import { Body, Controller, Post, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Post, Req, UseFilters, UseInterceptors } from "@nestjs/common";
+import type { Request } from "express";
+
 import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
 
+import { LoginUseCase, RefreshSessionUseCase } from "../../application";
 import { UserLoginPayloadDto } from "./dto/user-payload.dto";
-import { LoginUseCase } from "@/auth/application";
 import { Public } from "../decorators";
+import { buildSessionContext } from "./session-context.factory";
+import { RefreshTokenPayloadDto } from "./dto/refresh-token.dto";
 
 
 /**
@@ -17,7 +21,8 @@ import { Public } from "../decorators";
 @Controller("auth")
 export class AuthController {
     constructor(
-        private readonly login: LoginUseCase
+        private readonly login: LoginUseCase,
+        private readonly refresh: RefreshSessionUseCase
     ) { };
 
     /**
@@ -27,9 +32,24 @@ export class AuthController {
     @Public()
     @Post("login")
     @ResponseMessage("Inicio de sesión exitoso")
-    public async signIn(@Body() dto: UserLoginPayloadDto) {
-        return this.login.execute(dto);
+    public async signIn(@Body() dto: UserLoginPayloadDto, @Req() req: Request) {
+        return this.login.execute(dto, buildSessionContext(req));
     };
+
+
+    @Public()
+    @Post("refresh")
+    @ResponseMessage("Sesión renovada exitosamente.")
+    public async renew(@Body() dto: RefreshTokenPayloadDto, @Req() req: Request) {
+        const tokens = await this.refresh.execute(dto.refreshToken, buildSessionContext(req));
+
+        return {
+            sessionToken: tokens.accessToken,
+            expiredAt: tokens.accessExpiresAt.toISOString(),
+            refreshToken: tokens.refreshToken,
+            refreshExpiredAt: tokens.refreshExpiresAt.toISOString()
+        };
+    }
 
 
     /**

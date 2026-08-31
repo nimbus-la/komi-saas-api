@@ -4,10 +4,12 @@ import { ConfigService } from "@nestjs/config";
 import { Module } from "@nestjs/common";
 
 import { JwtConfig } from "@/interfaces";
-import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, TenantResolverAdapter } from "./infrastructure";
-import { AuthUserFinder, LoginUseCase, PasswordVerifier, TenantResolver, TokenIssuer } from "./application";
+import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository } from "./infrastructure";
+import { AuthUserFinder, LoginUseCase, PasswordVerifier, RefreshSessionUseCase, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "./application";
 import { UserModule } from "@/context/user/user.module";
 import { TenantModule } from "@/context/tenants/tenant.module";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { SessionRepository } from "./domain";
 
 
 /**
@@ -19,6 +21,7 @@ import { TenantModule } from "@/context/tenants/tenant.module";
  */
 @Module({
     imports: [
+        TypeOrmModule.forFeature([SessionModel]),
         UserModule,
         TenantModule,
 
@@ -58,6 +61,16 @@ import { TenantModule } from "@/context/tenants/tenant.module";
             useClass: JwtTokenIssuer
         },
 
+        {
+            provide: RefreshTokenGenerator,
+            useClass: Sha256RefreshTokenGenerator,
+        },
+
+        {
+            provide: SessionRepository,
+            useClass: TypeOrmSessionRepository
+        },
+
         // El caso de uso es una clase limpia, sin decoradores de Nest, para poder
         // probarlo con dobles. Por eso se arma a mano con una factory en vez de
         // dejar que el contenedor lo instancie solo.
@@ -68,15 +81,56 @@ import { TenantModule } from "@/context/tenants/tenant.module";
                 tenantResolver: TenantResolver,
                 userFinder: AuthUserFinder,
                 passwordVerifier: PasswordVerifier,
-                tokenIssuer: TokenIssuer
-            ) => new LoginUseCase(tenantResolver, userFinder, passwordVerifier, tokenIssuer),
+                tokenIssuer: TokenIssuer,
+                sessions: SessionRepository,
+                refreshGenerator: RefreshTokenGenerator,
+                configService: ConfigService
+            ) => new LoginUseCase(
+                tenantResolver, 
+                userFinder, 
+                passwordVerifier, 
+                tokenIssuer,
+                sessions,
+                refreshGenerator,
+                configService.getOrThrow<JwtConfig>('jwt').refreshTtlDays
+            ),
 
             // El orden tiene que coincidir con el de los parámetros de la factory.
             inject: [
                 TenantResolver,
                 AuthUserFinder,
                 PasswordVerifier,
-                TokenIssuer
+                TokenIssuer,
+                SessionRepository,
+                RefreshTokenGenerator,
+                ConfigService
+            ]
+        },
+
+        {
+            provide: RefreshSessionUseCase,
+
+            useFactory: (
+                sessions: SessionRepository,
+                userFinder: AuthUserFinder,
+                tokenIssuer: TokenIssuer,
+                refreshGenerator: RefreshTokenGenerator,
+                configService: ConfigService
+            ) => new RefreshSessionUseCase(
+                sessions,
+                userFinder,
+                tokenIssuer,
+                refreshGenerator,
+                configService.getOrThrow<JwtConfig>('jwt').refreshTtlDays
+            ),
+
+            // El orden tiene que coincidir con el de los parámetros de la factory.
+            inject: [
+                SessionRepository,
+                AuthUserFinder,
+                TokenIssuer,
+                RefreshTokenGenerator,
+                ConfigService,
             ]
         }
     ],
