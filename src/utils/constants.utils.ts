@@ -13,3 +13,6 @@ export const RESPONSE_CODE = {
 export const DEFAULT_SESSION_TTL_DAYS = 7;
 // En segundos, igual que JWT_ACCESS_TTL: 15 minutos.
 export const DEFAULT_ACCESS_TTL_SECONDS = 900;
+
+// Factor para convertir la vigencia de la sesión (en días) a milisegundos.
+export const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;

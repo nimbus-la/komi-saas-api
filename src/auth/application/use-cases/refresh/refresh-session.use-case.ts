@@ -1,3 +1,5 @@
+import { MILLISECONDS_PER_DAY } from "@/utils";
+
 import { ExpiredRefreshTokenException, InvalidRefreshTokenException, RefreshTokenReuseDetectedException, Session, SessionRepository, SessionRevocationReason } from "../../../domain";
 
 import { AuthTokens, SessionContext } from "../../dtos";
@@ -9,7 +11,7 @@ export class RefreshSessionUseCase {
         private readonly userFinder: AuthUserFinder,
         private readonly tokenIssuer: TokenIssuer,
         private readonly refreshGenerator: RefreshTokenGenerator,
-        private readonly refreshTtlSeconds: number,
+        private readonly refreshTtlDays: number,
     ) { };
 
 
@@ -53,7 +55,7 @@ export class RefreshSessionUseCase {
         }
 
         const generated = this.refreshGenerator.generate();
-        const refreshExpiresAt = new Date(Date.now() + this.refreshTtlSeconds * 1000);
+        const refreshExpiresAt = new Date(Date.now() + this.refreshTtlDays * MILLISECONDS_PER_DAY);
 
         const successor = Session.create({
             userId: user.userId,

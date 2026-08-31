@@ -1,3 +1,5 @@
+import { MILLISECONDS_PER_DAY } from "@/utils";
+
 import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException, Session, SessionRepository } from "../../../domain";
 
 import { LoginParams, SessionContext } from "../../dtos";
@@ -24,7 +26,7 @@ export class LoginUseCase {
         private readonly tokenIssuer: TokenIssuer,
         private readonly sessions: SessionRepository,
         private readonly refreshGenerator: RefreshTokenGenerator,
-        private readonly refreshTtlSeconds: number,
+        private readonly refreshTtlDays: number,
     ) { }
 
 
@@ -77,7 +79,7 @@ export class LoginUseCase {
         }
 
         const generated = this.refreshGenerator.generate();
-        const refreshExpiresAt = new Date(Date.now() + this.refreshTtlSeconds * 1000);
+        const refreshExpiresAt = new Date(Date.now() + this.refreshTtlDays * MILLISECONDS_PER_DAY);
 
         const session = Session.create({
             userId: dataUser.userId,
