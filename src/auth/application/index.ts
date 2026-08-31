@@ -11,4 +11,5 @@ export * from './ports/refresh-token-generator.port';
 export * from './ports/tenant-resolver.port';
 export * from './ports/token-issuer.port';
 export * from './use-cases/login/login.use-case';
+export * from './use-cases/logout/logout.use-case';
 export * from './use-cases/refresh/refresh-session.use-case';

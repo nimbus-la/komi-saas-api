@@ -1,15 +1,16 @@
 import { APP_GUARD } from "@nestjs/core";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { Module } from "@nestjs/common";
 
 import { JwtConfig } from "@/interfaces";
-import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository } from "./infrastructure";
-import { AuthUserFinder, LoginUseCase, PasswordVerifier, RefreshSessionUseCase, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "./application";
 import { UserModule } from "@/context/user/user.module";
 import { TenantModule } from "@/context/tenants/tenant.module";
-import { TypeOrmModule } from "@nestjs/typeorm";
+
 import { SessionRepository } from "./domain";
+import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository } from "./infrastructure";
+import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshSessionUseCase, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "./application";
 
 
 /**
@@ -132,6 +133,12 @@ import { SessionRepository } from "./domain";
                 RefreshTokenGenerator,
                 ConfigService,
             ]
+        },
+
+        {
+            provide: LogoutUseCase,
+            useFactory: (sessions: SessionRepository, refreshGenerator: RefreshTokenGenerator) => new LogoutUseCase(sessions, refreshGenerator),
+            inject: [SessionRepository, RefreshTokenGenerator]
         }
     ],
     exports: []

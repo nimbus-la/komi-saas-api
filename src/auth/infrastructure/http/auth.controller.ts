@@ -3,7 +3,7 @@ import type { Request } from "express";
 
 import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
 
-import { LoginUseCase, RefreshSessionUseCase } from "../../application";
+import { LoginUseCase, LogoutUseCase, RefreshSessionUseCase } from "../../application";
 import { UserLoginPayloadDto } from "./dto/user-payload.dto";
 import { Public } from "../decorators";
 import { buildSessionContext } from "./session-context.factory";
@@ -22,7 +22,8 @@ import { RefreshTokenPayloadDto } from "./dto/refresh-token.dto";
 export class AuthController {
     constructor(
         private readonly login: LoginUseCase,
-        private readonly refresh: RefreshSessionUseCase
+        private readonly refresh: RefreshSessionUseCase,
+        private readonly logout: LogoutUseCase
     ) { };
 
     /**
@@ -56,9 +57,10 @@ export class AuthController {
      * Todavía sin implementar. Devuelve lo que recibe para dejar la ruta en pie
      * mientras se define cómo se manejan las sesiones.
      */
+    @Public()
     @Post("logout")
     @ResponseMessage("La sesión se ha cerrado exitosamente")
-    public async signOut(@Body() username: string) {
-        return username;
+    public async signOut(@Body() dto: RefreshTokenPayloadDto): Promise<void> {
+        await this.logout.execute(dto.refreshToken);
     }
 }
