@@ -52,6 +52,13 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1102': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'El negocio se encuentra inactivo. Ponte en contacto con un administrador.' },
     '1103': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El negocio indicado no existe.' },
 
+    // Sesión / refresh token. Los tres comparten mensaje a propósito: en los tres
+    // casos lo único que puede hacer el cliente es volver al login, y distinguirlos
+    // hacia afuera solo le diría a un atacante qué tan cerca estuvo.
+    '1104': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La sesión no es válida. Vuelve a iniciar sesión.' },
+    '1105': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La sesión no es válida. Vuelve a iniciar sesión.' },
+    '1106': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La sesión no es válida. Vuelve a iniciar sesión.' },
+
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El slug del tenant ya se encuentra registrado.' },
     '1204': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El nombre del tenant ya se encuentra registrado.' },

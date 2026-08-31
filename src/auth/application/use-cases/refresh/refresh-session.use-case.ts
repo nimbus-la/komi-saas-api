@@ -25,6 +25,16 @@ export class RefreshSessionUseCase {
         }
 
         if (session.isRevoked()) {
+            // Solo un refresh YA CANJEADO delata un robo: si esta sesión sigue viva
+            // en algún lado es porque existen dos copias del mismo token. Las demás
+            // revocaciones (un logout, una baja hecha por un administrador) son
+            // cierres normales, y tratarlas como robo cerraría todas las sesiones
+            // del usuario en todos sus dispositivos por, por ejemplo, un logout y un
+            // refresh en vuelo desde otra pestaña.
+            if (session.getRevocationReason() !== SessionRevocationReason.Rotated) {
+                throw new InvalidRefreshTokenException();
+            }
+
             const userId = session.getUserId();
 
             await this.sessions.revokeAllByUser(

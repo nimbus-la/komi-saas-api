@@ -73,6 +73,16 @@ export class Session extends AggregateRoot<SessionId> {
     }
 
 
+    /**
+     * Por qué dejó de servir, o null si sigue viva. Quien renueva la sesión lo
+     * necesita para separar el reúso de un refresh ya canjeado (ROTATED, la única
+     * señal real de robo) del resto de revocaciones, que son cierres normales.
+     */
+    public getRevocationReason(): SessionRevocationReason | null {
+        return this.revocationReason;
+    }
+
+
     public revoke(reason: SessionRevocationReason, now: Date = new Date()): void {
         if (this.revokedAt !== null) return;
 

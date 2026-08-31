@@ -5,6 +5,9 @@ import 'reflect-metadata';
 import { validateEnv } from './env.validation';
 
 
+/** Exactamente 32 caracteres: el mínimo que exige el contrato. */
+const SECRET_32 = 'a'.repeat(32);
+
 const VALID_ENV = {
     NODE_ENV: 'development',
     DB_HOST: 'localhost',
@@ -13,6 +16,7 @@ const VALID_ENV = {
     DB_PASSWORD: 'erp_password',
     DB_NAME: 'erp',
     CORS_ORIGINS: 'http://localhost:3000',
+    JWT_SECRET: SECRET_32,
 };
 
 const envWithout = (key: string): Record<string, unknown> => {
@@ -54,6 +58,60 @@ describe('validateEnv', () => {
 
         it('rechaza CORS_ORIGINS vacío', () => {
             expect(() => validateEnv({ ...VALID_ENV, CORS_ORIGINS: '' })).toThrow(/CORS_ORIGINS/);
+        });
+
+        /**
+         * Con él se firman todos los access token. Ausente, la app arrancaría
+         * firmando con cadena vacía y cualquiera podría fabricar tokens válidos.
+         */
+        it('exige JWT_SECRET', () => {
+            expect(() => validateEnv(envWithout('JWT_SECRET'))).toThrow(/JWT_SECRET/);
+        });
+    });
+
+
+    /**
+     * Los tres valores que gobiernan la sesión. El secreto tiene mínimo duro; los
+     * dos TTL son opcionales porque la config tiene defaults, pero si vienen se
+     * validan para que un '0' no deje tokens que nacen expirados.
+     */
+    describe('JWT', () => {
+        it('acepta un secreto de exactamente 32 caracteres', () => {
+            expect(() => validateEnv({ ...VALID_ENV, JWT_SECRET: SECRET_32 })).not.toThrow();
+        });
+
+        it('rechaza un secreto de 31 caracteres', () => {
+            expect(() => validateEnv({ ...VALID_ENV, JWT_SECRET: 'a'.repeat(31) }))
+                .toThrow(/JWT_SECRET/);
+        });
+
+        it('JWT_ACCESS_TTL es opcional', () => {
+            expect(() => validateEnv(envWithout('JWT_ACCESS_TTL'))).not.toThrow();
+        });
+
+        it('convierte JWT_ACCESS_TTL de string a número', () => {
+            expect(validateEnv({ ...VALID_ENV, JWT_ACCESS_TTL: '900' }).JWT_ACCESS_TTL).toBe(900);
+        });
+
+        // Un access token de menos de un minuto obligaría a refrescar sin parar.
+        it('rechaza un JWT_ACCESS_TTL menor a 60 segundos', () => {
+            expect(() => validateEnv({ ...VALID_ENV, JWT_ACCESS_TTL: '30' }))
+                .toThrow(/JWT_ACCESS_TTL/);
+        });
+
+        it('JWT_REFRESH_TTL_DAYS es opcional', () => {
+            expect(() => validateEnv(envWithout('JWT_REFRESH_TTL_DAYS'))).not.toThrow();
+        });
+
+        it('convierte JWT_REFRESH_TTL_DAYS de string a número', () => {
+            expect(validateEnv({ ...VALID_ENV, JWT_REFRESH_TTL_DAYS: '7' }).JWT_REFRESH_TTL_DAYS)
+                .toBe(7);
+        });
+
+        // El valor se lee en DÍAS. Un 0 dejaría sesiones muertas al nacer.
+        it('rechaza un JWT_REFRESH_TTL_DAYS de 0 días', () => {
+            expect(() => validateEnv({ ...VALID_ENV, JWT_REFRESH_TTL_DAYS: '0' }))
+                .toThrow(/JWT_REFRESH_TTL_DAYS/);
         });
     });
 
