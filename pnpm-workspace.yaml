@@ -1,0 +1,10 @@
+packages:
+  - '.'
+
+allowBuilds:
+  argon2: true
+  unrs-resolver: true
+
+onlyBuiltDependencies:
+  - argon2
+  - unrs-resolver
