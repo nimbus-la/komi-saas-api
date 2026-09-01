@@ -6,5 +6,6 @@ allowBuilds:
   unrs-resolver: true
 
 onlyBuiltDependencies:
+  - '@nestjs/core'
   - argon2
   - unrs-resolver
