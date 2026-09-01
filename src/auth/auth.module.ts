@@ -1,9 +1,16 @@
+import { APP_GUARD } from "@nestjs/core";
+import { JwtModule } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { Module } from "@nestjs/common";
 
-import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, TenantResolverAdapter } from "./infrastructure";
-import { AuthUserFinder, LoginUseCase, PasswordVerifier, TenantResolver } from "./application";
+import { JwtConfig } from "@/interfaces";
 import { UserModule } from "@/context/user/user.module";
 import { TenantModule } from "@/context/tenants/tenant.module";
+
+import { SessionRepository } from "./domain";
+import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, TenantScopeGuard, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository } from "./infrastructure";
+import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshSessionUseCase, RefreshTokenGenerator, SessionIssuer, TenantResolver, TokenIssuer } from "./application";
 
 
 /**
@@ -15,11 +22,31 @@ import { TenantModule } from "@/context/tenants/tenant.module";
  */
 @Module({
     imports: [
+        TypeOrmModule.forFeature([SessionModel]),
         UserModule,
-        TenantModule
+        TenantModule,
+
+        JwtModule.registerAsync({
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                secret: configService.getOrThrow<JwtConfig>('jwt').secret
+            }),
+        }),
     ],
     controllers: [AuthController],
     providers: [
+        // El orden importa: los guards globales corren en el orden en que se
+        // registran, y el de tenant necesita el request.user que deja el de JWT.
+        {
+            provide: APP_GUARD,
+            useClass: JwtAuthGuard
+        },
+
+        {
+            provide: APP_GUARD,
+            useClass: TenantScopeGuard
+        },
+
         // Cada puerto se registra usando la clase abstracta como token. Así el caso
         // de uso pide el puerto y recibe el adaptador sin enterarse de cuál es.
         {
@@ -37,6 +64,41 @@ import { TenantModule } from "@/context/tenants/tenant.module";
             useClass: Argon2PasswordVerifier
         },
 
+        {
+            provide: TokenIssuer,
+            useClass: JwtTokenIssuer
+        },
+
+        {
+            provide: RefreshTokenGenerator,
+            useClass: Sha256RefreshTokenGenerator,
+        },
+
+        {
+            provide: SessionRepository,
+            useClass: TypeOrmSessionRepository
+        },
+
+        // Abrir una sesión y firmar sus tokens es idéntico en el login y en la
+        // renovación, así que vive aquí y los dos casos de uso lo reciben ya armado.
+        {
+            provide: SessionIssuer,
+
+            useFactory: (
+                sessions: SessionRepository,
+                tokenIssuer: TokenIssuer,
+                refreshGenerator: RefreshTokenGenerator,
+                configService: ConfigService
+            ) => new SessionIssuer(
+                sessions,
+                tokenIssuer,
+                refreshGenerator,
+                configService.getOrThrow<JwtConfig>('jwt').refreshTtlDays
+            ),
+
+            inject: [SessionRepository, TokenIssuer, RefreshTokenGenerator, ConfigService]
+        },
+
         // El caso de uso es una clase limpia, sin decoradores de Nest, para poder
         // probarlo con dobles. Por eso se arma a mano con una factory en vez de
         // dejar que el contenedor lo instancie solo.
@@ -47,14 +109,54 @@ import { TenantModule } from "@/context/tenants/tenant.module";
                 tenantResolver: TenantResolver,
                 userFinder: AuthUserFinder,
                 passwordVerifier: PasswordVerifier,
-            ) => new LoginUseCase(tenantResolver, userFinder, passwordVerifier),
+                sessionIssuer: SessionIssuer
+            ) => new LoginUseCase(
+                tenantResolver,
+                userFinder,
+                passwordVerifier,
+                sessionIssuer
+            ),
 
             // El orden tiene que coincidir con el de los parámetros de la factory.
             inject: [
                 TenantResolver,
                 AuthUserFinder,
                 PasswordVerifier,
+                SessionIssuer
             ]
+        },
+
+        {
+            provide: RefreshSessionUseCase,
+
+            useFactory: (
+                sessions: SessionRepository,
+                tenantResolver: TenantResolver,
+                userFinder: AuthUserFinder,
+                refreshGenerator: RefreshTokenGenerator,
+                sessionIssuer: SessionIssuer
+            ) => new RefreshSessionUseCase(
+                sessions,
+                tenantResolver,
+                userFinder,
+                refreshGenerator,
+                sessionIssuer
+            ),
+
+            // El orden tiene que coincidir con el de los parámetros de la factory.
+            inject: [
+                SessionRepository,
+                TenantResolver,
+                AuthUserFinder,
+                RefreshTokenGenerator,
+                SessionIssuer,
+            ]
+        },
+
+        {
+            provide: LogoutUseCase,
+            useFactory: (sessions: SessionRepository, refreshGenerator: RefreshTokenGenerator) => new LogoutUseCase(sessions, refreshGenerator),
+            inject: [SessionRepository, RefreshTokenGenerator]
         }
     ],
     exports: []

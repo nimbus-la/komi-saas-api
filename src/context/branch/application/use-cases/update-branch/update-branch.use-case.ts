@@ -15,11 +15,15 @@ export class UpdateBranchUseCase {
 
     public async execute(
         id: string,
+        tenantId: string,
         params: UpdateBranchParams,
     ): Promise<void> {
 
+        // Acotada por negocio: si la sucursal es de otro, no aparece y sale el
+        // mismo "no existe" que si nunca hubiera existido.
         const branch = await this.repository.searchAggregateById(
             BranchId.create(id),
+            tenantId
         );
 
         if (branch === null) {
@@ -31,7 +35,7 @@ export class UpdateBranchUseCase {
         if (params.name !== undefined) {
             name = BranchName.create(params.name);
 
-            if (await this.repository.existsByName(name)) {
+            if (await this.repository.existsByName(name, tenantId)) {
                 throw new BranchNameAlreadyExistsException(params.name);
             }
         }

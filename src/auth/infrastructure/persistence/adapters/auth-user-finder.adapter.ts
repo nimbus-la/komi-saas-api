@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { UserAggregate, UserName, UserRepository, UserTenantId } from "@/context/user/domain";
+import { UserAggregate, UserId, UserName, UserRepository, UserTenantId } from "@/context/user/domain";
 import { AuthUserCredentials, AuthUserFinder } from "../../../application";
 
 
@@ -17,6 +17,26 @@ export class AuthUserFinderAdapter implements AuthUserFinder {
     constructor(
         private readonly usersRepository: UserRepository
     ) { }
+
+
+    public async findByUserId(tenantId: string, userId: string): Promise<AuthUserCredentials | null> {
+        let user: UserId;
+
+        try {
+            user = UserId.create(userId);
+        } catch (error) {
+            return null;
+        }
+
+        const findUserId = await this.usersRepository.searchAggregateById(
+            UserTenantId.create(tenantId),
+            user
+        );
+
+        return findUserId ?
+            this.toUserCredentials(findUserId)
+            : null
+    }
 
 
     public async findByUserName(tenantId: string, userName: string): Promise<AuthUserCredentials | null> {

@@ -1,0 +1,137 @@
+import { ExpiredRefreshTokenException, InactiveTenantException, InvalidRefreshTokenException, RefreshTokenReuseDetectedException, Session, SessionRepository, SessionRevocationReason } from "../../../domain";
+
+import { SessionIssuer } from "../../services/session-issuer";
+
+import { AuthTokens, SessionContext } from "../../dtos";
+import { AuthUserFinder, RefreshTokenGenerator, TenantResolver } from "../../ports";
+
+
+/**
+ * Cuánto se tolera que un refresh recién canjeado vuelva a aparecer antes de
+ * tratarlo como robado. Cubre reintentos y peticiones en vuelo del mismo
+ * cliente; un reúso malicioso llega mucho más tarde que esto.
+ */
+const ROTATION_GRACE_MS = 10_000;
+
+
+export class RefreshSessionUseCase {
+    constructor(
+        private readonly sessions: SessionRepository,
+        private readonly tenantResolver: TenantResolver,
+        private readonly userFinder: AuthUserFinder,
+        private readonly refreshGenerator: RefreshTokenGenerator,
+        private readonly sessionIssuer: SessionIssuer,
+    ) { };
+
+
+    /** Si el canje fue hace nada, quien repite es el propio cliente, no un ladrón. */
+    private wasJustRotated(session: Session, now: Date = new Date()): boolean {
+        const revokedAt = session.getRevokedAt();
+
+        return revokedAt !== null
+            && now.getTime() - revokedAt.getTime() < ROTATION_GRACE_MS;
+    }
+
+
+    public async execute(refreshToken: string, context: SessionContext): Promise<AuthTokens> {
+        const hash = this.refreshGenerator.hash(refreshToken);
+
+        const session = await this.sessions.findByRefreshTokenHash(hash);
+
+        if (session === null) {
+            throw new InvalidRefreshTokenException()
+        }
+
+        if (session.isRevoked()) {
+            // Solo un refresh YA CANJEADO delata un robo: si esta sesión sigue viva
+            // en algún lado es porque existen dos copias del mismo token. Las demás
+            // revocaciones (un logout, una baja hecha por un administrador) son
+            // cierres normales, y tratarlas como robo cerraría todas las sesiones
+            // del usuario en todos sus dispositivos por, por ejemplo, un logout y un
+            // refresh en vuelo desde otra pestaña.
+            if (session.getRevocationReason() !== SessionRevocationReason.Rotated) {
+                throw new InvalidRefreshTokenException();
+            }
+
+            // Recién canjeado: casi siempre es el mismo cliente repitiendo, no un
+            // ladrón. Un doble clic, un reintento por timeout o dos pestañas que
+            // renuevan a la vez mandan el mismo token dos veces con milisegundos de
+            // diferencia, y la copia que llega tarde encuentra la sesión ya rotada.
+            // Dar la alarma ahí cerraría todas las sesiones del usuario por usar la
+            // aplicación con normalidad.
+            //
+            // Se pierde poco: quien llega dentro de la ventana tampoco obtiene
+            // sesión, solo se ahorra el escándalo. Un ladrón de verdad se presenta
+            // mucho después de que la víctima ya renovó, y ahí sí salta la alarma.
+            if (this.wasJustRotated(session)) {
+                throw new InvalidRefreshTokenException();
+            }
+
+            const userId = session.getUserId();
+
+            await this.sessions.revokeAllByUser(
+                userId,
+                SessionRevocationReason.ReuseDetected,
+                new Date()
+            );
+
+            throw new RefreshTokenReuseDetectedException(userId);
+        }
+
+        if (session.isExpired()) {
+            throw new ExpiredRefreshTokenException();
+        }
+
+        const previous = session.toPrimitives();
+
+        // Se vuelve a mirar el estado del negocio, no solo el del usuario. Entre el
+        // login y este refresh pueden haber pasado días, y en ese rato el negocio
+        // pudo darse de baja; sin esta comprobación sus usuarios seguirían
+        // renovando la sesión indefinidamente y la baja no serviría de nada.
+        //
+        // Va antes que el usuario por el mismo orden que sigue el login: primero el
+        // negocio, después quien trabaja en él.
+        const tenant = await this.tenantResolver.findById(previous.tenantId);
+
+        if (tenant === null || !tenant.isActive) {
+            await this.sessions.revokeAllByUser(
+                previous.userId,
+                SessionRevocationReason.Revoked,
+                new Date()
+            );
+
+            // Aquí sí se dice qué pasó, en vez del genérico 1104. Quien llega hasta
+            // este punto trae un refresh válido, así que no es alguien tanteando; y
+            // responder "sesión inválida" lo mandaría al login, donde se encontraría
+            // con este mismo mensaje. Mejor dárselo de una vez.
+            throw new InactiveTenantException(tenant?.slug ?? previous.tenantId);
+        }
+
+        const user = await this.userFinder.findByUserId(previous.tenantId, previous.userId);
+
+        if (user === null || !user.isActive) {
+            await this.sessions.revokeAllByUser(
+                previous.userId,
+                SessionRevocationReason.Revoked,
+                new Date()
+            );
+
+            throw new InvalidRefreshTokenException();
+        }
+
+        // El canje va entero en el emisor compartido: arma la sucesora, marca la
+        // anterior y guarda las dos en una sola operación atómica.
+        const tokens = await this.sessionIssuer.rotate(session, user, context);
+
+        // Null significa que otra petición canjeó este mismo refresh en el mismo
+        // instante. No se trata como robo: el token se usó UNA vez, que es justo su
+        // límite, y quien pierde simplemente se queda sin sesión. Si de verdad
+        // había dos copias, la segunda se presentará más tarde contra una sesión ya
+        // marcada ROTATED y ahí sí saltará la detección de reúso.
+        if (tokens === null) {
+            throw new InvalidRefreshTokenException();
+        }
+
+        return tokens;
+    }
+}

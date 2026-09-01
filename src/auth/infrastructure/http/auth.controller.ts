@@ -1,8 +1,13 @@
-import { Body, Controller, Post, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Post, Req, UseFilters, UseInterceptors } from "@nestjs/common";
+import type { Request } from "express";
+
 import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
 
+import { LoginUseCase, LogoutUseCase, RefreshSessionUseCase, toAuthTokensResponse } from "../../application";
 import { UserLoginPayloadDto } from "./dto/user-payload.dto";
-import { LoginUseCase } from "@/auth/application";
+import { Public } from "../decorators";
+import { buildSessionContext } from "./session-context.factory";
+import { RefreshTokenPayloadDto } from "./dto/refresh-token.dto";
 
 
 /**
@@ -16,27 +21,41 @@ import { LoginUseCase } from "@/auth/application";
 @Controller("auth")
 export class AuthController {
     constructor(
-        private readonly login: LoginUseCase
+        private readonly login: LoginUseCase,
+        private readonly refresh: RefreshSessionUseCase,
+        private readonly logout: LogoutUseCase
     ) { };
 
     /**
      * El DTO ya viene validado, y sus campos calzan uno a uno con LoginParams, así
      * que se pasa derecho al caso de uso sin armar nada intermedio.
      */
+    @Public()
     @Post("login")
     @ResponseMessage("Inicio de sesión exitoso")
-    public async signIn(@Body() dto: UserLoginPayloadDto) {
-        return this.login.execute(dto);
+    public async signIn(@Body() dto: UserLoginPayloadDto, @Req() req: Request) {
+        return this.login.execute(dto, buildSessionContext(req));
     };
+
+
+    @Public()
+    @Post("refresh")
+    @ResponseMessage("Sesión renovada exitosamente.")
+    public async renew(@Body() dto: RefreshTokenPayloadDto, @Req() req: Request) {
+        const tokens = await this.refresh.execute(dto.refreshToken, buildSessionContext(req));
+
+        return toAuthTokensResponse(tokens);
+    }
 
 
     /**
      * Todavía sin implementar. Devuelve lo que recibe para dejar la ruta en pie
      * mientras se define cómo se manejan las sesiones.
      */
+    @Public()
     @Post("logout")
     @ResponseMessage("La sesión se ha cerrado exitosamente")
-    public async signOut(@Body() username: string) {
-        return username;
+    public async signOut(@Body() dto: RefreshTokenPayloadDto): Promise<void> {
+        await this.logout.execute(dto.refreshToken);
     }
 }

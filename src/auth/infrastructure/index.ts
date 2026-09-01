@@ -1,7 +1,17 @@
-// Implementaciones concretas que el módulo enchufa a los puertos, más el controlador.
-
+export * from './decorators/current-user.decorator';
+export * from './decorators/public.decorator';
+export * from './guards/jwt-auth.guard';
+export * from './guards/tenant-scope.guard';
 export * from './http/auth.controller';
+export * from './http/session-context.factory';
 export * from './security/argon2-password-verifier';
+export * from './security/jwt-token.issuer';
+export * from './security/sha256-refresh-token.generator';
+export * from './types/authenticated-user';
+export * from './http/dto/refresh-token.dto';
 export * from './http/dto/user-payload.dto';
 export * from './persistence/adapters/auth-user-finder.adapter';
 export * from './persistence/adapters/tenant-resolver.adapter';
+export * from './persistence/mappers/session.persistence-mapper';
+export * from './persistence/repositories/session.repository';
+export * from './persistence/models/session.model';

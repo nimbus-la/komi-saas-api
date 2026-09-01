@@ -19,4 +19,6 @@ export abstract class AuthUserFinder {
         tenantId: string,
         userName: string
     ): Promise<AuthUserCredentials | null>;
+
+    abstract findByUserId(tenantId: string, userId: string): Promise<AuthUserCredentials | null>;
 }

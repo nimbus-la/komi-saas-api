@@ -17,6 +17,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
 
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Los datos enviados no son válidos.' },
+    '1001': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'Necesitas iniciar sesión para hacer esto.' },
     '1002': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El costo ingresado no es válido.' },
     '1004': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La operación monetaria no es válida.' },
     '1005': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del tenant no es válido.' },
@@ -50,7 +51,17 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1100': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'Las credenciales proporcionadas no son válidas.' },
     '1101': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La cuenta se encuentra inactiva. Ponte en contacto con un administrador.' },
     '1102': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'El negocio se encuentra inactivo. Ponte en contacto con un administrador.' },
-    '1103': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El negocio indicado no existe.' },
+
+    // Sesión / refresh token. Los tres comparten mensaje a propósito: en los tres
+    // casos lo único que puede hacer el cliente es volver al login, y distinguirlos
+    // hacia afuera solo le diría a un atacante qué tan cerca estuvo.
+    '1104': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La sesión no es válida. Vuelve a iniciar sesión.' },
+    '1105': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La sesión no es válida. Vuelve a iniciar sesión.' },
+    '1106': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La sesión no es válida. Vuelve a iniciar sesión.' },
+
+    // Autenticado, pero apuntando a otro negocio. No es 401: volver al login no
+    // arreglaría nada.
+    '1107': { status: ResponseStatus.Error, category: ErrorCategory.Forbidden, message: 'No tienes acceso a los datos de este negocio.' },
 
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El slug del tenant ya se encuentra registrado.' },

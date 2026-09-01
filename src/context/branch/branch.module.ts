@@ -4,7 +4,7 @@ import { BranchEntity } from "./infrastructure/persistence/models/branch.entity"
 import { BranchController } from "./infrastructure/http/branch.controller";
 import { BranchRepository } from "./domain";
 import { BranchService } from "./infrastructure/persistence/repositories/branch.repository";
-import { CreateBranchUseCase, DeleteBranchUseCase, SearchAllBranchUseCase, SearchBranchesByTenantUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "./application";
+import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesByTenantUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "./application";
 import { TenantModule } from "../tenants/tenant.module";
 import { TenantRepository } from "../tenants/domain";
 
@@ -46,13 +46,6 @@ import { TenantRepository } from "../tenants/domain";
             provide: SearchBranchUseCase,
             useFactory: (repository: BranchRepository) =>
                 new SearchBranchUseCase(repository),
-            inject: [BranchRepository],
-        },
-
-        {
-            provide: SearchAllBranchUseCase,
-            useFactory: (repository: BranchRepository) =>
-                new SearchAllBranchUseCase(repository),
             inject: [BranchRepository],
         },
 

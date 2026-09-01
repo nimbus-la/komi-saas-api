@@ -5,9 +5,11 @@ export class SearchBranchUseCase {
         private readonly repository: BranchRepository
     ) {}
 
-    public async execute(id: string) {
+    /** El negocio llega del token, no de la petición: una sucursal ajena no existe. */
+    public async execute(id: string, tenantId: string) {
         return await this.repository.searchById(
-            BranchId.create(id)
+            BranchId.create(id),
+            tenantId
         )
     }
 }

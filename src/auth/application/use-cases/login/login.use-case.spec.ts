@@ -1,11 +1,11 @@
 import {
-    AuthTenantNotFoundException,
     InactiveAccountException,
     InactiveTenantException,
     InvalidCredentialsException,
 } from '../../../domain';
 
-import { AuthUserCredentials, LoginParams, ResolvedTenant } from '../../dtos';
+import { AuthUserCredentials, LoginParams, ResolvedTenant, SessionContext } from '../../dtos';
+import { SessionIssuer } from '../../services/session-issuer';
 import { LoginUseCase } from './login.use-case';
 
 
@@ -45,7 +45,7 @@ const activeUser: AuthUserCredentials = {
     userId: '3f1c9b6e-5a72-4d18-8c04-2b9e7a1d6f30',
     tenantId: activeTenant.id,
     branchId: 'b7a2c4d8-9e13-4f56-a0b1-2c3d4e5f6a7b',
-    rolId: '11111111-2222-3333-4444-555555555555',
+    rolName: 'Cajero',
     rolScope: 'BRANCH',
     userName: 'jperez',
     firstName: 'Juan',
@@ -72,6 +72,29 @@ const validParams: LoginParams = {
 };
 
 
+/** De dónde llegó la petición. El caso de uso solo lo copia a la sesión. */
+const context: SessionContext = {
+    ipAddress: '190.24.10.7',
+    userAgent: 'Mozilla/5.0 (prueba)',
+};
+
+
+/** Días que vive el refresh en los tests. No es el valor real, es uno redondo. */
+const REFRESH_TTL_DAYS = 7;
+
+/** Lo que devuelve el generador de refresh, fijo para poder afirmar sobre él. */
+const GENERATED_REFRESH = {
+    plain: 'refresh-en-claro',
+    hash: 'refresh-hasheado',
+};
+
+/** Lo que devuelve el emisor de JWT, también fijo. */
+const ISSUED_ACCESS = {
+    accessToken: 'access-token-firmado',
+    expiresAt: new Date('2026-01-01T00:15:00.000Z'),
+};
+
+
 /** El caso de uso junto a sus mocks, para poder espiarlos desde el test. */
 interface Harness {
     useCase: LoginUseCase;
@@ -79,10 +102,13 @@ interface Harness {
     findByUserName: jest.Mock;
     verify: jest.Mock;
     verifyAgainstDummy: jest.Mock;
+    save: jest.Mock;
+    issue: jest.Mock;
+    generate: jest.Mock;
 }
 
 /**
- * Arma el caso de uso con los tres puertos falseados. Por defecto todo sale bien,
+ * Arma el caso de uso con todos sus puertos falseados. Por defecto todo sale bien,
  * así cada test solo tiene que romper la pieza que le interesa.
  */
 const buildHarness = (options: {
@@ -97,17 +123,39 @@ const buildHarness = (options: {
     const passwordMatches = options.passwordMatches ?? true;
 
     const findBySlug = jest.fn().mockResolvedValue(tenant);
+    const findTenantById = jest.fn().mockResolvedValue(tenant);
     const findByUserName = jest.fn().mockResolvedValue(user);
+    const findByUserId = jest.fn().mockResolvedValue(user);
     const verify = jest.fn().mockResolvedValue(passwordMatches);
     const verifyAgainstDummy = jest.fn().mockResolvedValue(undefined);
 
-    const useCase = new LoginUseCase(
-        { findBySlug },
-        { findByUserName },
-        { verify, verifyAgainstDummy },
+    const save = jest.fn().mockResolvedValue(undefined);
+    const findByRefreshTokenHash = jest.fn().mockResolvedValue(null);
+    const revokeAllByUser = jest.fn().mockResolvedValue(undefined);
+    const rotate = jest.fn().mockResolvedValue(true);
+
+    const issue = jest.fn().mockResolvedValue(ISSUED_ACCESS);
+    const generate = jest.fn().mockReturnValue(GENERATED_REFRESH);
+    const hash = jest.fn().mockReturnValue(GENERATED_REFRESH.hash);
+
+    // El emisor de sesiones va de verdad, no falseado: lo que se quiere seguir
+    // vigilando es qué le pide el login a los puertos de abajo, y esos sí son
+    // dobles. Falsear el emisor escondería justo eso.
+    const sessionIssuer = new SessionIssuer(
+        { create: save, update: jest.fn(), findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate },
+        { issue },
+        { generate, hash },
+        REFRESH_TTL_DAYS,
     );
 
-    return { useCase, findBySlug, findByUserName, verify, verifyAgainstDummy };
+    const useCase = new LoginUseCase(
+        { findBySlug, findById: findTenantById },
+        { findByUserName, findByUserId },
+        { verify, verifyAgainstDummy },
+        sessionIssuer,
+    );
+
+    return { useCase, findBySlug, findByUserName, verify, verifyAgainstDummy, save, issue, generate };
 };
 
 
@@ -120,18 +168,34 @@ describe('LoginUseCase', () => {
         it('normaliza el slug (trim + minúsculas) antes de resolverlo', async () => {
             const { useCase, findBySlug } = buildHarness();
 
-            await useCase.execute({ ...validParams, tenantSlug: '  PanaderiA-Komi  ' });
+            await useCase.execute({ ...validParams, tenantSlug: '  PanaderiA-Komi  ' }, context);
 
             expect(findBySlug).toHaveBeenCalledWith('panaderia-komi');
         });
 
 
-        it('lanza AuthTenantNotFoundException cuando el negocio no existe', async () => {
+        /**
+         * Un negocio que no existe responde igual que una contraseña incorrecta.
+         * Si dijera "ese negocio no existe", probar slugs uno por uno serviría
+         * para averiguar qué empresas están dadas de alta en la plataforma.
+         */
+        it('lanza InvalidCredentialsException cuando el negocio no existe', async () => {
             const { useCase } = buildHarness({ tenant: null });
 
-            await expect(useCase.execute(validParams)).rejects.toBeInstanceOf(
-                AuthTenantNotFoundException,
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
+                InvalidCredentialsException,
             );
+        });
+
+
+        // Responder igual no basta si se responde mucho más rápido: el cronómetro
+        // sería el mismo oráculo. Por eso también quema el tiempo del hash dummy.
+        it('quema tiempo contra el hash dummy cuando el negocio no existe', async () => {
+            const { useCase, verifyAgainstDummy } = buildHarness({ tenant: null });
+
+            await expect(useCase.execute(validParams, context)).rejects.toThrow();
+
+            expect(verifyAgainstDummy).toHaveBeenCalledWith(validParams.password);
         });
 
 
@@ -140,29 +204,61 @@ describe('LoginUseCase', () => {
         it('no busca al usuario cuando el negocio no existe', async () => {
             const { useCase, findByUserName } = buildHarness({ tenant: null });
 
-            await expect(useCase.execute(validParams)).rejects.toThrow();
+            await expect(useCase.execute(validParams, context)).rejects.toThrow();
 
             expect(findByUserName).not.toHaveBeenCalled();
         });
 
 
+        // Al dueño de las credenciales sí se le dice qué pasa: ya demostró quién es.
         it('lanza InactiveTenantException cuando el negocio está inactivo', async () => {
             const { useCase } = buildHarness({ tenant: tenantWith({ isActive: false }) });
 
-            await expect(useCase.execute(validParams)).rejects.toBeInstanceOf(
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
                 InactiveTenantException,
             );
         });
 
 
-        it('no busca al usuario cuando el negocio está inactivo', async () => {
-            const { useCase, findByUserName } = buildHarness({
+        /**
+         * Mismo criterio que con la cuenta inactiva: el estado del negocio solo se
+         * cuenta después de probar la contraseña. Con credenciales que no son
+         * suyas, el intento tiene que verse como cualquier otro fallido.
+         */
+        it('no revela que el negocio está inactivo cuando la contraseña es incorrecta', async () => {
+            const { useCase } = buildHarness({
                 tenant: tenantWith({ isActive: false }),
+                passwordMatches: false,
             });
 
-            await expect(useCase.execute(validParams)).rejects.toThrow();
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
+                InvalidCredentialsException,
+            );
+        });
 
-            expect(findByUserName).not.toHaveBeenCalled();
+
+        // Que verify se haya llamado prueba que el chequeo del negocio quedó
+        // después y no antes, que es donde no debe estar.
+        it('verifica la contraseña antes de mirar el estado del negocio', async () => {
+            const { useCase, verify } = buildHarness({ tenant: tenantWith({ isActive: false }) });
+
+            await expect(useCase.execute(validParams, context)).rejects.toThrow(InactiveTenantException);
+
+            expect(verify).toHaveBeenCalledTimes(1);
+        });
+
+
+        // Si los dos están de baja manda el del negocio: sin negocio no hay cuenta
+        // que valga.
+        it('el negocio inactivo manda sobre la cuenta inactiva', async () => {
+            const { useCase } = buildHarness({
+                tenant: tenantWith({ isActive: false }),
+                user: userWith({ isActive: false }),
+            });
+
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
+                InactiveTenantException,
+            );
         });
     });
 
@@ -177,7 +273,7 @@ describe('LoginUseCase', () => {
         it('busca al usuario con el id del negocio resuelto, no con el slug', async () => {
             const { useCase, findByUserName } = buildHarness();
 
-            await useCase.execute(validParams);
+            await useCase.execute(validParams, context);
 
             expect(findByUserName).toHaveBeenCalledWith(activeTenant.id, activeUser.userName);
         });
@@ -186,7 +282,7 @@ describe('LoginUseCase', () => {
         it('hace trim al username antes de buscarlo', async () => {
             const { useCase, findByUserName } = buildHarness();
 
-            await useCase.execute({ ...validParams, username: '   jperez   ' });
+            await useCase.execute({ ...validParams, username: '   jperez   ' }, context);
 
             expect(findByUserName).toHaveBeenCalledWith(activeTenant.id, 'jperez');
         });
@@ -197,7 +293,7 @@ describe('LoginUseCase', () => {
         it('conserva las mayúsculas del username: la búsqueda es sensible a caso', async () => {
             const { useCase, findByUserName } = buildHarness();
 
-            await useCase.execute({ ...validParams, username: 'JPerez' });
+            await useCase.execute({ ...validParams, username: 'JPerez' }, context);
 
             expect(findByUserName).toHaveBeenCalledWith(activeTenant.id, 'JPerez');
         });
@@ -207,7 +303,7 @@ describe('LoginUseCase', () => {
         it('lanza InvalidCredentialsException cuando el usuario no existe', async () => {
             const { useCase } = buildHarness({ user: null });
 
-            await expect(useCase.execute(validParams)).rejects.toBeInstanceOf(
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
                 InvalidCredentialsException,
             );
         });
@@ -218,7 +314,7 @@ describe('LoginUseCase', () => {
         it('quema tiempo contra el hash dummy cuando el usuario no existe', async () => {
             const { useCase, verifyAgainstDummy } = buildHarness({ user: null });
 
-            await expect(useCase.execute(validParams)).rejects.toThrow();
+            await expect(useCase.execute(validParams, context)).rejects.toThrow();
 
             expect(verifyAgainstDummy).toHaveBeenCalledWith(validParams.password);
         });
@@ -227,7 +323,7 @@ describe('LoginUseCase', () => {
         it('no verifica contra un hash real cuando el usuario no existe', async () => {
             const { useCase, verify } = buildHarness({ user: null });
 
-            await expect(useCase.execute(validParams)).rejects.toThrow();
+            await expect(useCase.execute(validParams, context)).rejects.toThrow();
 
             expect(verify).not.toHaveBeenCalled();
         });
@@ -239,7 +335,7 @@ describe('LoginUseCase', () => {
         it('verifica la contraseña plana contra el hash almacenado', async () => {
             const { useCase, verify } = buildHarness();
 
-            await useCase.execute(validParams);
+            await useCase.execute(validParams, context);
 
             expect(verify).toHaveBeenCalledWith(validParams.password, activeUser.passwordHash);
         });
@@ -250,7 +346,7 @@ describe('LoginUseCase', () => {
         it('no hace trim a la contraseña', async () => {
             const { useCase, verify } = buildHarness();
 
-            await useCase.execute({ ...validParams, password: '  con espacios  ' });
+            await useCase.execute({ ...validParams, password: '  con espacios  ' }, context);
 
             expect(verify).toHaveBeenCalledWith('  con espacios  ', activeUser.passwordHash);
         });
@@ -259,7 +355,7 @@ describe('LoginUseCase', () => {
         it('lanza InvalidCredentialsException cuando la contraseña no coincide', async () => {
             const { useCase } = buildHarness({ passwordMatches: false });
 
-            await expect(useCase.execute(validParams)).rejects.toBeInstanceOf(
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
                 InvalidCredentialsException,
             );
         });
@@ -270,7 +366,7 @@ describe('LoginUseCase', () => {
         it('no llama al hash dummy cuando el usuario sí existe', async () => {
             const { useCase, verifyAgainstDummy } = buildHarness({ passwordMatches: false });
 
-            await expect(useCase.execute(validParams)).rejects.toThrow();
+            await expect(useCase.execute(validParams, context)).rejects.toThrow();
 
             expect(verifyAgainstDummy).not.toHaveBeenCalled();
         });
@@ -286,7 +382,7 @@ describe('LoginUseCase', () => {
         it('lanza InactiveAccountException si las credenciales son válidas pero la cuenta está inactiva', async () => {
             const { useCase } = buildHarness({ user: userWith({ isActive: false }) });
 
-            await expect(useCase.execute(validParams)).rejects.toBeInstanceOf(
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
                 InactiveAccountException,
             );
         });
@@ -301,7 +397,7 @@ describe('LoginUseCase', () => {
                 passwordMatches: false,
             });
 
-            await expect(useCase.execute(validParams)).rejects.toBeInstanceOf(
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
                 InvalidCredentialsException,
             );
         });
@@ -312,7 +408,7 @@ describe('LoginUseCase', () => {
         it('verifica la contraseña antes de mirar el estado de la cuenta', async () => {
             const { useCase, verify } = buildHarness({ user: userWith({ isActive: false }) });
 
-            await expect(useCase.execute(validParams)).rejects.toThrow(InactiveAccountException);
+            await expect(useCase.execute(validParams, context)).rejects.toThrow(InactiveAccountException);
 
             expect(verify).toHaveBeenCalledTimes(1);
         });
@@ -330,15 +426,19 @@ describe('LoginUseCase', () => {
         it('devuelve el usuario mapeado junto a los campos de sesión', async () => {
             const { useCase } = buildHarness();
 
-            const result = await useCase.execute(validParams);
+            const result = await useCase.execute(validParams, context);
 
             expect(result).toEqual({
-                sessionToken: '',
+                sessionToken: ISSUED_ACCESS.accessToken,
+                expiredAt: ISSUED_ACCESS.expiresAt.toISOString(),
+                refreshToken: GENERATED_REFRESH.plain,
+                refreshExpiresAt: expect.any(String),
                 lastLogin: '',
                 user: {
                     userId: activeUser.userId,
                     tenantId: activeUser.tenantId,
                     branchId: activeUser.branchId,
+                    rolName: activeUser.rolName,
                     rolScope: activeUser.rolScope,
                     userName: activeUser.userName,
                     firstName: activeUser.firstName,
@@ -351,25 +451,137 @@ describe('LoginUseCase', () => {
         });
 
 
+        // Sale el refresh EN CLARO, nunca su hash: el hash es lo único que se
+        // guarda, y confundirlos dejaría en la base un token utilizable.
+        it('devuelve el refresh en claro y guarda solo su hash', async () => {
+            const { useCase, save } = buildHarness();
+
+            const result = await useCase.execute(validParams, context);
+
+            expect(result.refreshToken).toBe(GENERATED_REFRESH.plain);
+            expect(save.mock.calls[0]?.[0].toPrimitives().refreshTokenHash)
+                .toBe(GENERATED_REFRESH.hash);
+        });
+
+
+        // El TTL se lee en DÍAS. Este test es el que atrapa que alguien vuelva a
+        // multiplicar por 1000 en vez de por un día entero.
+        it('calcula la expiración del refresh en días, no en segundos', async () => {
+            const { useCase } = buildHarness();
+
+            const antes = Date.now();
+            const result = await useCase.execute(validParams, context);
+
+            const vividos = new Date(result.refreshExpiresAt).getTime() - antes;
+            const sieteDias = REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+            // El caso de uso mira el reloj DESPUÉS que el test, así que la vigencia
+            // medida nunca es menor a la esperada; el margen cubre lo que tarde en
+            // llegar hasta ahí. Con el bug de los segundos daba ~7000 ms y no 7 días.
+            expect(vividos).toBeGreaterThanOrEqual(sieteDias);
+            expect(vividos).toBeLessThan(sieteDias + 5000);
+        });
+
+
+        // El jti del access token es el id de la sesión recién guardada. Si se
+        // separan, revocar la sesión deja de tener efecto sobre el token.
+        it('firma el access token con el id de la sesión que acaba de guardar', async () => {
+            const { useCase, save, issue } = buildHarness();
+
+            await useCase.execute(validParams, context);
+
+            const guardada = save.mock.calls[0]?.[0].getID().value;
+
+            expect(issue).toHaveBeenCalledWith({
+                userId: activeUser.userId,
+                tenantId: activeUser.tenantId,
+                branchId: activeUser.branchId,
+                rolScope: activeUser.rolScope,
+                sessionId: guardada,
+            });
+        });
+
+
+        // La sesión tiene que quedar guardada ANTES de emitir el token: al revés,
+        // un fallo al guardar dejaría circulando un access token sin sesión detrás.
+        it('guarda la sesión antes de emitir el access token', async () => {
+            const { useCase, save, issue } = buildHarness();
+
+            await useCase.execute(validParams, context);
+
+            expect(save.mock.invocationCallOrder[0])
+                .toBeLessThan(issue.mock.invocationCallOrder[0]!);
+        });
+
+
+        it('registra en la sesión la IP y el user agent de la petición', async () => {
+            const { useCase, save } = buildHarness();
+
+            await useCase.execute(validParams, context);
+
+            const guardada = save.mock.calls[0]?.[0].toPrimitives();
+
+            expect(guardada.ipAddress).toBe(context.ipAddress);
+            expect(guardada.userAgent).toBe(context.userAgent);
+            expect(guardada.userId).toBe(activeUser.userId);
+            expect(guardada.tenantId).toBe(activeUser.tenantId);
+        });
+
+
+        // Una sesión nace viva. Que arranque revocada o con motivo no sería un
+        // detalle cosmético: el refresh la leería como reúso.
+        it('crea la sesión sin revocar', async () => {
+            const { useCase, save } = buildHarness();
+
+            await useCase.execute(validParams, context);
+
+            const guardada = save.mock.calls[0]?.[0].toPrimitives();
+
+            expect(guardada.revokedAt).toBeNull();
+            expect(guardada.revocationReason).toBeNull();
+            expect(guardada.replacedBySessionId).toBeNull();
+        });
+
+
+        // Ninguna credencial fallida debe dejar rastro de sesión ni token emitido.
+        it.each([
+            ['el negocio no existe', { tenant: null }],
+            ['el negocio está inactivo', { tenant: tenantWith({ isActive: false }) }],
+            ['el usuario no existe', { user: null }],
+            ['la contraseña no coincide', { passwordMatches: false }],
+            ['la cuenta está inactiva', { user: userWith({ isActive: false }) }],
+        ])('no crea sesión ni emite token cuando %s', async (_caso, options) => {
+            const { useCase, save, issue, generate } = buildHarness(options);
+
+            await expect(useCase.execute(validParams, context)).rejects.toThrow();
+
+            expect(save).not.toHaveBeenCalled();
+            expect(issue).not.toHaveBeenCalled();
+            expect(generate).not.toHaveBeenCalled();
+        });
+
+
         // Se revisa el JSON entero y no solo user, por si el hash termina colgado
         // en cualquier otro rincón de la respuesta.
         it('nunca expone el hash de la contraseña', async () => {
             const { useCase } = buildHarness();
 
-            const result = await useCase.execute(validParams);
+            const result = await useCase.execute(validParams, context);
 
             expect(JSON.stringify(result)).not.toContain(activeUser.passwordHash);
             expect(result.user).not.toHaveProperty('passwordHash');
         });
 
 
-        it('no expone el rolId ni el flag isActive', async () => {
+        // El mapper copia campo a campo: del rol sale el nombre y el alcance, que
+        // el front usa para pintar el menú, pero nunca el flag interno de estado.
+        it('no expone el flag isActive ni el hash', async () => {
             const { useCase } = buildHarness();
 
-            const result = await useCase.execute(validParams);
+            const result = await useCase.execute(validParams, context);
 
-            expect(result.user).not.toHaveProperty('rolId');
             expect(result.user).not.toHaveProperty('isActive');
+            expect(result.user).not.toHaveProperty('passwordHash');
         });
 
 
@@ -380,7 +592,7 @@ describe('LoginUseCase', () => {
                 user: userWith({ branchId: null, secondName: null, secondLastName: null }),
             });
 
-            const result = await useCase.execute(validParams);
+            const result = await useCase.execute(validParams, context);
 
             expect(result.user.branchId).toBeNull();
             expect(result.user.secondName).toBeNull();
