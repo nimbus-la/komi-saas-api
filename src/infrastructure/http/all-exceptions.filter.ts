@@ -25,7 +25,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
         [ErrorCategory.Conflict]: HttpStatus.CONFLICT,
         [ErrorCategory.Unauthorized]: HttpStatus.UNAUTHORIZED,
         [ErrorCategory.Forbidden]: HttpStatus.FORBIDDEN,
+        [ErrorCategory.TooManyRequests]: HttpStatus.TOO_MANY_REQUESTS,
         [ErrorCategory.Unavailable]: HttpStatus.SERVICE_UNAVAILABLE,
+    };
+
+
+    /**
+     * Qué entrada del catálogo le corresponde a un rechazo del framework.
+     *
+     * Sin esto todos caían en 1000, así que a quien se quedaba sin token o se
+     * pasaba de intentos se le respondía "los datos enviados no son válidos", que
+     * no describe ninguno de los dos casos ni le dice qué hacer.
+     */
+    private static readonly HTTP_TO_CODE: Partial<Record<number, string>> = {
+        [HttpStatus.UNAUTHORIZED]: '1001',
+        [HttpStatus.TOO_MANY_REQUESTS]: '1003',
     };
 
 
@@ -99,7 +113,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
         if (exception instanceof HttpException) {
             const httpStatus = exception.getStatus();
-            const entry = this.resolveEntry(RESPONSE_CODE.VALIDATION_ERROR);
+            const code = AllExceptionsFilter.HTTP_TO_CODE[httpStatus] ?? RESPONSE_CODE.VALIDATION_ERROR;
+            const entry = this.resolveEntry(code);
             const header = `[${traceId}] [HTTP ${httpStatus}] ${origin}`;
 
             if (httpStatus >= HttpStatus.INTERNAL_SERVER_ERROR) {
@@ -115,7 +130,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
             return {
                 status: entry.status,
-                code: RESPONSE_CODE.VALIDATION_ERROR,
+                code,
                 httpStatus,
                 message: entry.message,
                 content: null,

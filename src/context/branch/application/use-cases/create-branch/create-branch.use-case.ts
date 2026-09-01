@@ -19,7 +19,7 @@ export class CreateBranchUseCase {
 
         const name = BranchName.create(params.name);
 
-        if (await this.repository.existsByName(name)) {
+        if (await this.repository.existsByName(name, params.tenantId)) {
             throw new BranchNameAlreadyExistsException(name.value);
         }
 

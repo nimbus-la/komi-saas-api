@@ -1,10 +1,17 @@
 import { DomainException } from "@/shared";
 
-/** Se lanza cuando la sucursal no existe. Código 1330. */
+/**
+ * Se lanza cuando la sucursal no existe. Código 1207.
+ *
+ * Antes usaba el 1330, que en el catálogo es "Debe especificar una sucursal para
+ * esta operación" y sale como 409: ni describía el problema ni daba el estado
+ * correcto. También cubre el caso de la sucursal que existe pero es de otro
+ * negocio, y ahí decir "no existe" es justo lo que hay que decir.
+ */
 export class BranchNotFoundException extends DomainException {
     constructor(branchId: string) {
         super({
-            code: '1330',
+            code: '1207',
             detail: `La sucursal ${branchId} no existe o no está disponible.`
         });
     };

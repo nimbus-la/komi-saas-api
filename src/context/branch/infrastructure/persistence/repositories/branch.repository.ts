@@ -34,10 +34,11 @@ export class BranchService implements BranchRepository {
         await this.branchRepository.save(row);
     }
 
-    public async searchById(id: BranchId): Promise<BranchResponse | null> {
+    public async searchById(id: BranchId, tenantId: string): Promise<BranchResponse | null> {
         const row = await this.branchRepository.findOne({
             where: {
                 id: id.value,
+                tenantId,
             },
         });
 
@@ -60,12 +61,14 @@ export class BranchService implements BranchRepository {
     }
 
     public async searchAggregateById(
-        id: BranchId
+        id: BranchId,
+        tenantId: string
     ): Promise<BranchAggregate | null> {
 
         const row = await this.branchRepository.findOne({
             where: {
                 id: id.value,
+                tenantId,
             },
         });
 
@@ -87,10 +90,11 @@ export class BranchService implements BranchRepository {
         });
     }
 
-    public async existsByName(name: BranchName): Promise<boolean> {
+    public async existsByName(name: BranchName, tenantId: string): Promise<boolean> {
         const count = await this.branchRepository
             .createQueryBuilder("branch")
             .where("branch.name ILIKE :name", { name: name.value })
+            .andWhere("branch.tenantId = :tenantId", { tenantId })
             .getCount();
 
         return count > 0;
@@ -108,18 +112,11 @@ export class BranchService implements BranchRepository {
         return count > 0;
     }
 
-    public async searchAll(): Promise<BranchResponse[]> {
-
-        const rows = await this.branchRepository.find();
-
-        return rows.map((row) => BranchMapper.toResponse(row));
-    }
-
     public async update(branch: BranchAggregate): Promise<void> {
         const primitives = branch.toPrimitives();
 
         await this.branchRepository.update(
-            { id: primitives.id },
+            { id: primitives.id, tenantId: primitives.tenantId },
             {
                 name: primitives.name,
                 address: primitives.address,

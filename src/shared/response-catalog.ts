@@ -17,6 +17,8 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
 
     // 1xxx — validación / reglas de dominio
     '1000': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Los datos enviados no son válidos.' },
+    '1001': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'Necesitas iniciar sesión para hacer esto.' },
+    '1003': { status: ResponseStatus.Error, category: ErrorCategory.TooManyRequests, message: 'Demasiados intentos. Espera un momento antes de volver a intentarlo.' },
     '1002': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El costo ingresado no es válido.' },
     '1004': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La operación monetaria no es válida.' },
     '1005': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del tenant no es válido.' },
