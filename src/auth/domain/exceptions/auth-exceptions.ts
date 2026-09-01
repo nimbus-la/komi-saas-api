@@ -55,21 +55,6 @@ export class InactiveTenantException extends DomainException {
 
 
 /**
- * No hay ningún negocio con ese slug. También cubre el caso del slug mal escrito,
- * porque el resolutor devuelve lo mismo para ambos.
- */
-export class AuthTenantNotFoundException extends DomainException {
-    constructor(tenantSlug: string) {
-        super({
-            code: "1103",
-            detail: `No existe un negocio con el slug '${tenantSlug}'`
-        });
-    }
-}
-
-
-
-/**
  * La petición viene firmada por un negocio pero apunta a otro. El token es
  * válido, así que no es un 401: es alguien autenticado tocando donde no le
  * corresponde, y eso merece quedar registrado con los dos identificadores.

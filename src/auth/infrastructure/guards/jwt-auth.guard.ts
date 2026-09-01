@@ -2,6 +2,8 @@ import { Reflector } from "@nestjs/core";
 import { JwtService, TokenExpiredError } from "@nestjs/jwt";
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 
+import { JWT_ALGORITHM, JWT_AUDIENCE, JWT_ISSUER } from "@/utils";
+
 import { SessionRepository, SessionRevocationReason } from "../../domain";
 import { AccessTokenPayload, AuthenticatedUser, RequestWithUser } from "../types";
 import { IS_PUBLIC_KEY } from "../decorators";
@@ -98,7 +100,20 @@ export class JwtAuthGuard implements CanActivate {
         let payload: AccessTokenPayload;
 
         try {
-            payload = await this.jwtService.verifyAsync<AccessTokenPayload>(token);
+            /**
+             * Los tres van explícitos, y los tres importan:
+             *
+             * - `algorithms` cierra la lista a HS256 en vez de aceptar la que traiga
+             *   por defecto la librería.
+             * - `issuer` y `audience` obligan a que el token lo hayamos emitido
+             *   nosotros y para esta aplicación, así que uno firmado por otro
+             *   sistema no entra ni compartiendo el secreto por accidente.
+             */
+            payload = await this.jwtService.verifyAsync<AccessTokenPayload>(token, {
+                algorithms: [JWT_ALGORITHM],
+                issuer: JWT_ISSUER,
+                audience: JWT_AUDIENCE,
+            });
         } catch (error: unknown) {
             throw error instanceof TokenExpiredError
                 ? new UnauthorizedException('El token de acceso expiró')

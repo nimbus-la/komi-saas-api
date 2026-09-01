@@ -1,5 +1,4 @@
 import {
-    AuthTenantNotFoundException,
     InactiveAccountException,
     InactiveTenantException,
     InvalidCredentialsException,
@@ -143,7 +142,7 @@ const buildHarness = (options: {
     // vigilando es qué le pide el login a los puertos de abajo, y esos sí son
     // dobles. Falsear el emisor escondería justo eso.
     const sessionIssuer = new SessionIssuer(
-        { save, findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate },
+        { create: save, update: jest.fn(), findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate },
         { issue },
         { generate, hash },
         REFRESH_TTL_DAYS,
@@ -175,12 +174,28 @@ describe('LoginUseCase', () => {
         });
 
 
-        it('lanza AuthTenantNotFoundException cuando el negocio no existe', async () => {
+        /**
+         * Un negocio que no existe responde igual que una contraseña incorrecta.
+         * Si dijera "ese negocio no existe", probar slugs uno por uno serviría
+         * para averiguar qué empresas están dadas de alta en la plataforma.
+         */
+        it('lanza InvalidCredentialsException cuando el negocio no existe', async () => {
             const { useCase } = buildHarness({ tenant: null });
 
             await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
-                AuthTenantNotFoundException,
+                InvalidCredentialsException,
             );
+        });
+
+
+        // Responder igual no basta si se responde mucho más rápido: el cronómetro
+        // sería el mismo oráculo. Por eso también quema el tiempo del hash dummy.
+        it('quema tiempo contra el hash dummy cuando el negocio no existe', async () => {
+            const { useCase, verifyAgainstDummy } = buildHarness({ tenant: null });
+
+            await expect(useCase.execute(validParams, context)).rejects.toThrow();
+
+            expect(verifyAgainstDummy).toHaveBeenCalledWith(validParams.password);
         });
 
 
@@ -195,6 +210,7 @@ describe('LoginUseCase', () => {
         });
 
 
+        // Al dueño de las credenciales sí se le dice qué pasa: ya demostró quién es.
         it('lanza InactiveTenantException cuando el negocio está inactivo', async () => {
             const { useCase } = buildHarness({ tenant: tenantWith({ isActive: false }) });
 
@@ -204,14 +220,45 @@ describe('LoginUseCase', () => {
         });
 
 
-        it('no busca al usuario cuando el negocio está inactivo', async () => {
-            const { useCase, findByUserName } = buildHarness({
+        /**
+         * Mismo criterio que con la cuenta inactiva: el estado del negocio solo se
+         * cuenta después de probar la contraseña. Con credenciales que no son
+         * suyas, el intento tiene que verse como cualquier otro fallido.
+         */
+        it('no revela que el negocio está inactivo cuando la contraseña es incorrecta', async () => {
+            const { useCase } = buildHarness({
                 tenant: tenantWith({ isActive: false }),
+                passwordMatches: false,
             });
 
-            await expect(useCase.execute(validParams, context)).rejects.toThrow();
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
+                InvalidCredentialsException,
+            );
+        });
 
-            expect(findByUserName).not.toHaveBeenCalled();
+
+        // Que verify se haya llamado prueba que el chequeo del negocio quedó
+        // después y no antes, que es donde no debe estar.
+        it('verifica la contraseña antes de mirar el estado del negocio', async () => {
+            const { useCase, verify } = buildHarness({ tenant: tenantWith({ isActive: false }) });
+
+            await expect(useCase.execute(validParams, context)).rejects.toThrow(InactiveTenantException);
+
+            expect(verify).toHaveBeenCalledTimes(1);
+        });
+
+
+        // Si los dos están de baja manda el del negocio: sin negocio no hay cuenta
+        // que valga.
+        it('el negocio inactivo manda sobre la cuenta inactiva', async () => {
+            const { useCase } = buildHarness({
+                tenant: tenantWith({ isActive: false }),
+                user: userWith({ isActive: false }),
+            });
+
+            await expect(useCase.execute(validParams, context)).rejects.toBeInstanceOf(
+                InactiveTenantException,
+            );
         });
     });
 

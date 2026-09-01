@@ -17,6 +17,6 @@ export class LogoutUseCase {
 
         session.revoke(SessionRevocationReason.Logout);
 
-        await this.sessions.save(session);
+        await this.sessions.update(session);
     }
 }

@@ -51,7 +51,6 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1100': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'Las credenciales proporcionadas no son válidas.' },
     '1101': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'La cuenta se encuentra inactiva. Ponte en contacto con un administrador.' },
     '1102': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'El negocio se encuentra inactivo. Ponte en contacto con un administrador.' },
-    '1103': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El negocio indicado no existe.' },
 
     // Sesión / refresh token. Los tres comparten mensaje a propósito: en los tres
     // casos lo único que puede hacer el cliente es volver al login, y distinguirlos

@@ -16,8 +16,15 @@ export class TypeOrmSessionRepository implements SessionRepository {
     ) { }
 
 
-    public async save(session: Session): Promise<void> {
-        await this.sessions.save(SessionPersistenceMapper.toPersistence(session));
+    public async create(session: Session): Promise<void> {
+        await this.sessions.insert(SessionPersistenceMapper.toPersistence(session));
+    }
+
+
+    public async update(session: Session): Promise<void> {
+        const { id, ...cambios } = SessionPersistenceMapper.toPersistence(session);
+
+        await this.sessions.update({ id }, cambios);
     }
 
 

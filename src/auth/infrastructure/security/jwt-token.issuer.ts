@@ -4,6 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 
 import { IssuedToken, SessionClaims, TokenIssuer } from "../../application";
 import { JwtConfig } from "@/interfaces";
+import { JWT_AUDIENCE, JWT_ISSUER } from "@/utils";
 
 
 @Injectable()
@@ -11,9 +12,12 @@ export class JwtTokenIssuer implements TokenIssuer {
     private readonly accessTtlSeconds: number;
 
 
+    // El ConfigService no lleva modificador a propósito: solo hace falta aquí
+    // dentro para leer la vigencia, y guardarlo como propiedad sería dejar
+    // colgada una dependencia que nadie más usa.
     constructor(
         private readonly jwtService: JwtService,
-        public configService: ConfigService
+        configService: ConfigService
     ) {
         this.accessTtlSeconds = configService.getOrThrow<JwtConfig>('jwt').accessTtlSeconds;
     }
@@ -29,7 +33,12 @@ export class JwtTokenIssuer implements TokenIssuer {
             },
             {
                 jwtid: claims.sessionId,
-                expiresIn: this.accessTtlSeconds
+                expiresIn: this.accessTtlSeconds,
+                // Quedan dentro del token como `iss` y `aud`. El guard exige los dos
+                // al verificar, así que un token ajeno no entra aunque su firma
+                // cuadrara.
+                issuer: JWT_ISSUER,
+                audience: JWT_AUDIENCE
             }
         );
 

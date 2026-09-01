@@ -45,7 +45,7 @@ export class SessionIssuer {
     public async start(owner: SessionOwner, context: SessionContext): Promise<AuthTokens> {
         const { session, generated } = this.build(owner, context);
 
-        await this.sessions.save(session);
+        await this.sessions.create(session);
 
         return this.issueFor(session, owner, generated);
     }

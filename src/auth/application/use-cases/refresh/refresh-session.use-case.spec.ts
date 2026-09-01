@@ -110,7 +110,7 @@ const buildHarness = (options: {
     const findByUserId = jest.fn().mockResolvedValue(found);
     const issue = jest.fn().mockResolvedValue(ISSUED);
 
-    const sessions = { save, findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate };
+    const sessions = { create: save, update: jest.fn(), findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate };
     const refreshGenerator = {
         generate: jest.fn().mockReturnValue(GENERATED),
         hash: jest.fn().mockReturnValue('hash-actual'),

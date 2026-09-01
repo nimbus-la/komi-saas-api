@@ -3,7 +3,18 @@ import { Session } from "./session.aggregate";
 import { SessionRevocationReason } from "./types";
 
 export abstract class SessionRepository {
-    abstract save(session: Session): Promise<void>;
+    /**
+     * Alta de una sesión nueva.
+     *
+     * Separado de la actualización a propósito: un `save` que sirve para las dos
+     * cosas obliga a la infraestructura a ir a la base primero para averiguar cuál
+     * de las dos es, y en un alta esa consulta sobra. Quien llama siempre sabe si
+     * está creando o modificando.
+     */
+    abstract create(session: Session): Promise<void>;
+
+    /** Persiste los cambios de una sesión que ya existe: revocarla, sobre todo. */
+    abstract update(session: Session): Promise<void>;
     abstract findByRefreshTokenHash(hash: string): Promise<Session | null>;
 
     /**

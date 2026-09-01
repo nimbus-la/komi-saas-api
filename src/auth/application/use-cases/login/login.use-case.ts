@@ -1,4 +1,4 @@
-import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
+import { InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
 
 import { LoginParams, SessionContext } from "../../dtos";
 import { toAuthTokensResponse, toUserResponse } from "../../mappers";
@@ -8,13 +8,17 @@ import { SessionIssuer } from "../../services/session-issuer";
 /**
  * Inicio de sesión de un usuario dentro de un negocio.
  *
- * El orden de los pasos no es casual, primero se resuelve el negocio, después se
- * busca al usuario dentro de ese negocio, luego se verifica la contraseña y solo
- * al final se mira si la cuenta está activa. Contar que una cuenta existe pero
- * está inactiva antes de comprobar la contraseña le regalaría esa información a
- * cualquiera que pruebe nombres al azar.
+ * El orden de los pasos no es casual: se resuelve el negocio, se busca al usuario
+ * dentro de él, se verifica la contraseña, y SOLO ENTONCES se mira si el negocio
+ * o la cuenta están dados de baja.
  *
- * Es una clase suelta, sin decoradores de Nest, para poder probarla con los tres
+ * Todo lo que ocurre antes de verificar la contraseña responde siempre lo mismo
+ * —credenciales inválidas— y tarda siempre lo mismo. Distinguir antes de ese
+ * punto entre "ese negocio no existe", "ese usuario no existe" y "la contraseña
+ * está mal" convierte el login en un buscador: probando slugs se averigua qué
+ * negocios hay dados de alta, y probando nombres, quién trabaja en ellos.
+ *
+ * Es una clase suelta, sin decoradores de Nest, para poder probarla con los
  * puertos falseados; el módulo la arma con una factory.
  */
 export class LoginUseCase {
@@ -34,11 +38,13 @@ export class LoginUseCase {
         const tenant = await this.tenantResolver.findBySlug(tenantSlug);
 
         if (tenant === null) {
-            throw new AuthTenantNotFoundException(tenantSlug);
-        }
-
-        if (!tenant.isActive) {
-            throw new InactiveTenantException(tenantSlug);
+            // Se responde exactamente igual que ante una contraseña incorrecta, y
+            // se gasta el mismo tiempo. Decir "ese negocio no existe" —o contestar
+            // al instante, que viene a ser lo mismo— convertía el login en un
+            // buscador de clientes: probando slugs se sabía cuáles están dados de
+            // alta en la plataforma.
+            await this.passwordVerifier.verifyAgainstDummy(params.password);
+            throw new InvalidCredentialsException(tenantSlug, params.username.trim());
         }
 
         // Al username solo se le quitan los espacios de los bordes. Las mayúsculas
@@ -68,8 +74,17 @@ export class LoginUseCase {
             throw new InvalidCredentialsException(tenantSlug, identifier);
         }
 
-        // Recién ahora, con la identidad ya probada, tiene sentido decirle que su
-        // cuenta está deshabilitada.
+        // Recién ahora, con la identidad ya probada, tiene sentido contar por qué no
+        // puede entrar. Antes de este punto cualquiera de estos dos mensajes le
+        // estaría confirmando a un desconocido que el negocio existe o que el
+        // usuario existe; después, se los está dando a su dueño.
+        //
+        // El del negocio va primero porque es el motivo que manda: si está dado de
+        // baja, da igual en qué estado esté la cuenta.
+        if (!tenant.isActive) {
+            throw new InactiveTenantException(tenantSlug);
+        }
+
         if (!dataUser.isActive) {
             throw new InactiveAccountException(identifier);
         }
