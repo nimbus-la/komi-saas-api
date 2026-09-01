@@ -143,7 +143,7 @@ const buildHarness = (options: {
         { findByUserName, findByUserId },
         { verify, verifyAgainstDummy },
         { issue },
-        { save, findByRefreshTokenHash, revokeAllByUser, rotate },
+        { save, findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate },
         { generate, hash },
         REFRESH_TTL_DAYS,
     );

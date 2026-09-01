@@ -2,6 +2,7 @@ import { Reflector } from "@nestjs/core";
 import { JwtService, TokenExpiredError } from "@nestjs/jwt";
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 
+import { SessionRepository, SessionRevocationReason } from "../../domain";
 import { AccessTokenPayload, AuthenticatedUser, RequestWithUser } from "../types";
 import { IS_PUBLIC_KEY } from "../decorators";
 
@@ -10,7 +11,8 @@ import { IS_PUBLIC_KEY } from "../decorators";
 export class JwtAuthGuard implements CanActivate {
     constructor(
         private readonly jwtService: JwtService,
-        private readonly reflector: Reflector
+        private readonly reflector: Reflector,
+        private readonly sessions: SessionRepository
     ) { }
 
 
@@ -30,9 +32,52 @@ export class JwtAuthGuard implements CanActivate {
             throw new UnauthorizedException('Se requiere un token de acceso');
         }
 
-        request.user = await this.verify(token);
+        const user = await this.verify(token);
+
+        await this.ensureSessionIsUsable(user.sessionId);
+
+        request.user = user;
 
         return true
+    }
+
+
+    /**
+     * Comprueba contra la base que la sesión detrás del token siga en pie.
+     *
+     * Sin esto la firma era lo único que se miraba, así que cerrar sesión o dar de
+     * baja a un usuario no surtía efecto hasta que el access token caducara solo:
+     * hasta quince minutos de acceso pleno después de haberle cerrado la puerta. Y
+     * cuando se detecta un token robado, esos quince minutos son del ladrón.
+     *
+     * Cuesta una consulta por clave primaria en cada petición. Es el precio de que
+     * revocar signifique algo de verdad; el `jti` estaba en el token desde el
+     * principio justamente para esto.
+     */
+    private async ensureSessionIsUsable(sessionId: string): Promise<void> {
+        const session = await this.sessions.findById(sessionId);
+
+        if (session === null) {
+            throw new UnauthorizedException('La sesión ya no existe');
+        }
+
+        /**
+         * ROTATED se deja pasar a propósito, y es la parte delicada.
+         *
+         * Al renovar, la sesión anterior queda marcada como canjeada, pero el
+         * access token que se emitió con ella sigue siendo válido durante lo que le
+         * quede de sus quince minutos. Rechazarlo aquí tumbaría las peticiones que
+         * el cliente tuviera en vuelo en el momento justo de renovar, sin que nadie
+         * haya hecho nada malo: renovar no es revocar.
+         *
+         * Los demás motivos —cierre de sesión, baja del usuario o del negocio,
+         * reúso detectado— sí son cortes deliberados y tienen efecto inmediato.
+         */
+        const reason = session.getRevocationReason();
+
+        if (reason !== null && reason !== SessionRevocationReason.Rotated) {
+            throw new UnauthorizedException('La sesión fue cerrada');
+        }
     }
 
 

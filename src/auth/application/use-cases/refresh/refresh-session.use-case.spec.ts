@@ -110,7 +110,7 @@ const buildHarness = (options: {
     const issue = jest.fn().mockResolvedValue(ISSUED);
 
     const useCase = new RefreshSessionUseCase(
-        { save, findByRefreshTokenHash, revokeAllByUser, rotate },
+        { save, findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate },
         { findById: jest.fn().mockResolvedValue(tenant), findBySlug: jest.fn() },
         { findByUserId, findByUserName: jest.fn() },
         { issue },

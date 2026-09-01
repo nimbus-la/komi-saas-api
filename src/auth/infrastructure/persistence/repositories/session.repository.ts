@@ -30,6 +30,15 @@ export class TypeOrmSessionRepository implements SessionRepository {
     }
 
 
+    public async findById(sessionId: string): Promise<Session | null> {
+        const row = await this.sessions.findOne({ where: { id: sessionId } });
+
+        return row === null
+            ? null
+            : SessionPersistenceMapper.toAggregate(row);
+    }
+
+
     public async revokeAllByUser(
         userId: string,
         reason: SessionRevocationReason,

@@ -6,6 +6,12 @@ export abstract class SessionRepository {
     abstract save(session: Session): Promise<void>;
     abstract findByRefreshTokenHash(hash: string): Promise<Session | null>;
 
+    /**
+     * La sesión que respalda un access token, buscada por el `jti` que lleva
+     * dentro. La usa el guard en cada petición, así que va por la clave primaria.
+     */
+    abstract findById(sessionId: string): Promise<Session | null>;
+
     abstract revokeAllByUser(
         userId: string,
         reason: SessionRevocationReason,
