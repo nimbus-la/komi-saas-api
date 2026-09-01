@@ -20,9 +20,6 @@ export enum ErrorCategory {
      */
     Forbidden = 'FORBIDDEN',
 
-    /** Se pasó de peticiones y toca esperar. */
-    TooManyRequests = 'TOO_MANY_REQUESTS',
-
     Unavailable = 'UNAVAILABLE',
 };
 

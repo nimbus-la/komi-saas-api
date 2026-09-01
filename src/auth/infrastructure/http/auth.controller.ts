@@ -1,9 +1,7 @@
 import { Body, Controller, Post, Req, UseFilters, UseInterceptors } from "@nestjs/common";
-import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
 
 import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
-import { LOGIN_THROTTLE_LIMIT, LOGIN_THROTTLE_TTL_MS } from "@/utils";
 
 import { LoginUseCase, LogoutUseCase, RefreshSessionUseCase } from "../../application";
 import { UserLoginPayloadDto } from "./dto/user-payload.dto";
@@ -32,17 +30,7 @@ export class AuthController {
      * El DTO ya viene validado, y sus campos calzan uno a uno con LoginParams, así
      * que se pasa derecho al caso de uso sin armar nada intermedio.
      */
-    /**
-     * Mucho más apretado que el resto de la API: es el único sitio donde se puede
-     * adivinar una contraseña probando, y cada intento cuesta un argon2 de 64 MB,
-     * así que sin tope sirve igual para forzar credenciales que para tumbar el
-     * proceso por memoria.
-     *
-     * El conteo es por IP. Detrás de un proxy hay que configurar `trust proxy` en
-     * main.ts o todas las peticiones contarán como una sola dirección.
-     */
     @Public()
-    @Throttle({ default: { ttl: LOGIN_THROTTLE_TTL_MS, limit: LOGIN_THROTTLE_LIMIT } })
     @Post("login")
     @ResponseMessage("Inicio de sesión exitoso")
     public async signIn(@Body() dto: UserLoginPayloadDto, @Req() req: Request) {

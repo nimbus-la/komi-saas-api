@@ -3,10 +3,8 @@ import { JwtModule } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Module } from "@nestjs/common";
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 
 import { JwtConfig } from "@/interfaces";
-import { THROTTLE_LIMIT, THROTTLE_TTL_MS } from "@/utils";
 import { UserModule } from "@/context/user/user.module";
 import { TenantModule } from "@/context/tenants/tenant.module";
 
@@ -28,10 +26,6 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
         UserModule,
         TenantModule,
 
-        // Tope general por IP para toda la API. El login lo aprieta mucho más con
-        // su propio @Throttle.
-        ThrottlerModule.forRoot([{ ttl: THROTTLE_TTL_MS, limit: THROTTLE_LIMIT }]),
-
         JwtModule.registerAsync({
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
@@ -42,14 +36,7 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
     controllers: [AuthController],
     providers: [
         // El orden importa: los guards globales corren en el orden en que se
-        // registran. El de peticiones va primero para que una avalancha se corte
-        // antes de gastar un argon2, y el de tenant al final porque necesita el
-        // request.user que deja el de JWT.
-        {
-            provide: APP_GUARD,
-            useClass: ThrottlerGuard
-        },
-
+        // registran, y el de tenant necesita el request.user que deja el de JWT.
         {
             provide: APP_GUARD,
             useClass: JwtAuthGuard

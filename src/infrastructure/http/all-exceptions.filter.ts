@@ -25,7 +25,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
         [ErrorCategory.Conflict]: HttpStatus.CONFLICT,
         [ErrorCategory.Unauthorized]: HttpStatus.UNAUTHORIZED,
         [ErrorCategory.Forbidden]: HttpStatus.FORBIDDEN,
-        [ErrorCategory.TooManyRequests]: HttpStatus.TOO_MANY_REQUESTS,
         [ErrorCategory.Unavailable]: HttpStatus.SERVICE_UNAVAILABLE,
     };
 
@@ -33,13 +32,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     /**
      * Qué entrada del catálogo le corresponde a un rechazo del framework.
      *
-     * Sin esto todos caían en 1000, así que a quien se quedaba sin token o se
-     * pasaba de intentos se le respondía "los datos enviados no son válidos", que
-     * no describe ninguno de los dos casos ni le dice qué hacer.
+     * Sin esto todos caían en 1000, así que a quien se quedaba sin token se le
+     * respondía "los datos enviados no son válidos", que no describe el caso ni
+     * le dice qué hacer.
      */
     private static readonly HTTP_TO_CODE: Partial<Record<number, string>> = {
         [HttpStatus.UNAUTHORIZED]: '1001',
-        [HttpStatus.TOO_MANY_REQUESTS]: '1003',
     };
 
 
