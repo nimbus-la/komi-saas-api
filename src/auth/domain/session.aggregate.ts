@@ -97,7 +97,19 @@ export class Session extends AggregateRoot<SessionId> {
     }
 
 
+    /**
+     * Canjea esta sesión por su sucesora.
+     *
+     * Una sesión ya cerrada no se canjea: se sale sin tocar nada. Sin esta guarda,
+     * `revoke` conservaba el motivo original —correcto— pero el puntero a la
+     * sucesora se asignaba igual, y quedaba una sesión marcada como LOGOUT
+     * apuntando a una sucesora que nunca la reemplazó. En la base no llegaba a
+     * verse, porque el canje se persiste con un UPDATE condicionado a que siga sin
+     * revocar, pero el agregado se contradecía a sí mismo.
+     */
     public rotateTo(successor: SessionId, now: Date = new Date()): void {
+        if (this.revokedAt !== null) return;
+
         this.revoke(SessionRevocationReason.Rotated, now);
         this.replacedBySessionId = successor.value;
     }
