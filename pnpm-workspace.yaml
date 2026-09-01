@@ -1,4 +1,0 @@
-allowBuilds:
-  '@nestjs/core': false
-  argon2: true
-  unrs-resolver: true

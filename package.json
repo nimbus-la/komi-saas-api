@@ -1,6 +1,7 @@
 {
   "name": "komi-saas-api",
   "version": "0.0.1",
+  "packageManager": "pnpm@11.15.1",
   "description": "",
   "author": "",
   "private": true,
