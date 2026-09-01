@@ -8,6 +8,7 @@ import {
 } from '../../../domain';
 
 import { AuthUserCredentials, ResolvedTenant, SessionContext } from '../../dtos';
+import { SessionIssuer } from '../../services/session-issuer';
 import { RefreshSessionUseCase } from './refresh-session.use-case';
 
 
@@ -109,13 +110,22 @@ const buildHarness = (options: {
     const findByUserId = jest.fn().mockResolvedValue(found);
     const issue = jest.fn().mockResolvedValue(ISSUED);
 
+    const sessions = { save, findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate };
+    const refreshGenerator = {
+        generate: jest.fn().mockReturnValue(GENERATED),
+        hash: jest.fn().mockReturnValue('hash-actual'),
+    };
+
+    // El emisor va de verdad: la rotación atómica es justo lo que estos tests
+    // vigilan, y falsearlo dejaría sin comprobar quién llama a rotate y con qué.
+    const sessionIssuer = new SessionIssuer(sessions, { issue }, refreshGenerator, REFRESH_TTL_DAYS);
+
     const useCase = new RefreshSessionUseCase(
-        { save, findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate },
+        sessions,
         { findById: jest.fn().mockResolvedValue(tenant), findBySlug: jest.fn() },
         { findByUserId, findByUserName: jest.fn() },
-        { issue },
-        { generate: jest.fn().mockReturnValue(GENERATED), hash: jest.fn().mockReturnValue('hash-actual') },
-        REFRESH_TTL_DAYS,
+        refreshGenerator,
+        sessionIssuer,
     );
 
     return { useCase, rotate, revokeAllByUser, issue, findByUserId };

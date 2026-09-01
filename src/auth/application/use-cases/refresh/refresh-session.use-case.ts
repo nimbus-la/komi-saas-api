@@ -1,9 +1,9 @@
-import { MILLISECONDS_PER_DAY } from "@/utils";
-
 import { ExpiredRefreshTokenException, InactiveTenantException, InvalidRefreshTokenException, RefreshTokenReuseDetectedException, Session, SessionRepository, SessionRevocationReason } from "../../../domain";
 
+import { SessionIssuer } from "../../services/session-issuer";
+
 import { AuthTokens, SessionContext } from "../../dtos";
-import { AuthUserFinder, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "../../ports";
+import { AuthUserFinder, RefreshTokenGenerator, TenantResolver } from "../../ports";
 
 
 /**
@@ -19,9 +19,8 @@ export class RefreshSessionUseCase {
         private readonly sessions: SessionRepository,
         private readonly tenantResolver: TenantResolver,
         private readonly userFinder: AuthUserFinder,
-        private readonly tokenIssuer: TokenIssuer,
         private readonly refreshGenerator: RefreshTokenGenerator,
-        private readonly refreshTtlDays: number,
+        private readonly sessionIssuer: SessionIssuer,
     ) { };
 
 
@@ -120,44 +119,19 @@ export class RefreshSessionUseCase {
             throw new InvalidRefreshTokenException();
         }
 
-        const generated = this.refreshGenerator.generate();
-        const refreshExpiresAt = new Date(Date.now() + this.refreshTtlDays * MILLISECONDS_PER_DAY);
+        // El canje va entero en el emisor compartido: arma la sucesora, marca la
+        // anterior y guarda las dos en una sola operación atómica.
+        const tokens = await this.sessionIssuer.rotate(session, user, context);
 
-        const successor = Session.create({
-            userId: user.userId,
-            tenantId: user.tenantId,
-            refreshTokenHash: generated.hash,
-            expiresAt: refreshExpiresAt,
-            ipAddress: context.ipAddress,
-            userAgent: context.userAgent
-        });
-
-        session.rotateTo(successor.getID());
-
-        const rotated = await this.sessions.rotate(session, successor);
-
-        // Perder aquí significa que otra petición canjeó este mismo refresh en el
-        // mismo instante. No se trata como robo: el token se usó UNA vez, que es
-        // justo su límite, y quien pierde simplemente se queda sin sesión. Si de
-        // verdad había dos copias, la segunda se presentará más tarde contra una
-        // sesión ya marcada ROTATED y ahí sí saltará la detección de reúso.
-        if (!rotated) {
+        // Null significa que otra petición canjeó este mismo refresh en el mismo
+        // instante. No se trata como robo: el token se usó UNA vez, que es justo su
+        // límite, y quien pierde simplemente se queda sin sesión. Si de verdad
+        // había dos copias, la segunda se presentará más tarde contra una sesión ya
+        // marcada ROTATED y ahí sí saltará la detección de reúso.
+        if (tokens === null) {
             throw new InvalidRefreshTokenException();
         }
 
-        const issued = await this.tokenIssuer.issue({
-            userId: user.userId,
-            tenantId: user.tenantId,
-            branchId: user.branchId,
-            rolScope: user.rolScope,
-            sessionId: successor.getID().value
-        });
-
-        return {
-            accessToken: issued.accessToken,
-            accessExpiresAt: issued.expiresAt,
-            refreshToken: generated.plain,
-            refreshExpiresAt
-        }
+        return tokens;
     }
 }

@@ -10,7 +10,7 @@ import { TenantModule } from "@/context/tenants/tenant.module";
 
 import { SessionRepository } from "./domain";
 import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, TenantScopeGuard, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository } from "./infrastructure";
-import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshSessionUseCase, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "./application";
+import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshSessionUseCase, RefreshTokenGenerator, SessionIssuer, TenantResolver, TokenIssuer } from "./application";
 
 
 /**
@@ -79,6 +79,26 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
             useClass: TypeOrmSessionRepository
         },
 
+        // Abrir una sesión y firmar sus tokens es idéntico en el login y en la
+        // renovación, así que vive aquí y los dos casos de uso lo reciben ya armado.
+        {
+            provide: SessionIssuer,
+
+            useFactory: (
+                sessions: SessionRepository,
+                tokenIssuer: TokenIssuer,
+                refreshGenerator: RefreshTokenGenerator,
+                configService: ConfigService
+            ) => new SessionIssuer(
+                sessions,
+                tokenIssuer,
+                refreshGenerator,
+                configService.getOrThrow<JwtConfig>('jwt').refreshTtlDays
+            ),
+
+            inject: [SessionRepository, TokenIssuer, RefreshTokenGenerator, ConfigService]
+        },
+
         // El caso de uso es una clase limpia, sin decoradores de Nest, para poder
         // probarlo con dobles. Por eso se arma a mano con una factory en vez de
         // dejar que el contenedor lo instancie solo.
@@ -89,18 +109,12 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
                 tenantResolver: TenantResolver,
                 userFinder: AuthUserFinder,
                 passwordVerifier: PasswordVerifier,
-                tokenIssuer: TokenIssuer,
-                sessions: SessionRepository,
-                refreshGenerator: RefreshTokenGenerator,
-                configService: ConfigService
+                sessionIssuer: SessionIssuer
             ) => new LoginUseCase(
-                tenantResolver, 
-                userFinder, 
-                passwordVerifier, 
-                tokenIssuer,
-                sessions,
-                refreshGenerator,
-                configService.getOrThrow<JwtConfig>('jwt').refreshTtlDays
+                tenantResolver,
+                userFinder,
+                passwordVerifier,
+                sessionIssuer
             ),
 
             // El orden tiene que coincidir con el de los parámetros de la factory.
@@ -108,10 +122,7 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
                 TenantResolver,
                 AuthUserFinder,
                 PasswordVerifier,
-                TokenIssuer,
-                SessionRepository,
-                RefreshTokenGenerator,
-                ConfigService
+                SessionIssuer
             ]
         },
 
@@ -122,16 +133,14 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
                 sessions: SessionRepository,
                 tenantResolver: TenantResolver,
                 userFinder: AuthUserFinder,
-                tokenIssuer: TokenIssuer,
                 refreshGenerator: RefreshTokenGenerator,
-                configService: ConfigService
+                sessionIssuer: SessionIssuer
             ) => new RefreshSessionUseCase(
                 sessions,
                 tenantResolver,
                 userFinder,
-                tokenIssuer,
                 refreshGenerator,
-                configService.getOrThrow<JwtConfig>('jwt').refreshTtlDays
+                sessionIssuer
             ),
 
             // El orden tiene que coincidir con el de los parámetros de la factory.
@@ -139,9 +148,8 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
                 SessionRepository,
                 TenantResolver,
                 AuthUserFinder,
-                TokenIssuer,
                 RefreshTokenGenerator,
-                ConfigService,
+                SessionIssuer,
             ]
         },
 

@@ -6,6 +6,7 @@ import {
 } from '../../../domain';
 
 import { AuthUserCredentials, LoginParams, ResolvedTenant, SessionContext } from '../../dtos';
+import { SessionIssuer } from '../../services/session-issuer';
 import { LoginUseCase } from './login.use-case';
 
 
@@ -138,14 +139,21 @@ const buildHarness = (options: {
     const generate = jest.fn().mockReturnValue(GENERATED_REFRESH);
     const hash = jest.fn().mockReturnValue(GENERATED_REFRESH.hash);
 
+    // El emisor de sesiones va de verdad, no falseado: lo que se quiere seguir
+    // vigilando es qué le pide el login a los puertos de abajo, y esos sí son
+    // dobles. Falsear el emisor escondería justo eso.
+    const sessionIssuer = new SessionIssuer(
+        { save, findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate },
+        { issue },
+        { generate, hash },
+        REFRESH_TTL_DAYS,
+    );
+
     const useCase = new LoginUseCase(
         { findBySlug, findById: findTenantById },
         { findByUserName, findByUserId },
         { verify, verifyAgainstDummy },
-        { issue },
-        { save, findByRefreshTokenHash, findById: jest.fn(), revokeAllByUser, rotate },
-        { generate, hash },
-        REFRESH_TTL_DAYS,
+        sessionIssuer,
     );
 
     return { useCase, findBySlug, findByUserName, verify, verifyAgainstDummy, save, issue, generate };

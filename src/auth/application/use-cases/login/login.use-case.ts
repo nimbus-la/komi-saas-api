@@ -1,10 +1,9 @@
-import { MILLISECONDS_PER_DAY } from "@/utils";
-
-import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException, Session, SessionRepository } from "../../../domain";
+import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
 
 import { LoginParams, SessionContext } from "../../dtos";
 import { toAuthTokensResponse, toUserResponse } from "../../mappers";
-import { AuthUserFinder, PasswordVerifier, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "../../ports";
+import { AuthUserFinder, PasswordVerifier, TenantResolver } from "../../ports";
+import { SessionIssuer } from "../../services/session-issuer";
 
 /**
  * Inicio de sesión de un usuario dentro de un negocio.
@@ -23,10 +22,7 @@ export class LoginUseCase {
         private readonly tenantResolver: TenantResolver,
         private readonly userFinder: AuthUserFinder,
         private readonly passwordVerifier: PasswordVerifier,
-        private readonly tokenIssuer: TokenIssuer,
-        private readonly sessions: SessionRepository,
-        private readonly refreshGenerator: RefreshTokenGenerator,
-        private readonly refreshTtlDays: number,
+        private readonly sessionIssuer: SessionIssuer,
     ) { }
 
 
@@ -78,37 +74,14 @@ export class LoginUseCase {
             throw new InactiveAccountException(identifier);
         }
 
-        const generated = this.refreshGenerator.generate();
-        const refreshExpiresAt = new Date(Date.now() + this.refreshTtlDays * MILLISECONDS_PER_DAY);
-
-        const session = Session.create({
-            userId: dataUser.userId,
-            tenantId: dataUser.tenantId,
-            refreshTokenHash: generated.hash,
-            expiresAt: refreshExpiresAt,
-            ipAddress: context.ipAddress,
-            userAgent: context.userAgent
-        });
-
-        await this.sessions.save(session);
-
-        const issued = await this.tokenIssuer.issue({
-            userId: dataUser.userId,
-            tenantId: dataUser.tenantId,
-            branchId: dataUser.branchId,
-            rolScope: dataUser.rolScope,
-            sessionId: session.getID().value
-        });
+        // Abrir la sesión y firmar los tokens es lo mismo aquí que al renovar, así
+        // que lo hace el emisor compartido y no cada caso de uso por su cuenta.
+        const tokens = await this.sessionIssuer.start(dataUser, context);
 
         return {
-            // Los campos de los tokens salen del mapper compartido con el refresh:
-            // los dos endpoints devuelven exactamente la misma forma.
-            ...toAuthTokensResponse({
-                accessToken: issued.accessToken,
-                accessExpiresAt: issued.expiresAt,
-                refreshToken: generated.plain,
-                refreshExpiresAt,
-            }),
+            // Y la forma de la respuesta sale del mapper que también comparten: los
+            // dos endpoints devuelven exactamente los mismos campos.
+            ...toAuthTokensResponse(tokens),
             lastLogin: "",
             user: toUserResponse(dataUser)
         }
