@@ -3,7 +3,7 @@ import { MILLISECONDS_PER_DAY } from "@/utils";
 import { AuthTenantNotFoundException, InactiveAccountException, InactiveTenantException, InvalidCredentialsException, Session, SessionRepository } from "../../../domain";
 
 import { LoginParams, SessionContext } from "../../dtos";
-import { toUserResponse } from "../../mappers";
+import { toAuthTokensResponse, toUserResponse } from "../../mappers";
 import { AuthUserFinder, PasswordVerifier, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "../../ports";
 
 /**
@@ -101,10 +101,14 @@ export class LoginUseCase {
         });
 
         return {
-            sessionToken: issued.accessToken,
-            expiredAt: issued.expiresAt.toISOString(),
-            refreshToken: generated.plain,
-            refreshExpiresAt: refreshExpiresAt.toISOString(),
+            // Los campos de los tokens salen del mapper compartido con el refresh:
+            // los dos endpoints devuelven exactamente la misma forma.
+            ...toAuthTokensResponse({
+                accessToken: issued.accessToken,
+                accessExpiresAt: issued.expiresAt,
+                refreshToken: generated.plain,
+                refreshExpiresAt,
+            }),
             lastLogin: "",
             user: toUserResponse(dataUser)
         }

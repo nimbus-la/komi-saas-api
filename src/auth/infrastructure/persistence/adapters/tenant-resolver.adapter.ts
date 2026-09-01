@@ -1,4 +1,4 @@
-import { TenantRepository, TenantSlug } from "@/context/tenants/domain";
+import { TenantAggregate, TenantId, TenantRepository, TenantSlug } from "@/context/tenants/domain";
 import { ResolvedTenant, TenantResolver } from "../../../application";
 import { Injectable } from "@nestjs/common";
 
@@ -29,10 +29,32 @@ export class TenantResolverAdapter implements TenantResolver {
 
         const tenant = await this.tenants.searchAggregateBySlug(tenantSlug);
 
-        if (!tenant) {
+        return tenant === null
+            ? null
+            : TenantResolverAdapter.toResolvedTenant(tenant);
+    }
+
+
+    public async findById(tenantId: string): Promise<ResolvedTenant | null> {
+        let id: TenantId;
+
+        try {
+            id = TenantId.create(tenantId);
+        } catch {
+            // Un id con formato invalido es un tenant inexistente.
             return null;
         }
 
+        const tenant = await this.tenants.searchAggregateById(id);
+
+        return tenant === null
+            ? null
+            : TenantResolverAdapter.toResolvedTenant(tenant);
+    }
+
+
+    /** Aplana el agregado a la vista que usa auth. Compartido por las dos busquedas. */
+    private static toResolvedTenant(tenant: TenantAggregate): ResolvedTenant {
         const primitives = tenant.toPrimitives();
 
         return {

@@ -120,12 +120,14 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
 
             useFactory: (
                 sessions: SessionRepository,
+                tenantResolver: TenantResolver,
                 userFinder: AuthUserFinder,
                 tokenIssuer: TokenIssuer,
                 refreshGenerator: RefreshTokenGenerator,
                 configService: ConfigService
             ) => new RefreshSessionUseCase(
                 sessions,
+                tenantResolver,
                 userFinder,
                 tokenIssuer,
                 refreshGenerator,
@@ -135,6 +137,7 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
             // El orden tiene que coincidir con el de los parámetros de la factory.
             inject: [
                 SessionRepository,
+                TenantResolver,
                 AuthUserFinder,
                 TokenIssuer,
                 RefreshTokenGenerator,

@@ -1,9 +1,9 @@
 import { MILLISECONDS_PER_DAY } from "@/utils";
 
-import { ExpiredRefreshTokenException, InvalidRefreshTokenException, RefreshTokenReuseDetectedException, Session, SessionRepository, SessionRevocationReason } from "../../../domain";
+import { ExpiredRefreshTokenException, InactiveTenantException, InvalidRefreshTokenException, RefreshTokenReuseDetectedException, Session, SessionRepository, SessionRevocationReason } from "../../../domain";
 
 import { AuthTokens, SessionContext } from "../../dtos";
-import { AuthUserFinder, RefreshTokenGenerator, TokenIssuer } from "../../ports";
+import { AuthUserFinder, RefreshTokenGenerator, TenantResolver, TokenIssuer } from "../../ports";
 
 
 /**
@@ -17,6 +17,7 @@ const ROTATION_GRACE_MS = 10_000;
 export class RefreshSessionUseCase {
     constructor(
         private readonly sessions: SessionRepository,
+        private readonly tenantResolver: TenantResolver,
         private readonly userFinder: AuthUserFinder,
         private readonly tokenIssuer: TokenIssuer,
         private readonly refreshGenerator: RefreshTokenGenerator,
@@ -83,6 +84,29 @@ export class RefreshSessionUseCase {
         }
 
         const previous = session.toPrimitives();
+
+        // Se vuelve a mirar el estado del negocio, no solo el del usuario. Entre el
+        // login y este refresh pueden haber pasado días, y en ese rato el negocio
+        // pudo darse de baja; sin esta comprobación sus usuarios seguirían
+        // renovando la sesión indefinidamente y la baja no serviría de nada.
+        //
+        // Va antes que el usuario por el mismo orden que sigue el login: primero el
+        // negocio, después quien trabaja en él.
+        const tenant = await this.tenantResolver.findById(previous.tenantId);
+
+        if (tenant === null || !tenant.isActive) {
+            await this.sessions.revokeAllByUser(
+                previous.userId,
+                SessionRevocationReason.Revoked,
+                new Date()
+            );
+
+            // Aquí sí se dice qué pasó, en vez del genérico 1104. Quien llega hasta
+            // este punto trae un refresh válido, así que no es alguien tanteando; y
+            // responder "sesión inválida" lo mandaría al login, donde se encontraría
+            // con este mismo mensaje. Mejor dárselo de una vez.
+            throw new InactiveTenantException(tenant?.slug ?? previous.tenantId);
+        }
 
         const user = await this.userFinder.findByUserId(previous.tenantId, previous.userId);
 

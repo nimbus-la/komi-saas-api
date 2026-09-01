@@ -123,6 +123,7 @@ const buildHarness = (options: {
     const passwordMatches = options.passwordMatches ?? true;
 
     const findBySlug = jest.fn().mockResolvedValue(tenant);
+    const findTenantById = jest.fn().mockResolvedValue(tenant);
     const findByUserName = jest.fn().mockResolvedValue(user);
     const findByUserId = jest.fn().mockResolvedValue(user);
     const verify = jest.fn().mockResolvedValue(passwordMatches);
@@ -138,7 +139,7 @@ const buildHarness = (options: {
     const hash = jest.fn().mockReturnValue(GENERATED_REFRESH.hash);
 
     const useCase = new LoginUseCase(
-        { findBySlug },
+        { findBySlug, findById: findTenantById },
         { findByUserName, findByUserId },
         { verify, verifyAgainstDummy },
         { issue },

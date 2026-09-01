@@ -1,12 +1,13 @@
 import {
     ExpiredRefreshTokenException,
+    InactiveTenantException,
     InvalidRefreshTokenException,
     RefreshTokenReuseDetectedException,
     Session,
     SessionRevocationReason,
 } from '../../../domain';
 
-import { AuthUserCredentials, SessionContext } from '../../dtos';
+import { AuthUserCredentials, ResolvedTenant, SessionContext } from '../../dtos';
 import { RefreshSessionUseCase } from './refresh-session.use-case';
 
 
@@ -68,20 +69,37 @@ const revokedSession = (reason: SessionRevocationReason, hace = 0): Session => {
 };
 
 
+/** El negocio al que pertenece la sesión, sano por defecto. */
+const activeTenant: ResolvedTenant = {
+    id: TENANT_ID,
+    name: 'Panadería Komi',
+    description: 'Negocio de prueba',
+    slug: 'panaderia-komi',
+    nit: '900123456-7',
+    created_at: new Date('2026-01-01T00:00:00.000Z'),
+    updated_at: new Date('2026-01-01T00:00:00.000Z'),
+    isActive: true,
+};
+
+
 interface Harness {
     useCase: RefreshSessionUseCase;
     rotate: jest.Mock;
     revokeAllByUser: jest.Mock;
     issue: jest.Mock;
+    findByUserId: jest.Mock;
 }
 
 const buildHarness = (options: {
     session?: Session | null;
+    tenant?: ResolvedTenant | null;
     found?: AuthUserCredentials | null;
     rotateWins?: boolean;
 } = {}): Harness => {
     const session = 'session' in options ? options.session : buildSession();
     const found = 'found' in options ? options.found : user;
+    // Se pregunta por la clave y no por el valor: null significa "no existe".
+    const tenant = 'tenant' in options ? options.tenant : activeTenant;
 
     const findByRefreshTokenHash = jest.fn().mockResolvedValue(session);
     const rotate = jest.fn().mockResolvedValue(options.rotateWins ?? true);
@@ -93,13 +111,14 @@ const buildHarness = (options: {
 
     const useCase = new RefreshSessionUseCase(
         { save, findByRefreshTokenHash, revokeAllByUser, rotate },
+        { findById: jest.fn().mockResolvedValue(tenant), findBySlug: jest.fn() },
         { findByUserId, findByUserName: jest.fn() },
         { issue },
         { generate: jest.fn().mockReturnValue(GENERATED), hash: jest.fn().mockReturnValue('hash-actual') },
         REFRESH_TTL_DAYS,
     );
 
-    return { useCase, rotate, revokeAllByUser, issue };
+    return { useCase, rotate, revokeAllByUser, issue, findByUserId };
 };
 
 
@@ -254,6 +273,43 @@ describe('RefreshSessionUseCase', () => {
 
             await expect(useCase.execute('vencido', context))
                 .rejects.toBeInstanceOf(ExpiredRefreshTokenException);
+        });
+
+
+        /**
+         * El negocio se vuelve a comprobar en cada renovación. Sin esto, darlo de
+         * baja no serviría de nada: sus usuarios seguirían renovando la sesión
+         * para siempre, porque el login —el único sitio donde se miraba— ya no
+         * vuelve a ejecutarse.
+         */
+        it.each([
+            ['el negocio está inactivo', { ...activeTenant, isActive: false }],
+            ['el negocio ya no existe', null],
+        ])('revoca todas las sesiones cuando %s', async (_caso, tenant) => {
+            const { useCase, revokeAllByUser, issue } = buildHarness({ tenant });
+
+            await expect(useCase.execute('refresh-actual', context))
+                .rejects.toBeInstanceOf(InactiveTenantException);
+
+            expect(revokeAllByUser).toHaveBeenCalledWith(
+                USER_ID,
+                SessionRevocationReason.Revoked,
+                expect.any(Date),
+            );
+            expect(issue).not.toHaveBeenCalled();
+        });
+
+
+        // El negocio se mira ANTES que el usuario, igual que en el login. Que no se
+        // haya buscado al usuario prueba que el corte ocurrió en el paso anterior.
+        it('no busca al usuario cuando el negocio está inactivo', async () => {
+            const { useCase, findByUserId } = buildHarness({
+                tenant: { ...activeTenant, isActive: false },
+            });
+
+            await expect(useCase.execute('refresh-actual', context)).rejects.toThrow();
+
+            expect(findByUserId).not.toHaveBeenCalled();
         });
 
 

@@ -4,6 +4,7 @@ export * from './dtos/refresh-token.dto';
 export * from './dtos/response-login.dto';
 export * from './dtos/tenant-resolver.dto';
 export * from './dtos/token-issuer.dto';
+export * from './mappers/auth-tokens.mapper';
 export * from './mappers/user-data.mapper';
 export * from './ports/auth-user-finder';
 export * from './ports/password-verifier.port';

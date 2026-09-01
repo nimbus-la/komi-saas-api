@@ -3,7 +3,7 @@ import type { Request } from "express";
 
 import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
 
-import { LoginUseCase, LogoutUseCase, RefreshSessionUseCase } from "../../application";
+import { LoginUseCase, LogoutUseCase, RefreshSessionUseCase, toAuthTokensResponse } from "../../application";
 import { UserLoginPayloadDto } from "./dto/user-payload.dto";
 import { Public } from "../decorators";
 import { buildSessionContext } from "./session-context.factory";
@@ -44,12 +44,7 @@ export class AuthController {
     public async renew(@Body() dto: RefreshTokenPayloadDto, @Req() req: Request) {
         const tokens = await this.refresh.execute(dto.refreshToken, buildSessionContext(req));
 
-        return {
-            sessionToken: tokens.accessToken,
-            expiredAt: tokens.accessExpiresAt.toISOString(),
-            refreshToken: tokens.refreshToken,
-            refreshExpiredAt: tokens.refreshExpiresAt.toISOString()
-        };
+        return toAuthTokensResponse(tokens);
     }
 
 
