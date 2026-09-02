@@ -12,3 +12,5 @@ export * from './value-object/quantity.value-object';
 
 
 export * from './response-catalog';
+
+export * from './validation.constants';

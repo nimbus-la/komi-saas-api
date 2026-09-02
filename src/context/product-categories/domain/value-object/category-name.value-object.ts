@@ -1,11 +1,13 @@
+import { VALIDATION_DEFAULTS } from "@/shared";
+
 import {
     CategoryNameTooLongException,
     CategoryNameTooShortException,
 } from "../exceptions/product-category.exception";
 
 export class CategoryName {
-    public static readonly MIN_LENGTH = 2;
-    public static readonly MAX_LENGTH = 120;
+    public static readonly MIN_LENGTH = VALIDATION_DEFAULTS.NAME.MIN_LENGTH;
+    public static readonly MAX_LENGTH = VALIDATION_DEFAULTS.NAME.MAX_LENGTH;
 
     private constructor(
         public readonly value: string,

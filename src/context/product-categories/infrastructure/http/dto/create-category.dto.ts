@@ -2,20 +2,18 @@ import {
     IsNotEmpty,
     IsOptional,
     IsString,
-    IsUUID,
     MaxLength,
     MinLength,
 } from "class-validator";
 
-export class CreateCategoryDto {
+import { VALIDATION_DEFAULTS } from "@/shared";
 
-    @IsUUID()
-    tenantId!: string;
+export class CreateCategoryDto {
 
     @IsString()
     @IsNotEmpty()
-    @MinLength(2)
-    @MaxLength(120)
+    @MinLength(VALIDATION_DEFAULTS.NAME.MIN_LENGTH)
+    @MaxLength(VALIDATION_DEFAULTS.NAME.MAX_LENGTH)
     name!: string;
 
     @IsOptional()

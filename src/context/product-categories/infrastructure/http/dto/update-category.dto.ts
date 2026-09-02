@@ -7,15 +7,16 @@ import {
     MinLength,
 } from "class-validator";
 
-export class UpdateCategoryDto {
+import { VALIDATION_DEFAULTS } from "@/shared";
 
+export class UpdateCategoryDto {
     @IsUUID()
-    tenantId!: string;
+    categoryId!: string;
 
     @IsOptional()
     @IsString()
-    @MinLength(2)
-    @MaxLength(120)
+    @MinLength(VALIDATION_DEFAULTS.NAME.MIN_LENGTH)
+    @MaxLength(VALIDATION_DEFAULTS.NAME.MAX_LENGTH)
     name?: string;
 
     @IsOptional()
