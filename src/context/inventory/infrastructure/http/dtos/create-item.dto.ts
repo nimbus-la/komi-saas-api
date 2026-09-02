@@ -1,11 +1,7 @@
-import { IsBoolean, IsString, IsUUID, MinLength } from "class-validator";
+import { IsBoolean, IsString, MinLength } from "class-validator";
 
 
 export class CreateItemDto {
-
-    @IsUUID()
-    tenantId!: string;
-
     @IsString()
     @MinLength(2)
     name!: string;

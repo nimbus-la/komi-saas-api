@@ -19,14 +19,14 @@ export class BranchMinimumDto {
 /**
  * Minimo POR SUCURSAL, en lote. Parcial: solo toca las sucursales enviadas.
  *
- *   { "branches": [
+ *   { "itemId": "uuid-item", "branches": [
  *       { "branchId": "uuid-norte", "minStock": "5000" },
  *       { "branchId": "uuid-sur",   "minStock": null }
  *   ] }
  */
 export class SetBranchMinimumStockDto {
     @IsUUID()
-    tenantId!: string;
+    itemId!: string;
 
     @IsArray()
     @ArrayMinSize(1, { message: 'Debe enviar al menos una sucursal.' })
