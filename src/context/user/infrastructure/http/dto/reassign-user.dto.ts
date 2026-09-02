@@ -1,5 +1,12 @@
 import { IsOptional, IsUUID } from "class-validator";
 export class ReassignUserDto {
-  @IsUUID() rolId!: string;
-  @IsOptional() @IsUUID() branchId?: string | null;
+  @IsUUID()
+  userId!: string;
+
+  @IsUUID() 
+  rolId!: string;
+
+  @IsOptional() 
+  @IsUUID() 
+  branchId?: string | null;
 }

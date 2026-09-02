@@ -1,4 +1,3 @@
-import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
 import {
   Body,
   Controller,
@@ -10,6 +9,9 @@ import {
   UseFilters,
   UseInterceptors,
 } from "@nestjs/common";
+
+import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
+import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -37,63 +39,119 @@ export class UserController {
     private readonly reassignUser: ReassignUserUseCase,
     private readonly searchById: SearchUserUseCase,
     private readonly searchAll: SearchAllUsersUseCase,
-  ) {}
+  ) { }
 
-  @Post(":tenantId")
+
+  @Post()
   public async create(
-    @Param("tenantId") tenantId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() body: CreateUserDto,
   ): Promise<void> {
-    await this.createUser.execute({
-      ...body,
-      tenantId,
-    });
+    const { tenantId } = user;
+
+    await this.createUser.execute({ ...body, tenantId });
   }
 
-  @Patch(":tenantId/:id")
+
+  /**
+   * Datos del usuario: credenciales, contraseña y perfil.
+   *
+   * El endpoint tiene el contrato roto. Los arreglos NO van aquí: van en
+   * UpdateUserUseCase y en UpdateUserDto.
+   *
+   * 1. Los nombres no llegan. La DTO los llama fullName y lastName; el caso de
+   *    uso espera firstName, secondName, firstLastName y secondLastName. El
+   *    body se pasa sin mapear, así que esos campos se descartan y la respuesta
+   *    es 200 sin haber cambiado nada. Mandar los nombres correctos da 400,
+   *    porque el ValidationPipe corre con forbidNonWhitelisted.
+   *
+   * 2. La DTO acepta action, rolId y branchId, que son de /user/status y
+   *    /user/reassign. El caso de uso ni los mira, así que se descartan igual.
+   *
+   * 3. Varios límites de la DTO son más flojos que los del dominio (userName,
+   *    password, phone), así que el rechazo ocurre abajo y no en la entrada.
+   *
+   * 4. Nadie comprueba que venga al menos un campo que actualizar: un body
+   *    con solo userId responde 200 y aun así escribe en la base. Es regla
+   *    de negocio, va en UserAggregate; inventario ya lo resuelve así.
+   *
+   * 5. La contraseña no debería estar en este endpoint. Tiene reglas de
+   *    autorización propias (la actual si es la mía, rol administrativo si
+   *    es la de otro) que no aplican a cambiar un teléfono, y mientras
+   *    compartan endpoint no puede haber una sola política coherente.
+   *    TODO: ChangeUserPasswordUseCase en PATCH /user/password, igual que
+   *    /user/status y /user/reassign. El agregado ya tiene changePassword()
+   *    aparte; falta que la separación llegue hasta aquí.
+   */
+  @Patch("update")
   public async update(
-    @Param("tenantId") tenantId: string,
-    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() body: UpdateUserDto,
   ): Promise<void> {
-    await this.updateUser.execute(tenantId, id, body);
+    await this.updateUser.execute(user.tenantId, body.userId, body);
   }
 
-  @Patch("status/:tenantId/:id")
+
+  @Patch("status")
   public async toggleStatus(
-    @Param("tenantId") tenantId: string,
-    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { userId: string }
   ): Promise<void> {
-    await this.toggleUserStatus.execute(tenantId, id);
+    await this.toggleUserStatus.execute(user.tenantId, body.userId);
   }
 
-  @Patch("reassign/:tenantId/:id")
+
+  @Patch("reassign")
   public async reassign(
-    @Param("tenantId") tenantId: string,
-    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() body: ReassignUserDto,
   ): Promise<void> {
-    await this.reassignUser.execute(tenantId, id, body);
+    const { userId } = body;
+
+    await this.reassignUser.execute(user.tenantId, userId, body);
   }
 
-  @Get(":tenantId")
+
+  /**
+   * Listado de usuarios del tenant, paginado.
+   *
+   * Lo que falta es de este endpoint y de la capa de persistencia; el caso de
+   * uso solo pasa la paginación al repositorio y no tiene nada que decidir.
+   *
+   * 1. No hay criterios de búsqueda ni filtros (nombres, apellidos, userName,
+   *    rol, branch, status, sexo). Van declarados en SearchUsersDto y bajan
+   *    hasta searchAll como parte del WHERE: filtrar en memoria la página ya
+   *    traída daría páginas incompletas, porque el recorte ocurre en la base.
+   *    Al declararlos hay que hacerlo primero en la DTO: el ValidationPipe
+   *    corre con forbidNonWhitelisted, así que cualquier query param que no
+   *    esté ahí responde 400 en vez de ignorarse.
+   *
+   * 2. pageSize no tiene tope. La DTO solo valida @Min(1) y el repositorio lo
+   *    usa tal cual como take, así que ?pageSize=100000 trae la tabla entera
+   *    del tenant en una sola respuesta. Falta un @Max en SearchUsersDto.
+   *
+   * 3. findAndCount no lleva ORDER BY. Sin un orden determinista la base no
+   *    garantiza que dos consultas devuelvan las filas en la misma secuencia,
+   *    así que un mismo usuario puede salir repetido en una página y faltar en
+   *    otra. Necesita un orden fijo (createdAt con id de desempate, porque
+   *    createdAt puede repetirse) y llega junto con los filtros, no antes.
+   */
+  @Get()
   public async searchAllUsers(
-    @Param("tenantId") tenantId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Query() query: SearchUsersDto,
   ) {
     const { pageNumber, pageSize } = query;
 
-    return this.searchAll.execute(tenantId, {
-      pageNumber,
-      pageSize,
-    });
+    return this.searchAll.execute(user.tenantId, { pageNumber, pageSize });
   }
 
-  @Get(":tenantId/:id")
+
+  @Get(":id")
   public async searchUserById(
-    @Param("tenantId") tenantId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
   ) {
-    return this.searchById.execute(tenantId, id);
+    return this.searchById.execute(user.tenantId, id);
   }
 }
