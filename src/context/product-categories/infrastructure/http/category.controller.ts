@@ -2,7 +2,6 @@ import {
     Body,
     Controller,
     Get,
-    Param,
     Patch,
     Post,
     Query,
@@ -11,6 +10,7 @@ import {
 } from "@nestjs/common";
 
 import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
+import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
@@ -23,7 +23,6 @@ import {
 
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(AllExceptionsFilter)
-
 @Controller("products/categories")
 export class CategoryController {
     constructor(
@@ -32,23 +31,34 @@ export class CategoryController {
         private readonly searchCategories: SearchCategoriesUseCase,
     ) { }
 
+
     @Post()
-    public async create(@Body() dto: CreateCategoryDto): Promise<void> {
-        await this.createCategory.execute(dto);
+    public async create(
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: CreateCategoryDto
+    ): Promise<void> {
+        await this.createCategory.execute({ ...dto, tenantId: user.tenantId });
     }
 
-    @Patch(':id')
+
+    @Patch("update")
     public async update(
-        @Param('id') id: string,
+        @CurrentUser() user: AuthenticatedUser,
         @Body() dto: UpdateCategoryDto,
     ): Promise<void> {
-        await this.updateCategory.execute(id, dto);
+        const { categoryId, ...dtoWithoutCategoryId } = dto;
+
+        await this.updateCategory.execute(categoryId, { ...dtoWithoutCategoryId, tenantId: user.tenantId });
     }
 
+
     @Get()
-    public async list(@Query() query: SearchCategoriesDto) {
+    public async list(
+        @CurrentUser() user: AuthenticatedUser,
+        @Query() query: SearchCategoriesDto
+    ) {
         const { pageNumber, pageSize, ...filters } = query;
 
-        return this.searchCategories.execute(filters, { pageNumber, pageSize });
+        return this.searchCategories.execute({ ...filters, tenantId: user.tenantId }, { pageNumber, pageSize });
     }
 }
