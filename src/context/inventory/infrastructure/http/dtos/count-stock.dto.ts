@@ -2,7 +2,7 @@ import { IsISO8601, IsOptional, IsString, IsUUID, Matches, MinLength } from "cla
 
 export class CountStockDto {
     @IsUUID()
-    tenantId!: string;
+    itemId!: string;
 
     @IsUUID()
     branchId!: string;

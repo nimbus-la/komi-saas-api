@@ -2,7 +2,7 @@ import { IsBoolean, IsOptional, IsString, IsUUID, MinLength } from "class-valida
 
 export class UpdateItemDto {
     @IsUUID()
-    tenantId!: string;
+    itemId!: string;
 
     @IsOptional()
     @IsString()

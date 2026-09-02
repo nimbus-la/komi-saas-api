@@ -1,5 +1,7 @@
 export * from './http/dtos/consume-stock.dto';
 export * from './http/dtos/create-item.dto';
+export * from './http/dtos/find-item.dto';
+export * from './http/dtos/search-item-batches.dto';
 export * from './http/dtos/receive-stock.dto';
 export * from './http/dtos/set-global-minimum-stock.dto';
 export * from './http/dtos/set-branch-minimum-stock.dto';

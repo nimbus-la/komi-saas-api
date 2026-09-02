@@ -1,6 +1,8 @@
-import { Body, Controller, DefaultValuePipe, Get, Param, ParseIntPipe, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
+import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
+import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
+
 import { ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetGlobalMinimumStockUseCase, SetBranchMinimumStockUseCase, UpdateInventoryItemUseCase } from "../../application";
 import { CreateItemDto } from "./dtos/create-item.dto";
 import { ReceiveStockDto } from "./dtos/receive-stock.dto";
@@ -13,6 +15,8 @@ import { RegisterWasteUseCase } from "../../application/use-cases/register-waste
 import { CountStockUseCase } from "../../application/use-cases/count-stock/count-stock.use-case";
 import { RegisterWasteDto } from "./dtos/register-waste.dto";
 import { CountStockDto } from "./dtos/count-stock.dto";
+import { FindInventoryItemDto } from "./dtos/find-item.dto";
+import { SearchItemBatchesDto } from "./dtos/search-item-batches.dto";
 
 
 @UseInterceptors(ResponseInterceptor)
@@ -36,40 +40,47 @@ export class InventoryItemController {
 
 
     @Post()
-    public async create(@Body() dto: CreateItemDto): Promise<void> {
-        await this.createItem.execute(dto);
+    @ResponseMessage("Item de inventario creado exitosamente.")
+    public async create(
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: CreateItemDto
+    ): Promise<void> {
+        await this.createItem.execute({ ...dto, tenantId: user.tenantId });
     };
 
 
 
+    // TODO: Implementar criterios de busqueda y filtrado de items
     @Get()
-    public async list(@Query() query: SearchInventoryItemsDto) {
-        const { tenantId, branchId, pageNumber, pageSize } = query;
-
-        return this.searchItems.execute(tenantId, { pageNumber, pageSize }, branchId);
-    };
-
-
-
-    @Get(':id')
-    public async find(
-        @Param('id') id: string,
-        @Query('tenantId') tenantId: string,
-        @Query('branchId') branchId?: string,
+    public async list(
+        @CurrentUser() user: AuthenticatedUser,
+        @Query() query: SearchInventoryItemsDto
     ) {
-        return this.findItem.execute(id, tenantId, branchId);
+        const { branchId, pageNumber, pageSize } = query;
+
+        return this.searchItems.execute(user.tenantId, { pageNumber, pageSize }, branchId);
     };
 
 
 
-    @Post('receive/:id')
+    @Get('find')
+    public async find(
+        @CurrentUser() user: AuthenticatedUser,
+        @Query() query: FindInventoryItemDto
+    ) {
+        return this.findItem.execute(query.itemId, user.tenantId, query.branchId);
+    };
+
+
+
+    @Post('receive')
     public async receive(
-        @Param('id') id: string,
+        @CurrentUser() user: AuthenticatedUser,
         @Body() dto: ReceiveStockDto
     ): Promise<void> {
         await this.receiveStock.execute({
-            itemId: id,
-            tenantId: dto.tenantId,
+            itemId: dto.itemId,
+            tenantId: user.tenantId,
             branchId: dto.branchId,
             quantityReceived: dto.quantityReceived,
             totalCostAmount: dto.totalCostAmount,
@@ -80,14 +91,14 @@ export class InventoryItemController {
 
 
 
-    @Post('consume/:id')
+    @Post('consume')
     public async consume(
-        @Param('id') id: string,
+        @CurrentUser() user: AuthenticatedUser,
         @Body() dto: ConsumeStockDto
     ): Promise<void> {
         await this.consumeStock.execute({
-            itemId: id,
-            tenantId: dto.tenantId,
+            itemId: dto.itemId,
+            tenantId: user.tenantId,
             branchId: dto.branchId,
             quantity: dto.quantity,
             ...(dto.consumedAt ? { consumedAt: dto.consumedAt } : {}),
@@ -97,11 +108,14 @@ export class InventoryItemController {
 
 
     /** Merma por cantidad total: FEFO reparte entre lotes. */
-    @Post('waste/:id')
-    public async waste(@Param('id') id: string, @Body() dto: RegisterWasteDto): Promise<void> {
+    @Post('waste')
+    public async waste(
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: RegisterWasteDto
+    ): Promise<void> {
         await this.registerWaste.execute({
-            itemId: id,
-            tenantId: dto.tenantId,
+            itemId: dto.itemId,
+            tenantId: user.tenantId,
             branchId: dto.branchId,
             quantity: dto.quantity,
             reason: dto.reason,
@@ -112,11 +126,14 @@ export class InventoryItemController {
 
 
     /** Conteo físico: cuadra el total del item en una sucursal (solo hacia abajo). */
-    @Post('count/:id')
-    public async count(@Param('id') id: string, @Body() dto: CountStockDto): Promise<void> {
+    @Post('count')
+    public async count(
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: CountStockDto
+    ): Promise<void> {
         await this.countStock.execute({
-            itemId: id,
-            tenantId: dto.tenantId,
+            itemId: dto.itemId,
+            tenantId: user.tenantId,
             branchId: dto.branchId,
             actualTotal: dto.actualTotal,
             reason: dto.reason,
@@ -126,25 +143,26 @@ export class InventoryItemController {
 
 
 
-    @Get('batches/:id')
+    @Get('batches')
     public async batches(
-        @Param('id') id: string,
-        @Query('tenantId') tenantId: string,
-        @Query('page', new DefaultValuePipe(1), ParseIntPipe) pageNumber: number,
-        @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
-        @Query('branchId') branchId?: string,
+        @CurrentUser() user: AuthenticatedUser,
+        @Query() query: SearchItemBatchesDto
     ) {
-        return this.searchItemBatches.execute(id, tenantId, { pageNumber, pageSize }, branchId);
+        const { itemId, branchId, pageNumber, pageSize } = query;
+
+        return this.searchItemBatches.execute(itemId, user.tenantId, { pageNumber, pageSize }, branchId);
     };
 
 
 
-    @Patch(':id')
+    @Patch('update')
     public async update(
-        @Param('id') id: string,
+        @CurrentUser() user: AuthenticatedUser,
         @Body() dto: UpdateItemDto,
     ): Promise<void> {
-        await this.updateItem.execute(id, dto.tenantId, dto);
+        const { itemId, ...changes } = dto;
+
+        await this.updateItem.execute(itemId, user.tenantId, changes);
     };
 
 
@@ -153,14 +171,14 @@ export class InventoryItemController {
      * Minimo GLOBAL del item: aplica a toda sucursal sin override propio.
      * No toca los overrides existentes. minStock null lo limpia.
      */
-    @Patch('minimum/global/:id')
+    @Patch('minimum/global')
     public async setGlobalMinimumStock(
-        @Param('id') id: string,
+        @CurrentUser() user: AuthenticatedUser,
         @Body() dto: SetGlobalMinimumStockDto,
     ): Promise<void> {
         await this.globalMinimumStock.execute({
-            itemId: id,
-            tenantId: dto.tenantId,
+            itemId: dto.itemId,
+            tenantId: user.tenantId,
             minStock: dto.minStock,
         });
     };
@@ -171,14 +189,14 @@ export class InventoryItemController {
      * Minimo POR SUCURSAL, en lote. Parcial: solo toca las sucursales enviadas.
      * Una entrada con minStock null elimina el override de esa sede.
      */
-    @Patch('minimum/branches/:id')
+    @Patch('minimum/branches')
     public async setBranchMinimumStock(
-        @Param('id') id: string,
+        @CurrentUser() user: AuthenticatedUser,
         @Body() dto: SetBranchMinimumStockDto,
     ): Promise<void> {
         await this.branchMinimumStock.execute({
-            itemId: id,
-            tenantId: dto.tenantId,
+            itemId: dto.itemId,
+            tenantId: user.tenantId,
             branches: dto.branches,
         });
     };
