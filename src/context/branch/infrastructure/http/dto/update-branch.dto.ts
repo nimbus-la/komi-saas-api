@@ -1,6 +1,8 @@
-import { IsBoolean, IsOptional, IsString, Length, Matches } from "class-validator";
+import { IsBoolean, IsOptional, IsString, IsUUID, Length, Matches } from "class-validator";
 
 export class UpdateBranchDto {
+    @IsUUID()
+    branchId!: string;
 
     @IsOptional()
     @IsString()

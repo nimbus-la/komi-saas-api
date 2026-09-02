@@ -21,14 +21,14 @@ import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesByTenantUseCase
 @UseFilters(AllExceptionsFilter)
 @Controller("branch")
 export class BranchController {
-
     constructor(
         private readonly createBranch: CreateBranchUseCase,
         private readonly searchBranchById: SearchBranchUseCase,
         private readonly updateBranch: UpdateBranchUseCase,
         private readonly deleteBranch: DeleteBranchUseCase,
         private readonly searchBranchesByTenant: SearchBranchesByTenantUseCase,
-    ) {}
+    ) { }
+
 
     @Post()
     @ResponseMessage('Sucursal creada exitosamente.')
@@ -36,35 +36,15 @@ export class BranchController {
         @CurrentUser() user: AuthenticatedUser,
         @Body() dto: CreateBranchDto
     ) {
-        await this.createBranch.execute({
-            tenantId: user.tenantId,
-            name: dto.name,
-            address: dto.address,
-            phone: dto.phone,
-            city: dto.city,
-            department: dto.department,
-        });
+        await this.createBranch.execute({ ...dto, tenantId: user.tenantId });
     };
 
 
-    /**
-     * Antes devolvía las sucursales de TODOS los negocios. Ahora son las de quien
-     * pregunta, que es lo único que este endpoint podía querer decir.
-     */
     @Get()
-    public async findAll(@CurrentUser() user: AuthenticatedUser) {
+    public async findAll(
+        @CurrentUser() user: AuthenticatedUser
+    ) {
         return await this.searchBranchesByTenant.execute(user.tenantId);
-    }
-
-
-    /**
-     * Queda igual que findAll ahora que ese está acotado. Se conserva para no
-     * romper a quien ya la esté llamando; el guard de alcance se encarga de que
-     * el tenantId de la ruta sea el del token.
-     */
-    @Get("tenant/:tenantId")
-    public async findByTenant(@Param("tenantId") tenantId: string) {
-        return await this.searchBranchesByTenant.execute(tenantId);
     }
 
 
@@ -77,23 +57,28 @@ export class BranchController {
     };
 
 
-    @Patch(":id")
+    @Patch("/update")
     public async update(
         @CurrentUser() user: AuthenticatedUser,
-        @Param("id") id: string,
         @Body() dto: UpdateBranchDto,
     ): Promise<void> {
-        await this.updateBranch.execute(id, user.tenantId, dto);
+        await this.updateBranch.execute(dto.branchId, user.tenantId, dto);
     }
 
 
-    @Delete(':id')
-    @ResponseMessage('Sucursal desactivada exitosamente.')
-    public async delete(
+    @Patch('/status')
+    @ResponseMessage('Estado de la sucursal actualizado exitosamente.')
+    public async updateStatus(
         @CurrentUser() user: AuthenticatedUser,
-        @Param('id') id: string
+        @Body() body: { branchId: string }
     ) {
-        await this.deleteBranch.execute(id, user.tenantId);
+        // TODO: Cambiar el nombre de la función a toggleStatus o algo así, porque no es solo desactivar, sino que puede reactivar también.
+        await this.deleteBranch.execute(body.branchId, user.tenantId);
     }
 
+
+    @Delete('/delete')
+    public async removeBranch() {
+        // TODO: Implementar la función de eliminar sucursal. agregando un nuevo estado al dominio (is_deleted) y un nuevo endpoint en el controller. Eliminar la sucursal de la base de datos no es una buena práctica, ya que puede haber registros relacionados con esa sucursal en otras tablas.
+    }
 };
