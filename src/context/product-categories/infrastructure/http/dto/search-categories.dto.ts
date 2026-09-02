@@ -6,6 +6,7 @@ import {
     IsOptional,
     IsString,
     IsUUID,
+    Max,
     Min,
 } from "class-validator";
 
@@ -45,6 +46,7 @@ export class SearchCategoriesDto {
     @Type(() => Number)
     @IsInt()
     @Min(VALIDATION_DEFAULTS.PAGINATION.MIN_VALUE)
+    @Max(VALIDATION_DEFAULTS.PAGINATION.MAX_PAGE_SIZE)
     @IsOptional()
     pageSize = VALIDATION_DEFAULTS.PAGINATION.PAGE_SIZE;
 }
