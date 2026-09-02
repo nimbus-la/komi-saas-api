@@ -1,13 +1,11 @@
 import { Type } from "class-transformer";
-import { IsEnum, IsInt, IsOptional, IsUUID, Min } from "class-validator";
+import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from "class-validator";
 
+import { VALIDATION_DEFAULTS } from "@/shared";
 import { MovementType } from "../../../domain";
 
 
 export class SearchInventoryMovementsDto {
-    @IsUUID()
-    tenantId!: string;
-
     @IsOptional()
     @IsUUID()
     inventoryItemId?: string;
@@ -22,13 +20,14 @@ export class SearchInventoryMovementsDto {
 
     @Type(() => Number)
     @IsInt()
-    @Min(1)
+    @Min(VALIDATION_DEFAULTS.PAGINATION.MIN_VALUE)
     @IsOptional()
-    pageNumber = 1;
+    pageNumber = VALIDATION_DEFAULTS.PAGINATION.PAGE_NUMBER;
 
     @Type(() => Number)
     @IsInt()
-    @Min(1)
+    @Min(VALIDATION_DEFAULTS.PAGINATION.MIN_VALUE)
+    @Max(VALIDATION_DEFAULTS.PAGINATION.MAX_PAGE_SIZE)
     @IsOptional()
-    pageSize = 20;
+    pageSize = VALIDATION_DEFAULTS.PAGINATION.PAGE_SIZE;
 }

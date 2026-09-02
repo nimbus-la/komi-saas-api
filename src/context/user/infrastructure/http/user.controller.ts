@@ -126,11 +126,7 @@ export class UserController {
    *    corre con forbidNonWhitelisted, así que cualquier query param que no
    *    esté ahí responde 400 en vez de ignorarse.
    *
-   * 2. pageSize no tiene tope. La DTO solo valida @Min(1) y el repositorio lo
-   *    usa tal cual como take, así que ?pageSize=100000 trae la tabla entera
-   *    del tenant en una sola respuesta. Falta un @Max en SearchUsersDto.
-   *
-   * 3. findAndCount no lleva ORDER BY. Sin un orden determinista la base no
+   * 2. findAndCount no lleva ORDER BY. Sin un orden determinista la base no
    *    garantiza que dos consultas devuelvan las filas en la misma secuencia,
    *    así que un mismo usuario puede salir repetido en una página y faltar en
    *    otra. Necesita un orden fijo (createdAt con id de desempate, porque

@@ -1,6 +1,8 @@
 import { Controller, Get, Query, UseFilters, UseInterceptors } from "@nestjs/common";
 
 import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
+import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
+
 import { SearchMovementsUseCase } from "../../application";
 import { SearchInventoryMovementsDto } from "./dtos/search-movement.dto";
 
@@ -15,12 +17,13 @@ export class InventoryMovementController {
 
     @Get()
     public async search(
+        @CurrentUser() user: AuthenticatedUser,
         @Query() query: SearchInventoryMovementsDto
     ) {
         const { pageNumber, pageSize, ...filters } = query;
 
         return this.searchMovements.execute(
-            filters,
+            { ...filters, tenantId: user.tenantId },
             { pageNumber, pageSize }
         );
     };

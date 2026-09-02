@@ -29,6 +29,17 @@ export const VALIDATION_DEFAULTS = {
         PAGE_SIZE: 20,
         /** Ni página 0 ni tamaño de página 0: el listado siempre pide algo. */
         MIN_VALUE: 1,
+        /**
+         * Techo del tamaño de página. Sin él, el pageSize de la petición baja
+         * tal cual al take de la consulta, así que un ?pageSize=100000 se lleva
+         * la tabla entera del tenant en una sola respuesta: la base la
+         * materializa, el proceso la mapea y la serializa, y el costo lo elige
+         * quien llama, no el servidor.
+         *
+         * 100 es holgado para cualquier pantalla real y deja la petición
+         * abusiva en un 400 limpio en vez de en una consulta pesada.
+         */
+        MAX_PAGE_SIZE: 100,
     },
 
 } as const;
