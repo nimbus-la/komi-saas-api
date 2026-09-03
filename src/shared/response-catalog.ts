@@ -143,6 +143,13 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1470': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado no está disponible para este negocio.' },
 
 
+    // Menús del sidebar: 1600 - 1609
+    '1600': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El título del menú debe tener al menos 2 caracteres.' },
+    '1601': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El título del menú debe tener como máximo 120 caracteres.' },
+    '1602': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El tipo de menú no es válido.' },
+    '1603': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La jerarquía del menú no es válida.' },
+    '1604': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El código del menú no es válido.' },
+
     // 2xxx — recurso
     '2000': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El recurso solicitado no existe.' },
     '2001': { status: ResponseStatus.Warn, category: ErrorCategory.Conflict, message: 'El item ya se encuentra registrado.' },
