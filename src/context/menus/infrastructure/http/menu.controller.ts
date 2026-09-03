@@ -1,8 +1,9 @@
-import { Controller, Get, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Patch, UseFilters, UseInterceptors } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
+import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
 
-import { GetMenuUseCase } from "../../application";
+import { UpdateMenuIsNewDto } from "./dto/update-menu-is-new.dto";
+import { GetMenuUseCase, UpdateMenuIsNewUseCase } from "../../application";
 
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(AllExceptionsFilter)
@@ -10,6 +11,7 @@ import { GetMenuUseCase } from "../../application";
 export class MenuController {
     constructor(
         private readonly getMenu: GetMenuUseCase,
+        private readonly updateMenuIsNew: UpdateMenuIsNewUseCase,
     ) { }
 
     /**
@@ -22,5 +24,18 @@ export class MenuController {
     @Get()
     public async find() {
         return await this.getMenu.execute();
+    }
+
+    /**
+     * Enciende o apaga el distintivo de "nuevo" de un menú.
+     *
+     * El menú se señala por id, el mismo que viaja en la respuesta del árbol.
+     * No lleva tenant: el sidebar es catálogo de plataforma y la marca es igual
+     * para todos los negocios.
+     */
+    @Patch("is-new")
+    @ResponseMessage("Estado del menú actualizado exitosamente.")
+    public async updateIsNew(@Body() dto: UpdateMenuIsNewDto): Promise<void> {
+        await this.updateMenuIsNew.execute(dto.menuId, dto.isNew);
     }
 }

@@ -44,3 +44,12 @@ export class InvalidMenuHierarchyException extends DomainException {
         });
     }
 }
+
+export class MenuNotFoundException extends DomainException {
+    constructor(id: string) {
+        super({
+            code: "1605",
+            detail: `El menú con id '${id}' no existe.`,
+        });
+    }
+}

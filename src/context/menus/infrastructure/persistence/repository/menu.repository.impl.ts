@@ -25,4 +25,19 @@ export class MenuRepositoryImpl extends MenuRepository {
 
         return rows.map((row) => MenuMapper.toDomain(row));
     }
+
+    async findById(id: string): Promise<Menu | null> {
+        const row = await this.menuRepository.findOne({ where: { id } });
+
+        return row ? MenuMapper.toDomain(row) : null;
+    }
+
+    async updateIsNew(menu: Menu): Promise<void> {
+        const primitives = menu.toPrimitives();
+
+        await this.menuRepository.update(
+            { id: primitives.id },
+            { isNew: primitives.isNew },
+        );
+    }
 }
