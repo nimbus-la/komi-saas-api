@@ -13,4 +13,18 @@ export abstract class MenuRepository {
      * dominio ni el contrato con el front se enteran.
      */
     abstract findAllActive(): Promise<Menu[]>;
+
+    /**
+     * Un menú por id, activo o no: apagar el distintivo de "nuevo" de una rama
+     * que ya se ocultó del sidebar tiene que seguir siendo posible.
+     */
+    abstract findById(id: string): Promise<Menu | null>;
+
+    /**
+     * Persiste únicamente el distintivo de "nuevo".
+     *
+     * El resto de la fila lo siembra el SQL y nadie más lo toca, así que un
+     * update completo sólo abriría la puerta a pisarlo por accidente.
+     */
+    abstract updateIsNew(menu: Menu): Promise<void>;
 }

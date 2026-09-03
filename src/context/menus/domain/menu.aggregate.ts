@@ -15,8 +15,9 @@ import {
  * Un nodo del sidebar. Los tres niveles son este mismo agregado; lo único que
  * los distingue es el tipo y de quién cuelgan.
  *
- * Hoy es de sólo lectura: el árbol se siembra por SQL (04-menus.sql) y la API
- * únicamente lo entrega. Por eso no hay `create` ni mutadores.
+ * El árbol se siembra por SQL (04-menus.sql), así que no hay `create`: la API
+ * no da de alta menús. Lo único que sí cambia en caliente es el distintivo de
+ * "nuevo", que se apaga cuando la novedad deja de serlo.
  */
 export class Menu extends AggregateRoot<MenuId> {
     private constructor(
@@ -30,7 +31,7 @@ export class Menu extends AggregateRoot<MenuId> {
         private readonly url: string | null,
         private readonly order: number,
         private readonly isActive: boolean,
-        private readonly isNew: boolean,
+        private isNew: boolean,
     ) {
         super(id);
     }
@@ -100,6 +101,22 @@ export class Menu extends AggregateRoot<MenuId> {
             isNew: this.isNew,
             items: [],
         };
+    }
+
+    /**
+     * Enciende o apaga el distintivo de "nuevo".
+     *
+     * A diferencia de activate()/deactivate() en otros agregados, repetir el
+     * valor actual no lanza: esto es una marca de presentación, no un estado
+     * del que dependa nada, y quien la apaga en lote no tiene por qué saber
+     * cuáles ya estaban apagadas.
+     */
+    public changeIsNew(isNew: boolean): void {
+        this.isNew = isNew;
+    }
+
+    public getIsNew(): boolean {
+        return this.isNew;
     }
 
     public getParentId(): string | null {
