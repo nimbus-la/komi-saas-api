@@ -6,15 +6,9 @@ import {
   Param,
   Patch,
   Post,
-  UseFilters,
-  UseInterceptors,
 } from "@nestjs/common";
 
-import {
-  AllExceptionsFilter,
-  ResponseInterceptor,
-  ResponseMessage,
-} from "@/infrastructure";
+import { ResponseMessage } from "@/infrastructure";
 import {
   CreateTenantUseCase,
   DeleteTenantUseCases,
@@ -28,8 +22,6 @@ import type { AuthenticatedUser } from "@/auth/infrastructure/types";
 import { CreateTenantDto } from "./dto/create-tenant.dto";
 import { UpdateTenantDto } from "./dto/update-tenant.dto";
 
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 @Controller("tenant")
 export class TenantController {
   constructor(

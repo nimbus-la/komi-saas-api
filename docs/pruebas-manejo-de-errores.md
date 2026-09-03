@@ -13,9 +13,16 @@ Cuatro caminos, según de dónde venga la excepción:
 | Excepción | Al cliente | A la consola |
 |---|---|---|
 | `DomainException` | código y estado del catálogo | `warn` de una línea con el `detail` |
+| `HttpException` **401** | su propio estado, código `1001` | `warn` con el payload de Nest |
+| `HttpException` **404** | su propio estado, código `2000` | `warn` con el payload de Nest |
 | `HttpException` **4xx** | su propio estado, código `1000` | `warn` con el payload de Nest |
 | `HttpException` **5xx** | su propio estado, código `1000` | `error` con el **objeto completo** |
 | **Todo lo demás** | `500` / `9999` genérico | `error` con el **objeto completo** |
+
+El filtro es **global** (`APP_FILTER` en `AppModule`), igual que
+`ResponseInterceptor` (`APP_INTERCEPTOR`). No hay que acordarse de decorar cada
+controller, y también quedan cubiertas las rutas que no existen: por eso el 404
+tiene su propia entrada.
 
 El volcado sale de `util.inspect(exception, { depth: 5 })`: el stack y, en el
 caso de TypeORM, también `query`, `parameters` y el `driverError` con su
@@ -38,6 +45,11 @@ le asigna un identificador a **cada** petición, termine bien o mal:
 
 El filtro ya no lo fabrica: lo lee de `req.requestId`, así que el `traceId` del
 cuerpo y el header de la respuesta son el mismo valor.
+
+Y va en el cuerpo de **toda** respuesta, no solo en las de error:
+`ResponseInterceptor` lo añade también al sobre de éxito. Un "esto se guardó
+mal" que no produjo ningún error sigue teniendo así por dónde buscarse en el
+log.
 
 Se acepta el del cliente a propósito: así el front conserva la referencia
 aunque la petición nunca llegue al servidor —timeout, red caída—, que es justo
@@ -242,7 +254,7 @@ Con la aplicación levantada, cualquier error real sirve. El cliente recibe:
 Y la consola, para esa misma petición:
 
 ```
-ERROR [AllExceptionsFilter] [dd60de2d61ba] [9999] POST /user → HTTP 500
+[18:42:11.507] ERROR: (dd60de2d61ba) [AllExceptionsFilter] POST /user
 QueryFailedError: DatabaseError: duplicate key value violates unique constraint "uq_users_email"
     at UserRepository.save (.../user.repository.ts:41:20)
   query: 'INSERT INTO users(email, password) VALUES ($1, $2)',
@@ -254,7 +266,15 @@ QueryFailedError: DatabaseError: duplicate key value violates unique constraint 
     constraint: 'uq_users_email',
     detail: 'Key (email)=(ana@komi.com) already exists.'
   }
+    code: "9999"
+    httpStatus: 500
+[18:42:11.509] ERROR: (dd60de2d61ba) POST /user -> 500 | 34 ms
 ```
+
+Son dos líneas que se complementan, unidas por el `traceId`: la del filtro trae
+el volcado del fallo, y la de cierre dice cómo terminó la petición y cuánto
+tardó. El identificador lo pone pino en cada línea de la petición, así que el
+filtro ya no lo escribe dentro del mensaje.
 
 Se le pide el `traceId` a quien reporta el error y se llega a la línea exacta.
 

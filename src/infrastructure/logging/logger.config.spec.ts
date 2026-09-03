@@ -140,6 +140,38 @@ describe('buildLoggerParams', () => {
     });
 
 
+    describe('nivel de la linea de peticion', () => {
+        const levelFor = (statusCode: number, error?: Error) => {
+            const { customLogLevel } = buildOptions(Enviroment.Development);
+
+            return customLogLevel!(
+                {} as IncomingMessage,
+                { statusCode } as ServerResponse,
+                error
+            );
+        };
+
+
+        /**
+         * Por defecto pino-http lo escribe todo en `info`: con LOG_LEVEL=warn
+         * en produccion no se veia ni un 500.
+         */
+        it('sube de nivel segun como termino la peticion', () => {
+            expect(levelFor(200)).toBe('info');
+            expect(levelFor(304)).toBe('info');
+            expect(levelFor(400)).toBe('warn');
+            expect(levelFor(404)).toBe('warn');
+            expect(levelFor(500)).toBe('error');
+            expect(levelFor(503)).toBe('error');
+        });
+
+
+        it('un error colgando de la respuesta es error, sea cual sea el estado', () => {
+            expect(levelFor(200, new TypeError('roto'))).toBe('error');
+        });
+    });
+
+
     describe('serializadores', () => {
         /**
          * Los de serie vuelcan los headers completos, y ahí viaja el

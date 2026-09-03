@@ -6,19 +6,14 @@ import {
   Patch,
   Post,
   Query,
-  UseFilters,
-  UseInterceptors,
 } from "@nestjs/common";
 
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { SearchProductsApplicationParams } from "../../domain/types/product-application";
 import { CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "../../application";
-import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
 import { ProfitMargin } from "../../domain/value-object/profit-margin.value-object";
 
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 
 @Controller("products")
 export class ProductController {

@@ -1,7 +1,8 @@
 import { inspect } from "node:util";
 
 import { Request, Response } from "express";
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common";
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 
 // Por ruta directa y no desde el barrel `@/shared`: ese índice exporta también
 // los value objects, que importan `uuid` (ESM puro) y hacen que Jest no pueda
@@ -16,7 +17,17 @@ import { createRequestId, RequestWithId } from "./request-id.middleware";
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-    private readonly logger = new Logger(AllExceptionsFilter.name);
+    /**
+     * `PinoLogger` es de scope TRANSIENT: esta instancia es solo de este
+     * filtro, así que fijarle el contexto no se lo cambia a nadie mas.
+     *
+     * Cada línea que escriba sale ya con el `traceId` de la petición, porque
+     * el middleware de `nestjs-pino` abrió ese contexto antes. Por eso los
+     * mensajes de aquí ya NO lo llevan escrito a mano: se imprimía dos veces.
+     */
+    constructor(private readonly logger: PinoLogger) {
+        this.logger.setContext(AllExceptionsFilter.name);
+    };
 
 
     private static readonly CATEGORY_TO_HTTP: Record<ErrorCategory, HttpStatus> = {
@@ -38,6 +49,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
      */
     private static readonly HTTP_TO_CODE: Partial<Record<number, string>> = {
         [HttpStatus.UNAUTHORIZED]: '1001',
+        // Al ser global, el filtro también atiende las rutas que no existen.
+        // Sin esta entrada, un 404 respondía "los datos enviados no son
+        // válidos", que no es lo que pasó.
+        [HttpStatus.NOT_FOUND]: RESPONSE_CODE.NOT_FOUND,
     };
 
 
@@ -96,7 +111,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
             // Regla de negocio violada: se sabe qué pasó, basta una línea.
             // El DETALLE técnico va SOLO al log, nunca a la respuesta.
-            this.logger.warn(`[${traceId}] [${exception.code}] ${origin} → HTTP ${httpStatus} · ${exception.detail}`);
+            this.logger.warn({ code: exception.code, httpStatus }, `${origin} | ${exception.detail}`);
 
             return {
                 status: entry.status,
@@ -113,17 +128,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
             const httpStatus = exception.getStatus();
             const code = AllExceptionsFilter.HTTP_TO_CODE[httpStatus] ?? RESPONSE_CODE.VALIDATION_ERROR;
             const entry = this.resolveEntry(code);
-            const header = `[${traceId}] [HTTP ${httpStatus}] ${origin}`;
 
             if (httpStatus >= HttpStatus.INTERNAL_SERVER_ERROR) {
                 // Un 5xx del framework no es un rechazo esperado: es un fallo
                 // nuestro, y necesita el mismo volcado que el resto de errores
                 // ajenos al dominio. Sin el stack no hay forma de ubicarlo.
-                this.logger.error(AllExceptionsFilter.dump(header, exception));
+                this.logger.error({ code, httpStatus }, AllExceptionsFilter.dump(origin, exception));
             } else {
                 // Un 4xx sí es un rechazo deliberado de un guard o un pipe:
                 // el payload de Nest ya dice todo lo que hay que saber.
-                this.logger.warn(`${header} · ${JSON.stringify(exception.getResponse())}`);
+                this.logger.warn({ code, httpStatus }, `${origin} | ${JSON.stringify(exception.getResponse())}`);
             };
 
             return {
@@ -142,10 +156,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         // la consola recibe el error ÍNTEGRO: stack, y en el caso de TypeORM
         // también `query`, `parameters` y el `driverError` con su SQLSTATE,
         // tabla y restricción. Sin eso, un 9999 es imposible de diagnosticar.
-        this.logger.error(AllExceptionsFilter.dump(
-            `[${traceId}] [${RESPONSE_CODE.INTERNAL_ERROR}] ${origin} | HTTP ${HttpStatus.INTERNAL_SERVER_ERROR}`,
-            exception,
-        ));
+        this.logger.error(
+            { code: RESPONSE_CODE.INTERNAL_ERROR, httpStatus: HttpStatus.INTERNAL_SERVER_ERROR },
+            AllExceptionsFilter.dump(origin, exception),
+        );
 
         const entry = this.resolveEntry(RESPONSE_CODE.INTERNAL_ERROR);
 

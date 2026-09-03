@@ -5,11 +5,8 @@ import {
     Patch,
     Post,
     Query,
-    UseFilters,
-    UseInterceptors,
 } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
 import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 
 import { CreateCategoryDto } from "./dto/create-category.dto";
@@ -21,8 +18,6 @@ import {
     UpdateCategoryUseCase,
 } from "../../application";
 
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 @Controller("products/categories")
 export class CategoryController {
     constructor(

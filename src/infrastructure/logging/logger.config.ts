@@ -79,6 +79,26 @@ const requestErrorMessage = (req: IncomingMessage, res: ServerResponse, error: E
 
 
 /**
+ * Nivel de la línea que cierra la petición, según cómo terminó.
+ *
+ * Por defecto `pino-http` lo escribe todo en `info`, así que una petición que
+ * revienta con un 500 quedaba al mismo nivel que una que fue bien: con
+ * `LOG_LEVEL=warn` en producción no se veía ninguna de las dos.
+ *
+ * Esta línea NO repite el error: dice cómo terminó la petición y cuánto tardó.
+ * El volcado del fallo —stack, query, driverError— lo escribe una sola vez
+ * `AllExceptionsFilter`, y las dos líneas se cruzan por el `traceId`.
+ */
+const requestLevel = (_req: IncomingMessage, res: ServerResponse, error?: Error): LevelWithSilent => {
+    if (error !== undefined || res.statusCode >= 500) {
+        return 'error';
+    };
+
+    return res.statusCode >= 400 ? 'warn' : 'info';
+};
+
+
+/**
  * Consola legible para desarrollo. En producción NO se usa: allí la salida es
  * JSON por línea, que es lo que un agregador (Loki, Datadog, CloudWatch) sabe
  * indexar.
@@ -122,6 +142,7 @@ export const buildLoggerParams = (configService: ConfigService): Params => {
         genReqId,
         quietReqLogger: true,
         customAttributeKeys: { reqId: TRACE_ID_KEY },
+        customLogLevel: requestLevel,
         customSuccessMessage: requestMessage,
         customErrorMessage: requestErrorMessage,
 

@@ -22,6 +22,10 @@ import { buildLoggerParams } from "./logger.config";
             useFactory: (configService: ConfigService) => buildLoggerParams(configService),
         }),
     ],
+
+    // Reexportado para que quien inyecte `PinoLogger` —empezando por el filtro
+    // de excepciones global— lo encuentre importando solo este módulo.
+    exports: [LoggerModule],
 })
 
 export class LoggingModule { };

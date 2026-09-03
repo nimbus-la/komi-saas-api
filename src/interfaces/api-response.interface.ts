@@ -7,9 +7,12 @@ export interface ApiResponse<T = unknown> {
     message: string;
     content: T | null;
     /**
-     * Identificador de la respuesta de error, presente solo cuando la genera
-     * AllExceptionsFilter. Es la referencia con la que se busca la causa
-     * técnica en el log: el cliente lo reporta, soporte lo busca.
+     * Identificador de la petición, el mismo que viaja en el header
+     * `X-Request-Id` y que acompaña a cada línea del log.
+     *
+     * Va en TODA respuesta, exitosa o no: es la referencia con la que se busca
+     * qué pasó de verdad. El cliente lo reporta, soporte lo busca. Solo falta
+     * si la respuesta se armó sin el `requestIdMiddleware` delante.
      */
     traceId?: string;
 };

@@ -1,7 +1,7 @@
-import { Body, Controller, Post, Req, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Post, Req } from "@nestjs/common";
 import type { Request } from "express";
 
-import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
+import { ResponseMessage } from "@/infrastructure";
 
 import { LoginUseCase, LogoutUseCase, RefreshSessionUseCase, toAuthTokensResponse } from "../../application";
 import { UserLoginPayloadDto } from "./dto/user-payload.dto";
@@ -16,8 +16,6 @@ import { RefreshTokenPayloadDto } from "./dto/refresh-token.dto";
  * No tiene lógica propia, solo recibe, delega y deja que el interceptor arme la
  * respuesta y el filtro traduzca las excepciones del dominio a códigos HTTP.
  */
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 @Controller("auth")
 export class AuthController {
     constructor(
