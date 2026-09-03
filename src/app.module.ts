@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
-import { AppConfigModule, DatabaseModule } from './infrastructure';
+import { AppConfigModule, DatabaseModule, LoggingModule } from './infrastructure';
 import { TenantModule } from './context/tenants/tenant.module';
 import { ProductsModule } from './context/products/products.module';
 import { CategoriesModule } from './context/product-categories/categories.module';
@@ -16,6 +16,7 @@ import { AuthModule } from './auth';
   imports: [
     EventEmitterModule.forRoot(),
     AppConfigModule,
+    LoggingModule,
     DatabaseModule,
     AuthModule,
     InventoryModule,

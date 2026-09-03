@@ -2,13 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger as PinoNestLogger } from 'nestjs-pino';
 
 import { buildCorsOptions, requestIdMiddleware } from './infrastructure';
 import { CorsConfig } from './interfaces';
 
 async function bootstrap() {
   const logger = new Logger('Main');
-  const app = await NestFactory.create(AppModule);
+
+  // `bufferLogs`: Nest retiene lo que se loguea durante el arranque y lo suelta
+  // cuando ya hay logger propio. Sin esto, todo lo anterior a `useLogger`
+  // —incluidos los errores de arranque, que son los que más falta hacen— saldría
+  // con el formato de consola de Nest, fuera de pino.
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+
+  // A partir de aquí, TODO `new Logger(...)` de Nest escribe por pino: los
+  // módulos de arranque, TypeORM, los handlers de eventos y el filtro de
+  // excepciones, sin tocar ninguno de esos archivos.
+  app.useLogger(app.get(PinoNestLogger));
 
   const configService = app.get(ConfigService);
 

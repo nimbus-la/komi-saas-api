@@ -10,6 +10,10 @@ export * from './database/database.module';
 export * from './events/event-emitter.publisher';
 
 
+export * from './logging/logger.config';
+export * from './logging/logging.module';
+
+
 export * from './http/all-exceptions.filter';
 export * from './http/cors.factory';
 export * from './http/request-id.middleware';
