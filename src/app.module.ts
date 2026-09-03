@@ -7,6 +7,7 @@ import { ProductsModule } from './context/products/products.module';
 import { CategoriesModule } from './context/product-categories/categories.module';
 import { InventoryModule } from './context/inventory/inventory-item.module';
 import { InventoryMovementModule } from './context/inventory-movements';
+import { MenusModule } from './context/menus/menus.module';
 import { RolModule } from './context/rol/rol.module';
 import { UserModule } from './context/user/user.module';
 import { AuthModule } from './auth';
@@ -23,6 +24,7 @@ import { AuthModule } from './auth';
     ProductsModule,
     CategoriesModule,
     RolModule,
+    MenusModule,
     UserModule,
   ],
 })

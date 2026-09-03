@@ -23,6 +23,15 @@ export const VALIDATION_DEFAULTS = {
         MAX_LENGTH: 120,
     },
 
+    /**
+     * Código estable con el que el front señala una entrada de un catálogo
+     * (hoy, el menu_code del sidebar). Holgado a propósito: son códigos
+     * legibles y compuestos, del estilo ADMIN_USERS_ROLES, no siglas.
+     */
+    CODE: {
+        MAX_LENGTH: 60,
+    },
+
     /** Paginación de los listados. */
     PAGINATION: {
         PAGE_NUMBER: 1,
