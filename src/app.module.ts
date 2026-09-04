@@ -31,12 +31,12 @@ import { AuthModule } from './auth';
   ],
 
   /**
-   * Filtro e interceptor GLOBALES, no por controlador.
+   * El filtro y el interceptor son globales, no de cada controlador.
    *
-   * Colgados de cada controller solo cubrían sus rutas: una ruta que no existe,
-   * un error en un middleware o un controller nuevo al que se le olvidara el
-   * decorador respondían con el error crudo de Nest, sin código de catálogo y
-   * sin traceId. Aquí no hay nada que recordar poner.
+   * Colgados uno a uno solo cubrían sus rutas, así que una ruta que no existe,
+   * un error en un middleware o un controlador nuevo al que se le olvidara el
+   * decorador respondían con el error crudo de Nest, sin código de catálogo ni
+   * `traceId`. Aquí no hay nada que acordarse de poner.
    */
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

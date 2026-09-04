@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { Reflector } from "@nestjs/core";
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
 
@@ -6,7 +6,6 @@ import { map, Observable } from "rxjs";
 
 import { ApiResponse } from "@/interfaces";
 import { RESPONSE_CODE, ResponseStatus } from "@/utils";
-import { RequestWithId } from "./request-id.middleware";
 import { RESPONSE_MESSAGE_KEY } from "./response-message.decorator";
 
 
@@ -21,15 +20,15 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
         const message = this.reflector.get<string>(RESPONSE_MESSAGE_KEY, context.getHandler()) ?? 'Operación exitosa.';
 
         /**
-         * El mismo identificador que ya viaja en el header `X-Request-Id` y que
-         * el filtro pone en las respuestas de error.
+         * El mismo identificador que viaja en el header y que el filtro pone en
+         * las respuestas de error.
          *
-         * También en las exitosas: si el front guarda el `traceId` de TODA
-         * respuesta, cuando el usuario reporte "esto se guardó mal" hay por
-         * dónde empezar a buscar en el log. Limitarlo a los errores solo sirve
-         * cuando el fallo se manifiesta como error, que es justo el caso fácil.
+         * Va también en las exitosas. Si el front guarda el `traceId` de todas,
+         * cuando alguien reporte "esto se guardó mal" hay por dónde empezar a
+         * buscar. Limitarlo a los errores solo cubre el caso fácil, que es
+         * cuando el fallo se nota.
          */
-        const traceId = context.switchToHttp().getRequest<RequestWithId>().requestId;
+        const traceId: unknown = context.switchToHttp().getRequest<Request>().id;
 
         return next.handle().pipe(
             map((data) => {
@@ -44,7 +43,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
                         httpStatus,
                         message: 'No se encontraron resultados.',
                         content: null,
-                        ...(traceId !== undefined ? { traceId } : {}),
+                        ...(typeof traceId === 'string' ? { traceId } : {}),
                     };
                 };
 
@@ -54,7 +53,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
                     httpStatus,
                     message,
                     content: (data ?? null) as T | null,
-                    ...(traceId !== undefined ? { traceId } : {}),
+                    ...(typeof traceId === 'string' ? { traceId } : {}),
                 };
             })
         );

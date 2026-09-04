@@ -2,37 +2,38 @@ import { Global, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { LoggerModule } from "nestjs-pino";
 
+import { LoggingConfig } from "@/interfaces";
+
 import { buildLoggerParams } from "./logger.config";
 
 
 /**
- * Logging de la aplicación, con la configuración INYECTADA igual que la base
- * de datos o CORS: nada de leer `process.env` suelto dentro del logger.
+ * El log de la aplicación, con su configuración inyectada igual que la de la
+ * base de datos o la de CORS, sin leer `process.env` suelto por dentro.
  *
- * `LoggerModule` monta su propio middleware, que es el que abre el contexto de
- * petición (`AsyncLocalStorage`) del que sale el `traceId` en cada línea. Ese
- * middleware corre DESPUÉS del `requestIdMiddleware` de `main.ts`, que se
- * registra directamente sobre Express al arrancar; por eso pino encuentra el
- * identificador ya puesto y no tiene que fabricar otro.
+ * `LoggerModule` monta su propio middleware. Es el que abre el contexto de la
+ * petición del que sale el `traceId` en cada línea, y también el que genera ese
+ * identificador y lo devuelve en el header `X-Request-Id`.
  */
 /**
- * Global como el de configuración: escribir en el log es algo que hace
- * cualquier capa —un publicador de eventos, un adaptador de persistencia, un
- * guard—, y sin esto habría que acordarse de importar este módulo en cada uno
- * de los que inyecte `PinoLogger`. Un import olvidado se descubre en tiempo de
- * arranque, y siempre en el módulo que menos se toca.
+ * Global como el de configuración, porque escribir en el log lo hace cualquier
+ * capa, sea un publicador de eventos, un adaptador de persistencia o un guard.
+ * Sin esto habría que importar este módulo en cada uno que inyecte
+ * `PinoLogger`, y un import olvidado revienta al arrancar, siempre en el módulo
+ * que menos se toca.
  */
 @Global()
 @Module({
     imports: [
         LoggerModule.forRootAsync({
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => buildLoggerParams(configService),
+            useFactory: (configService: ConfigService) =>
+                buildLoggerParams(configService.getOrThrow<LoggingConfig>('logging')),
         }),
     ],
 
-    // Reexportado para que quien inyecte `PinoLogger` —empezando por el filtro
-    // de excepciones global— lo encuentre importando solo este módulo.
+    // Se reexporta para que quien inyecte `PinoLogger`, empezando por el filtro
+    // de excepciones, lo encuentre importando solo este módulo.
     exports: [LoggerModule],
 })
 

@@ -33,11 +33,11 @@ export class Argon2PasswordVerifier implements PasswordVerifier {
             return await argon2.verify(hash, plain);
         } catch (error: unknown) {
             /**
-             * Hacia afuera esto es un fallo de credenciales, y tiene que
-             * serlo. Pero un hash ilegible NO es una contraseña equivocada:
-             * es una fila mal escrita en la base, y ese usuario no va a poder
-             * entrar nunca por más que acierte su contraseña. Sin esta línea,
-             * el caso se ve idéntico a alguien que no se acuerda de la suya.
+             * Hacia afuera esto es un fallo de credenciales y tiene que serlo.
+             * Pero un hash ilegible no es una contraseña equivocada, es una fila
+             * mal escrita en la base, y ese usuario no va a poder entrar nunca
+             * por más que acierte. Sin esta línea el caso se ve igual que el de
+             * alguien que no se acuerda de la suya.
              */
             this.logger.debug({ err: error }, 'El hash almacenado no se pudo verificar: se responde como credenciales inválidas');
 

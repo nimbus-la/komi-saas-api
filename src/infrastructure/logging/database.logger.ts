@@ -5,34 +5,27 @@ import { QueryParameters, readableQuery } from "./query-format.util";
 
 
 /**
- * El logger de la base de datos: todo lo que la capa de persistencia tenga que
- * decir sale por pino, y no por su cuenta.
+ * Hace que todo lo que tenga que decir la capa de persistencia salga por pino
+ * y no por su cuenta.
  *
  * Se llama por su papel y no por la librería que hay debajo. Hoy eso significa
- * implementar la interfaz `Logger` de TypeORM —ese `implements` es el único
- * punto atado a ella—; si mañana la persistencia cambia de librería, lo que se
- * reescribe es el cuerpo de estos métodos, y ni el módulo de base de datos ni
- * el resto del proyecto tienen que enterarse.
+ * implementar la interfaz `Logger` de TypeORM, y ese `implements` es lo único
+ * atado a ella. Si mañana cambia la librería se reescribe el cuerpo de estos
+ * métodos y nadie más se entera.
  *
- * Sin esto las consultas salían por su cuenta —`console.log` crudo, sin
- * timestamp, sin nivel y sin `traceId`—, así que quedaban sueltas entre las
- * líneas de la petición que las había disparado y no había forma de saber cuál
- * venía de cuál.
- *
- * El `traceId` no se pasa a mano: `PinoLogger` lo saca del contexto de
- * petición (`AsyncLocalStorage`) que abre `nestjs-pino`, y la consulta ocurre
- * dentro de esa misma cadena. Una consulta lanzada fuera de una petición —al
- * arrancar, o desde un evento diferido— sale sin él, que es lo correcto: no
- * pertenece a ninguna.
+ * Antes las consultas salían con `console.log`, sin hora, sin nivel y sin
+ * identificador, así que quedaban sueltas entre las líneas de la petición que
+ * las había disparado. El `traceId` no hay que pasarlo a mano, `PinoLogger` lo
+ * saca del contexto de la petición en curso. Una consulta lanzada fuera de una
+ * petición sale sin él, que es lo correcto porque no pertenece a ninguna.
  */
 export class DatabaseLogger implements Logger {
     /**
-     * @param logger - instancia propia: `PinoLogger` es TRANSIENT, así que
+     * @param logger - instancia propia, porque `PinoLogger` es transient y así
      *   fijarle el contexto no se lo cambia a nadie más.
      * @param logQueries - el `DB_LOGGING` del entorno. TypeORM llama a estos
-     *   métodos SIEMPRE y deja la decisión al logger, así que si no se
-     *   consultara aquí, esa variable dejaría de significar nada y las
-     *   consultas aparecerían aunque estuviera en `false`.
+     *   métodos siempre y deja la decisión al logger, así que sin mirarlo aquí
+     *   esa variable dejaría de servir para nada.
      */
     constructor(
         private readonly logger: PinoLogger,
@@ -43,12 +36,12 @@ export class DatabaseLogger implements Logger {
 
 
     /**
-     * Nivel `debug` a propósito: son cientos por minuto y en producción no se
-     * miran. Con `LOG_LEVEL=info` desaparecen sin tocar la conexión.
+     * Las consultas van en `debug` porque son cientos por minuto y en
+     * producción no se miran. Con `LOG_LEVEL=info` dejan de salir sin tocar la
+     * conexión.
      *
-     * La consulta va como MENSAJE y ya con los valores puestos: los parámetros
-     * en un campo aparte obligaban a contar `$1`, `$2` con el dedo para saber
-     * qué se había buscado.
+     * La consulta se escribe con los valores ya puestos. Con los parámetros en
+     * un campo aparte había que contar `$1`, `$2` para saber qué se buscó.
      */
     public logQuery(query: string, parameters?: QueryParameters): void {
         if (!this.logQueries) {
@@ -60,14 +53,13 @@ export class DatabaseLogger implements Logger {
 
 
     /**
-     * Se registra SIEMPRE, aunque `DB_LOGGING` esté apagado: una consulta que
-     * falla no es ruido de desarrollo.
+     * Una consulta que falla se registra siempre, aunque `DB_LOGGING` esté
+     * apagado, porque no es ruido de desarrollo.
      *
-     * En una petición HTTP esto se ve dos veces —aquí en el instante exacto, y
-     * al final en `AllExceptionsFilter` con el volcado completo—, y las une el
-     * `traceId`. La repetición vale lo que cuesta: cuando la consulta falla
-     * dentro de un handler de eventos o de un `catch` que se la traga, esta es
-     * la ÚNICA constancia de que ocurrió.
+     * En una petición HTTP esto se ve dos veces, aquí en el momento exacto y al
+     * final en el filtro con el volcado completo, y las une el `traceId`. Vale
+     * la pena repetirse, porque cuando la consulta revienta dentro de un evento
+     * o de un `catch` que se la traga esta es la única constancia que queda.
      */
     public logQueryError(error: string | Error, query: string, parameters?: QueryParameters): void {
         this.logger.error(
@@ -78,9 +70,8 @@ export class DatabaseLogger implements Logger {
 
 
     /**
-     * Solo llega si la conexión define `maxQueryExecutionTime`; hoy no está
-     * puesto, así que este método no se invoca. Queda implementado para que
-     * activarlo sea añadir esa opción y nada más.
+     * Solo llega si la conexión define `maxQueryExecutionTime`, que hoy no está
+     * puesto. Queda escrito para que activarlo sea añadir esa opción y nada más.
      */
     public logQuerySlow(time: number, query: string, parameters?: QueryParameters): void {
         this.logger.warn({ durationMs: time }, readableQuery(query, parameters));
@@ -97,7 +88,7 @@ export class DatabaseLogger implements Logger {
     };
 
 
-    /** Avisos generales de TypeORM: no distingue entre `log` e `info`. */
+    /** Avisos generales de TypeORM. No distingue entre `log` e `info`. */
     public log(level: 'log' | 'info' | 'warn', message: unknown): void {
         if (level === 'warn') {
             this.logger.warn(message);

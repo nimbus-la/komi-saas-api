@@ -24,6 +24,18 @@ class StockCountedStub extends DomainEvent {
 };
 
 
+/** Un evento que arrastra un dato que no puede quedar escrito. */
+class UserRegisteredStub extends DomainEvent {
+    public readonly eventName = 'user.registered';
+    public readonly userName = 'ana';
+    public readonly password = 'mi-clave';
+
+    public constructor() {
+        super();
+    };
+};
+
+
 const build = (emitAsync: jest.Mock) => {
     const error = jest.fn();
 
@@ -84,19 +96,49 @@ describe('EventEmitterPublisher', () => {
 
         it('queda constancia con el evento, el error y el payload para rehacerlo', async () => {
             const { publisher, error } = build(failingFirst());
-            const event = new StockConsumedStub();
 
-            await publisher.publish([event]);
+            await publisher.publish([new StockConsumedStub()]);
 
             expect(error).toHaveBeenCalledTimes(1);
             expect(error).toHaveBeenCalledWith(
                 expect.objectContaining({
                     event: 'inventory.stock.consumed',
-                    payload: event,
+                    // Una COPIA saneada del evento, no el evento: por eso se
+                    // compara el contenido y no la identidad.
+                    payload: expect.objectContaining({ eventName: 'inventory.stock.consumed' }),
                     err: expect.any(Error),
                 }),
                 expect.stringContaining('no se pudo procesar'),
             );
+        });
+
+
+        /**
+         * El payload se escribe ENTERO para poder rehacer a mano lo que quedo
+         * a medias, asi que pasa por la misma lista negra que el cuerpo de una
+         * peticion. Sin esto, un evento con datos sensibles los deja en claro.
+         */
+        it('el payload va saneado', async () => {
+            const { publisher, error } = build(jest.fn().mockRejectedValue(new Error('boom')));
+
+            await publisher.publish([new UserRegisteredStub()]);
+
+            const registrado = JSON.stringify(error.mock.calls[0]![0]);
+
+            expect(registrado).not.toContain('mi-clave');
+            expect(registrado).toContain('ana');
+        });
+
+
+        /** La fecha del hecho no puede perderse por sanear. */
+        it('el payload conserva cuando ocurrio', async () => {
+            const { publisher, error } = build(jest.fn().mockRejectedValue(new Error('boom')));
+
+            await publisher.publish([new UserRegisteredStub()]);
+
+            const payload = (error.mock.calls[0]![0] as { payload: { occurredOn: string } }).payload;
+
+            expect(typeof payload.occurredOn).toBe('string');
         });
 
 

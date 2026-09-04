@@ -4,21 +4,21 @@ import { ConfigService } from '@nestjs/config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoNestLogger, PinoLogger } from 'nestjs-pino';
 
-import { buildCorsOptions, requestIdMiddleware } from './infrastructure';
+import { buildCorsOptions, registerProcessErrorHandlers } from './infrastructure';
 import { CorsConfig } from './interfaces';
 
 async function bootstrap() {
   const logger = new Logger('Main');
 
-  // `bufferLogs`: Nest retiene lo que se loguea durante el arranque y lo suelta
-  // cuando ya hay logger propio. Sin esto, todo lo anterior a `useLogger`
-  // —incluidos los errores de arranque, que son los que más falta hacen— saldría
-  // con el formato de consola de Nest, fuera de pino.
+  // Con `bufferLogs`, Nest retiene lo que se loguea durante el arranque y lo
+  // suelta cuando ya hay logger propio. Sin esto, todo lo anterior a `useLogger`
+  // saldría con el formato de Nest y fuera de pino, incluidos los errores de
+  // arranque, que son los que más falta hacen.
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  // A partir de aquí, TODO `new Logger(...)` de Nest escribe por pino: los
-  // módulos de arranque, TypeORM, los handlers de eventos y el filtro de
-  // excepciones, sin tocar ninguno de esos archivos.
+  // A partir de aquí cualquier `new Logger(...)` de Nest escribe por pino, sea
+  // el de los módulos de arranque, el de TypeORM o el de los eventos, sin tocar
+  // ninguno de esos archivos.
   app.useLogger(app.get(PinoNestLogger));
 
   const configService = app.get(ConfigService);
@@ -26,10 +26,6 @@ async function bootstrap() {
   // CORS primero: el preflight (OPTIONS) debe resolverse antes de
   // cualquier pipe, guard o interceptor que pudiera rechazarlo.
   app.enableCors(buildCorsOptions(configService.getOrThrow<CorsConfig>('cors')));
-
-  // Antes que pipes, guards e interceptores: así toda petición tiene un
-  // identificador desde el primer instante, no solo las que fallan.
-  app.use(requestIdMiddleware);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -39,14 +35,20 @@ async function bootstrap() {
     })
   );
 
-  // El filtro y el interceptor son globales, pero se registran en AppModule
-  // (APP_FILTER / APP_INTERCEPTOR) y no aquí: por ahí pasan por el inyector, que
-  // es como el filtro recibe su logger. Montados con `useGlobalFilters` habría
-  // que construirlos a mano y resolverles las dependencias uno por uno.
+  // El filtro y el interceptor son globales pero se registran en AppModule con
+  // APP_FILTER y APP_INTERCEPTOR, no aquí, porque así los construye el inyector
+  // y el filtro recibe su logger. Con `useGlobalFilters` habría que armarlos a
+  // mano y resolverles las dependencias una por una.
 
-  // `resolve` y no `get`: PinoLogger es de scope TRANSIENT, y el inyector
+  // Cierra el último hueco, que es lo que revienta fuera de una petición y por
+  // tanto nunca llega al filtro de excepciones.
+  //
+  // Se usa `resolve` y no `get` porque `PinoLogger` es transient y el inyector
   // devuelve una instancia nueva por consumidor en vez de un singleton.
-  registerProcessHandlers(await app.resolve(PinoLogger));
+  registerProcessErrorHandlers({
+    logger: await app.resolve(PinoLogger),
+    shutdown: () => app.close(),
+  });
 
   const port = configService.get<number>('PORT') ?? 3000;
 
@@ -57,32 +59,12 @@ async function bootstrap() {
 
 
 /**
- * La última red: lo que revienta fuera de toda petición y de todo `catch`.
- *
- * Sin estos dos, un `await` sin protección en un handler de eventos o en una
- * tarea de arranque tumbaba el proceso con el volcado por defecto de Node —sin
- * formato, sin nivel, fuera de pino— o, peor, lo dejaba en pie con una promesa
- * rechazada que nadie miró.
- *
- * Se registra en `fatal` a propósito: es el único nivel que vacía el buffer de
- * pino de forma síncrona, y sin eso la línea se perdería al salir. Y se sale de
- * verdad, con código 1: tras un error no capturado el proceso queda en un
- * estado que nadie puede dar por bueno, así que es mejor que el orquestador lo
- * levante de cero. Registrar el listener y NO salir sería lo peligroso: apaga
- * el comportamiento por defecto de Node y deja el proceso vivo y roto.
+ * El arranque puede fallar antes de que exista un logger, por ejemplo con una
+ * variable de entorno inválida, la base caída o un módulo que no resuelve. Ahí
+ * todavía no hay pino ni handlers de proceso, así que solo queda stderr. Lo que
+ * no puede pasar es que el error se pierda y el proceso muera en silencio.
  */
-const registerProcessHandlers = (logger: PinoLogger): void => {
-  logger.setContext('Process');
-
-  process.on('uncaughtException', (error: Error) => {
-    logger.fatal({ err: error }, 'Excepción no capturada: el proceso no puede continuar');
-    process.exit(1);
-  });
-
-  process.on('unhandledRejection', (reason: unknown) => {
-    logger.fatal({ err: reason }, 'Promesa rechazada sin manejar: el proceso no puede continuar');
-    process.exit(1);
-  });
-};
-
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  console.error('El arranque falló y la aplicación no llegó a levantar:', error);
+  process.exit(1);
+});

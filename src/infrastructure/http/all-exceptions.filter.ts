@@ -11,19 +11,19 @@ import { DomainException } from "@/shared/domain/domain.exception";
 import { RESPONSE_CATALOG } from "@/shared/response-catalog";
 import { CatalogEntryResponse, ErrorCategory, RESPONSE_CODE } from "@/utils";
 import { ApiResponse } from "@/interfaces";
-import { createRequestId, RequestWithId } from "./request-id.middleware";
+import { createTraceId } from "../logging/trace-id.util";
 
 
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
     /**
-     * `PinoLogger` es de scope TRANSIENT: esta instancia es solo de este
-     * filtro, así que fijarle el contexto no se lo cambia a nadie mas.
+     * `PinoLogger` es transient, así que esta instancia es solo de este filtro y
+     * fijarle el contexto no se lo cambia a nadie más.
      *
-     * Cada línea que escriba sale ya con el `traceId` de la petición, porque
-     * el middleware de `nestjs-pino` abrió ese contexto antes. Por eso los
-     * mensajes de aquí ya NO lo llevan escrito a mano: se imprimía dos veces.
+     * Cada línea que escriba sale con el `traceId` de la petición, porque el
+     * middleware de pino abrió ese contexto antes. Por eso los mensajes de aquí
+     * ya no lo llevan escrito a mano, que se imprimía dos veces.
      */
     constructor(private readonly logger: PinoLogger) {
         this.logger.setContext(AllExceptionsFilter.name);
@@ -50,7 +50,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     private static readonly HTTP_TO_CODE: Partial<Record<number, string>> = {
         [HttpStatus.UNAUTHORIZED]: '1001',
         // Al ser global, el filtro también atiende las rutas que no existen.
-        // Sin esta entrada, un 404 respondía "los datos enviados no son
+        // Sin esta entrada un 404 respondía "los datos enviados no son
         // válidos", que no es lo que pasó.
         [HttpStatus.NOT_FOUND]: RESPONSE_CODE.NOT_FOUND,
     };
@@ -63,18 +63,38 @@ export class AllExceptionsFilter implements ExceptionFilter {
     public catch(exception: unknown, host: ArgumentsHost): void {
         const http = host.switchToHttp();
         const response = http.getResponse<Response>();
-        const request = http.getRequest<RequestWithId>();
+        const request = http.getRequest<Request | undefined>();
 
-        // El identificador lo puso `requestIdMiddleware` al entrar la petición,
-        // así que es el mismo que ya viajó en el header `X-Request-Id` y el que
-        // llevan las demás líneas de log de esta petición. El respaldo cubre el
-        // caso de que el filtro se use sin ese middleware delante.
-        const traceId = request?.requestId ?? createRequestId();
+        // El identificador lo puso pino al entrar la petición, así que es el
+        // mismo que viajó en el header y el que llevan las demás líneas de esta
+        // petición. El respaldo cubre que el filtro se use fuera de ese ciclo,
+        // por ejemplo en una prueba.
+        const traceId = AllExceptionsFilter.traceIdOf(request);
         const origin = AllExceptionsFilter.describeRequest(request);
 
         const envelope = this.toEnvelope(exception, traceId, origin);
 
         response.status(envelope.httpStatus).json(envelope);
+    };
+
+
+    /**
+     * Encabeza la línea diciendo qué petición fue y con qué estado terminó.
+     *
+     * El detalle, sea el mensaje del dominio o el payload de validación de
+     * Nest, va como campo aparte. Metido en el texto era un JSON de trescientos
+     * caracteres dentro del mensaje, que ni se leía ni se podía filtrar.
+     */
+    private static header(origin: string, httpStatus: number): string {
+        return `${origin} -> HTTP ${httpStatus}`;
+    };
+
+
+    /** Pino deja el identificador en `req.id` al abrir la petición. */
+    private static traceIdOf(request: Request | undefined): string {
+        const incoming: unknown = request?.id;
+
+        return typeof incoming === 'string' ? incoming : createTraceId();
     };
 
 
@@ -111,7 +131,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
             // Regla de negocio violada: se sabe qué pasó, basta una línea.
             // El DETALLE técnico va SOLO al log, nunca a la respuesta.
-            this.logger.warn({ code: exception.code, httpStatus }, `${origin} | ${exception.detail}`);
+            this.logger.warn(
+                { code: exception.code, httpStatus, detail: exception.detail },
+                AllExceptionsFilter.header(origin, httpStatus),
+            );
 
             return {
                 status: entry.status,
@@ -137,7 +160,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
             } else {
                 // Un 4xx sí es un rechazo deliberado de un guard o un pipe:
                 // el payload de Nest ya dice todo lo que hay que saber.
-                this.logger.warn({ code, httpStatus }, `${origin} | ${JSON.stringify(exception.getResponse())}`);
+                this.logger.warn(
+                    { code, httpStatus, detail: exception.getResponse() },
+                    AllExceptionsFilter.header(origin, httpStatus),
+                );
             };
 
             return {

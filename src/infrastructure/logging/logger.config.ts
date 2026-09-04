@@ -1,38 +1,32 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 
-import { ConfigService } from "@nestjs/config";
 import { Params } from "nestjs-pino";
-import { LevelWithSilent, stdTimeFunctions } from "pino";
+import { stdTimeFunctions } from "pino";
 import { Options } from "pino-http";
 
 import type { AuthenticatedUser } from "@/auth/infrastructure/types";
+import { LoggingConfig } from "@/interfaces";
 
-import { Enviroment } from "../config/env.validation";
-// Por ruta directa y no desde el barrel `@/infrastructure`: ese índice exporta
-// también este archivo, así que importarlo desde ahí sería una dependencia
-// circular con el módulo a medio construir.
-import { RequestWithId, resolveRequestId } from "../http/request-id.middleware";
 import { REDACTED, sanitize } from "./sanitizer.util";
+import { resolveTraceId, TRACE_ID_HEADER } from "./trace-id.util";
 
 
 
 /**
- * Nombre de la propiedad que lleva el identificador de la petición en cada
- * línea de log. Es el MISMO valor que viaja en el header `X-Request-Id` y que
- * el filtro de excepciones devuelve en el cuerpo como `traceId`; se llama
- * igual en los tres sitios para que buscarlo sea un solo grep.
+ * El identificador de la petición se llama igual en el log, en el header
+ * `X-Request-Id` y en el cuerpo de la respuesta, así que buscarlo es un solo
+ * grep.
  */
 const TRACE_ID_KEY = 'traceId';
 
 
 /**
- * La petición con lo que le van colgando por el camino: lo que parseó Express
- * y el usuario que resolvió `JwtAuthGuard`.
+ * La petición con lo que le van colgando por el camino, o sea lo que parsea
+ * Express y el usuario que resuelve el guard de autenticación.
  *
- * El tipo de `AuthenticatedUser` se importa en vez de redeclararlo aquí: si
- * mañana ese payload cambia de forma, esto tiene que dejar de compilar, no
- * seguir escribiendo un `tenantId` que ya no existe. Es `import type`, así que
- * no crea ninguna dependencia real de infraestructura hacia auth.
+ * `AuthenticatedUser` se importa en vez de copiar su forma aquí. Si mañana ese
+ * token cambia, esto tiene que dejar de compilar en lugar de seguir escribiendo
+ * un `tenantId` que ya no existe.
  */
 type LoggedRequest = IncomingMessage & {
     user?: AuthenticatedUser;
@@ -45,32 +39,19 @@ type LoggedRequest = IncomingMessage & {
 
 
 /**
- * En desarrollo interesa ver el detalle (`debug`); en producción esas líneas
- * son ruido y coste. No se fija `LOG_LEVEL` en el `.env` por defecto para que
- * el entorno decida solo, pero definirlo gana siempre.
- */
-const defaultLevel = (environment: Enviroment): LevelWithSilent =>
-    environment === Enviroment.Development ? 'debug' : 'info';
-
-
-/**
- * Identificador de la petición para pino.
+ * Crea el identificador de la petición y lo devuelve por el header antes de
+ * que corra ningún guard ni controlador, así el cliente lo tiene aunque la
+ * cosa termine mal.
  *
- * NO genera uno nuevo: reutiliza el que `requestIdMiddleware` ya puso al
- * entrar la petición. Si pino fabricara el suyo habría dos identificadores
- * distintos para la misma petición —uno en el log y otro en el header y en el
- * cuerpo del error— y la correlación, que es justo el objetivo, no existiría.
- *
- * El respaldo cubre el caso de que este logger se monte sin ese middleware
- * delante: entonces resuelve el identificador igual que él y lo deja escrito
- * en la petición, para que el filtro de excepciones encuentre el mismo valor.
+ * Pino lo guarda en `req.id` y de ahí lo leen el filtro de errores y el
+ * interceptor de respuesta.
  */
-const genReqId = (req: IncomingMessage): string => {
-    const request = req as unknown as RequestWithId;
+const genReqId = (req: IncomingMessage, res: ServerResponse): string => {
+    const traceId = resolveTraceId(req.headers['x-request-id']);
 
-    request.requestId ??= resolveRequestId(request.headers['x-request-id']);
+    res.setHeader(TRACE_ID_HEADER, traceId);
 
-    return request.requestId;
+    return traceId;
 };
 
 
@@ -80,42 +61,38 @@ const urlOf = (req: IncomingMessage): string =>
 
 
 /**
- * Mensaje de la petición TERMINADA: `POST /auth/login -> 401`.
+ * Cómo termina una petición, por ejemplo `POST /auth/login -> 401`.
  *
- * Solo ASCII, a propósito. Una flecha `→` es UTF-8 de varios bytes y la
- * consola de Windows, que por defecto no va en UTF-8, la pinta como `ÔåÆ`. El
- * log lo lee gente en terminales que no controlamos: tiene que verse igual en
- * todas. La duración no va aquí, sino en el campo `responseTime`.
+ * Va en ASCII porque una flecha `→` ocupa varios bytes y las consolas de
+ * Windows que no están en UTF-8 la pintan como `ÔåÆ`. La duración no se pone
+ * aquí, sale en el campo `responseTime`.
  */
 const requestMessage = (req: IncomingMessage, res: ServerResponse): string =>
     `${req.method ?? '?'} ${urlOf(req)} -> ${res.statusCode}`;
 
 
 /**
- * Mensaje de la petición que ENTRA: `--> POST /auth/login`.
+ * Anuncia la petición que entra, por ejemplo `--> POST /auth/login`.
  *
- * Solo en desarrollo. Si el proceso se cae a la mitad —o se queda colgado— esta
- * línea es la única constancia de qué petición y con qué cuerpo lo provocó: la
- * de cierre nunca llegaría a escribirse. En producción se calla porque
- * duplicaría cada petición del log.
+ * Si el proceso se cae o se cuelga a mitad, la línea de cierre nunca llega a
+ * escribirse y esta es la única pista de qué la provocó.
  *
- * El `-->` es toda la marca de inicio que lleva. Se probó abrir con una regla
- * de guiones para separar peticiones y quedaba peor: `pino-pretty` escribe el
- * mensaje detrás del nivel, así que la regla se llevaba la línea del timestamp
- * y dejaba el `-->` suelto debajo.
+ * Se probó abrir con una regla de guiones para separar peticiones y quedaba
+ * peor, porque pino-pretty escribe el mensaje detrás del nivel y la regla se
+ * llevaba la línea del timestamp.
  */
 const receivedMessage = (req: IncomingMessage): string =>
     `--> ${req.method ?? '?'} ${urlOf(req)}`;
 
 
 /**
- * Nivel de la línea que cierra la petición, según cómo terminó.
+ * Pone la línea de cierre en el nivel que le toca según cómo acabó.
  *
- * Por defecto `pino-http` lo escribe todo en `info`, así que una petición que
- * revienta con un 500 quedaba al mismo nivel que una que fue bien: con
- * `LOG_LEVEL=warn` en producción no se veía ninguna de las dos.
+ * Pino-http lo escribe todo en `info` por defecto, así que un 500 quedaba al
+ * mismo nivel que una petición que fue bien y con `LOG_LEVEL=warn` no se veía
+ * ninguno de los dos.
  */
-const requestLevel = (_req: IncomingMessage, res: ServerResponse, error?: Error): LevelWithSilent => {
+const requestLevel = (_req: IncomingMessage, res: ServerResponse, error?: Error): 'error' | 'warn' | 'info' => {
     if (error !== undefined || res.statusCode >= 500) {
         return 'error';
     };
@@ -125,20 +102,20 @@ const requestLevel = (_req: IncomingMessage, res: ServerResponse, error?: Error)
 
 
 /**
- * Con qué llegó la petición: cuerpo, query string y parámetros de ruta.
+ * Con qué llegó la petición, o sea el cuerpo, la query string y los parámetros
+ * de la ruta.
  *
- * Los tres juntos, porque los tres hacen falta para reproducir un fallo: un
- * `PATCH /branch/:id?force=true` no se rehace solo con el cuerpo.
- *
- * Devuelve un objeto vacío si no hay nada que registrar, para no arrastrar un
- * `payload: {}` en cada lectura.
+ * Hacen falta los tres para reproducir un fallo, porque un
+ * `PATCH /branch/:id?force=true` no se rehace solo con el cuerpo. Si no hay
+ * nada que registrar devuelve un objeto vacío y así no aparece un `payload: {}`
+ * en cada lectura.
  */
 const payloadOf = (req: IncomingMessage, includeParams: boolean): object => {
     const { body, query, params } = req as LoggedRequest;
 
     const payload = {
-        // Los parámetros de ruta no existen hasta que Express empareja la ruta:
-        // al ENTRAR la petición lo que hay ahí son restos internos del router.
+        // Los parámetros de la ruta no existen hasta que Express la empareja.
+        // Al entrar la petición lo que hay ahí son restos internos del router.
         ...(includeParams && isPresent(params) ? { params: sanitize(params) } : {}),
         ...(isPresent(query) ? { query: sanitize(query) } : {}),
         ...(isPresent(body) ? { body: sanitize(body) } : {}),
@@ -148,7 +125,7 @@ const payloadOf = (req: IncomingMessage, includeParams: boolean): object => {
 };
 
 
-/** Descarta lo que no aporta: nulo, indefinido u objeto sin claves. */
+/** Descarta lo que no aporta, o sea nulo, indefinido u objeto sin claves. */
 const isPresent = (value: unknown): boolean => {
     if (value === null || value === undefined) {
         return false;
@@ -162,20 +139,20 @@ const isPresent = (value: unknown): boolean => {
 };
 
 
-/** La IP del cliente, mire Express o el socket. */
+/** La IP del cliente, la ponga Express o haya que sacarla del socket. */
 const ipOf = (req: IncomingMessage): string | undefined =>
     (req as LoggedRequest).ip ?? req.socket?.remoteAddress;
 
 
 /**
- * Quién hizo la petición, del token que ya validó `JwtAuthGuard`.
+ * Quién hizo la petición, sacado del token que el guard ya validó.
  *
- * Solo se sabe al CERRAR: cuando la petición entra, el guard todavía no ha
- * corrido. Con esto, "algo raro pasó con el inventario del negocio 42" se
- * convierte en un filtro por `tenantId` en vez de en una lectura de todo el log.
+ * Con esto, "algo raro pasó con el inventario del negocio 42" se resuelve
+ * filtrando por `tenantId` en vez de leyendo el log entero. Solo se sabe al
+ * cerrar, porque cuando la petición entra el guard todavía no ha corrido.
  *
- * NO se registra el `sessionId`: identifica una sesión viva y no hace falta
- * para diagnosticar nada.
+ * El `sessionId` no se registra. Identifica una sesión viva y no ayuda a
+ * diagnosticar nada.
  */
 const businessContext = (req: IncomingMessage): object => {
     const { user } = req as LoggedRequest;
@@ -194,13 +171,12 @@ const businessContext = (req: IncomingMessage): object => {
 
 
 /**
- * Red de seguridad para las líneas escritas a mano —`logger.info({ user })`—,
- * que no pasan por el saneador del payload.
+ * Tapa estos campos en las líneas que se escriben a mano, como un
+ * `logger.info({ user })`, que no pasan por el saneador del cuerpo.
  *
- * Van en la grafía con la que se escriben en el código y no en minúsculas como
- * las del saneador: `redact` compara exacto, así que `refreshtoken` no taparía
- * un `refreshToken`. Cubre el primer y el segundo nivel sin coste; más abajo
- * ya no llega, y por eso el cuerpo de la petición se sanea aparte.
+ * Van escritos como se escriben en el código porque `redact` compara exacto y
+ * `refreshtoken` no taparía un `refreshToken`. Solo alcanza el primer y el
+ * segundo nivel, y por eso el cuerpo de la petición se sanea aparte.
  */
 const MANUAL_FIELDS = [
     'password',
@@ -221,24 +197,22 @@ const REDACTED_PATHS = MANUAL_FIELDS.flatMap((field) => [field, `*.${field}`]);
 
 
 /**
- * El preflight del navegador no es una petición de negocio: lo responde CORS
- * antes de llegar a ningún controller. Registrarlo solo duplica cada llamada
- * del front en el log.
+ * El preflight del navegador lo responde CORS antes de llegar a ningún
+ * controlador, así que registrarlo solo duplica cada llamada del front.
  */
 const isPreflight = (req: IncomingMessage): boolean => req.method === 'OPTIONS';
 
 
 /**
- * Salida legible para desarrollo. En producción NO se usa: allí es JSON por
- * línea, que es lo que un agregador (Loki, Datadog, CloudWatch) sabe indexar.
+ * Salida coloreada para trabajar. En producción no se usa, porque allí el log
+ * es JSON por línea y lo consume un agregador como Loki o Datadog.
  *
- * `traceId`, `context` y el resto de campos salen DEBAJO del mensaje, no
- * apretados dentro de él: cada línea dice una cosa y los datos se leen en
- * columna. Solo se ocultan `pid` y `hostname`, que no aportan nada cuando el
- * proceso es tu propia terminal.
+ * El `traceId`, el contexto y los demás campos salen debajo del mensaje y no
+ * apretados dentro de él, para poder leerlos en columna. Se ocultan `pid` y
+ * `hostname`, que no dicen nada cuando el proceso es tu propia terminal.
  *
- * La fecha va completa y no solo la hora: un log de desarrollo se deja abierto
- * durante días, y "10:41" sin día no sirve para cruzarlo con nada.
+ * La fecha va completa. Un log de desarrollo se deja abierto durante días y un
+ * "10:41" a secas no sirve para cruzarlo con nada.
  */
 const PRETTY_TRANSPORT = {
     target: 'pino-pretty',
@@ -253,24 +227,28 @@ const PRETTY_TRANSPORT = {
 
 
 /**
- * Configuración de `nestjs-pino` para toda la aplicación.
+ * Arma la configuración de pino para toda la aplicación.
  *
- * `quietReqLogger` junto con el renombre de `reqId`: cada línea escrita durante
- * una petición —la del propio ciclo HTTP, pero también las de los casos de uso,
- * los handlers de eventos, las consultas a la base y el filtro de excepciones—
- * sale con `traceId` y nada más del request. El detalle de la petición va en
- * sus dos líneas propias, la de entrada y la de cierre.
+ * Solo depende de `LoggingConfig`, no de Nest ni del entorno, así que el
+ * comportamiento del log se puede probar sin levantar la aplicación. Quién
+ * decide esos valores es `logging.config.ts`.
+ *
+ * `quietReqLogger` hace que cada línea escrita durante una petición lleve el
+ * `traceId` y nada más del request. Eso vale para las del ciclo HTTP y también
+ * para las de los casos de uso, los eventos y las consultas a la base. El
+ * detalle de la petición va en sus dos líneas propias, la de entrada y la de
+ * cierre.
  */
-export const buildLoggerParams = (configService: ConfigService): Params => {
-    const environment = configService.getOrThrow<Enviroment>('NODE_ENV');
-    const level = configService.get<LevelWithSilent>('LOG_LEVEL') ?? defaultLevel(environment);
-    const isDevelopment = environment === Enviroment.Development;
-
-    /** Lo que acompaña a la línea de cierre, según el entorno. */
+export const buildLoggerParams = ({ level, pretty, logRequestPayload }: LoggingConfig): Params => {
+    /**
+     * Lo que acompaña a la línea de cierre. Con la consola legible se añade la
+     * IP suelta, porque ahí `req` y `res` no se escriben. En JSON ya vienen en
+     * los serializadores.
+     */
     const closingRecord = (req: IncomingMessage, val: object): object => ({
         ...val,
         ...businessContext(req),
-        ...(isDevelopment ? { ip: ipOf(req) } : payloadOf(req, true)),
+        ...(pretty ? { ip: ipOf(req) } : {}),
     });
 
 
@@ -285,36 +263,29 @@ export const buildLoggerParams = (configService: ConfigService): Params => {
         autoLogging: { ignore: isPreflight },
         redact: { paths: REDACTED_PATHS, censor: REDACTED },
 
-        // Hora ISO en el JSON: `1788533056755` no se lee, y un log lo acaba
-        // mirando una persona aunque lo haya escrito una máquina.
+        // La hora en el JSON va en ISO porque un `1788533056755` no hay quien
+        // lo lea, y estos logs los acaba mirando una persona.
         timestamp: stdTimeFunctions.isoTime,
 
-        /**
-         * Sin envolver: los serializadores reciben así el objeto crudo de
-         * Express y no la versión que `pino-http` ya recortó. Es lo que
-         * permite leer `originalUrl` y `ip`, que en la versión recortada no
-         * existen.
-         */
+        // Sin envolver, los serializadores reciben el objeto crudo de Express
+        // en vez de la versión que pino-http ya recortó. Es lo que permite leer
+        // `originalUrl` y `ip`, que en la recortada no están.
         wrapSerializers: false,
 
         /**
-         * Serializadores escritos a mano y no los de serie: aquellos vuelcan
-         * los headers completos —y ahí viaja el `Authorization`—, además de
-         * `query`, `params`, el puerto de origen y el resto de la petición.
+         * Los serializadores están escritos a mano porque los de serie vuelcan
+         * los headers completos, y por ahí viaja el `Authorization`. De los
+         * headers solo se guarda el `user-agent`, que es el único que ayuda a
+         * depurar, y la IP, sin la cual no se puede seguir a quien esté
+         * abusando de un endpoint.
          *
-         * De los headers solo sobrevive el `user-agent`, que es el único que
-         * dice algo al depurar. La IP se queda porque sin ella no se puede
-         * seguir a quien esté abusando de un endpoint.
-         *
-         * En desarrollo NO se escriben: el mensaje ya dice método, ruta y
-         * estado, así que `req` y `res` eran ocho líneas para repetirlo. En
-         * producción sí, porque ahí son campos que el agregador filtra.
+         * Con la consola legible no se escriben, porque el mensaje ya dice
+         * método, ruta y estado y eran ocho líneas para repetirlo.
          */
-        serializers: isDevelopment
-            // Devolviendo `undefined` la clave no se escribe. Quitar el
-            // serializador NO es equivalente: sin él, pino vuelca el objeto
-            // `ServerResponse` entero, que son doscientas líneas de sockets y
-            // temporizadores por petición.
+        serializers: pretty
+            // Devolver `undefined` deja la clave fuera. Quitar el serializador
+            // no es lo mismo, porque entonces pino vuelca el `ServerResponse`
+            // entero, que son doscientas líneas de sockets por petición.
             ? { req: () => undefined, res: () => undefined }
             : {
                 req: (req: IncomingMessage) => ({
@@ -326,27 +297,30 @@ export const buildLoggerParams = (configService: ConfigService): Params => {
                 res: (res: ServerResponse) => ({ statusCode: res.statusCode }),
             },
 
-        /**
-         * El usuario se añade al cerrar, que es cuando existe.
-         *
-         * En desarrollo se suma la IP suelta —los serializadores están
-         * apagados— y NO el cuerpo, que ya salió en la línea de entrada:
-         * escribirlo dos veces por petición llena la consola con lo mismo. En
-         * producción, al revés.
-         */
+        // El usuario se añade al cerrar, que es cuando ya existe.
         customSuccessObject: (req, _res, val: object) => closingRecord(req, val),
         customErrorObject: (req, _res, _error, val: object) => closingRecord(req, val),
 
-        ...(isDevelopment
+        /**
+         * La petición se anuncia al entrar, con el cuerpo que trae. Depende de
+         * si se puede registrar el cuerpo y no del formato, porque sin cuerpo
+         * esta línea no aporta nada que la de cierre no diga ya.
+         *
+         * El cuerpo sale aquí y la línea de cierre no lo repite, que si no se
+         * escribe dos veces por petición.
+         */
+        ...(logRequestPayload
             ? {
                 customReceivedMessage: receivedMessage,
                 customReceivedObject: (req: IncomingMessage) => payloadOf(req, false),
-                transport: PRETTY_TRANSPORT,
             }
+            : {}),
+
+        ...(pretty
+            ? { transport: PRETTY_TRANSPORT }
             : {
-                // En JSON el nivel sale como texto ("error") y no como número
-                // (50): un log que también lee una persona no debería necesitar
-                // traducción.
+                // En JSON el nivel sale como texto y no como el número 50, para
+                // no tener que traducirlo al leerlo.
                 formatters: { level: (label: string) => ({ level: label }) },
             }),
     };

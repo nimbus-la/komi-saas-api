@@ -29,11 +29,11 @@ export class AuthUserFinderAdapter implements AuthUserFinder {
         try {
             user = UserId.create(userId);
         } catch (error: unknown) {
-            // "No existe" y "llegó con un formato imposible" se responden igual
-            // hacia arriba, y deben seguir haciéndolo. Pero son cosas muy
-            // distintas: lo segundo es un identificador que alguien construyó
-            // mal, y sin esta línea se investigaba como si el usuario se
-            // hubiera borrado.
+            // Que no exista y que llegue con un formato imposible se
+            // responden igual hacia arriba, y así debe seguir. Pero son cosas
+            // distintas, porque lo segundo es un identificador mal construido y
+            // sin esta línea se investigaba como si el usuario se hubiera
+            // borrado.
             this.logger.debug({ userId, err: error }, 'El identificador de usuario no es válido: se responde como inexistente');
 
             return null;

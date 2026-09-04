@@ -1,11 +1,12 @@
-import { Controller, ForbiddenException, Get, INestApplication, Logger } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { Controller, ForbiddenException, Get, INestApplication } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
+import { LoggerModule } from 'nestjs-pino';
 import { EntityNotFoundError, QueryFailedError } from 'typeorm';
 import request from 'supertest';
 
 import { AllExceptionsFilter } from '@/infrastructure/http/all-exceptions.filter';
-import { requestIdMiddleware } from '@/infrastructure/http/request-id.middleware';
+import { buildLoggerParams } from '@/infrastructure/logging/logger.config';
 import { ResponseInterceptor } from '@/infrastructure/http/response.interceptor';
 import { DomainException } from '@/shared/domain/domain.exception';
 import { RESPONSE_CODE } from '@/utils';
@@ -93,16 +94,23 @@ describe('Manejo de errores (e2e)', () => {
     let app: INestApplication;
 
     beforeAll(async () => {
-        Logger.overrideLogger([]);
-
-        const moduleRef = await Test.createTestingModule({ controllers: [LabController] }).compile();
+        // El mismo cableado que en AppModule. El logger va en silencio para no
+        // llenar la salida de jest, pero su middleware sigue montado y es el que
+        // genera el identificador de cada peticion.
+        const moduleRef = await Test.createTestingModule({
+            imports: [
+                LoggerModule.forRoot(
+                    buildLoggerParams({ level: 'silent', pretty: false, logRequestPayload: false })
+                ),
+            ],
+            controllers: [LabController],
+            providers: [
+                { provide: APP_FILTER, useClass: AllExceptionsFilter },
+                { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+            ],
+        }).compile();
 
         app = moduleRef.createNestApplication();
-
-        // Mismo cableado que main.ts, en el mismo orden.
-        app.use(requestIdMiddleware);
-        app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
-        app.useGlobalFilters(new AllExceptionsFilter());
 
         await app.init();
     });
@@ -130,10 +138,15 @@ describe('Manejo de errores (e2e)', () => {
             expect(body).toMatchObject({ status: 'INFO', code: RESPONSE_CODE.NO_CONTENT, content: null });
         });
 
-        it('no agrega traceId al cuerpo de las respuestas exitosas', async () => {
-            const { body } = await get('ok');
+        /**
+         * El traceId va tambien en las exitosas. Si el front lo guarda siempre,
+         * un "esto se guardo mal" que no produjo ningun error sigue teniendo
+         * por donde buscarse.
+         */
+        it('agrega el traceId al cuerpo, y es el mismo del header', async () => {
+            const { body, headers } = await get('ok');
 
-            expect(body.traceId).toBeUndefined();
+            expect(body.traceId).toBe(headers['x-request-id']);
         });
     });
 

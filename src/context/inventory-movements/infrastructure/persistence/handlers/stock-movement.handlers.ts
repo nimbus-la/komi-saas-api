@@ -3,10 +3,11 @@ import { Injectable } from "@nestjs/common";
 import { PinoLogger } from "nestjs-pino";
 
 import { DomainEvent } from "@/shared/domain/domain-event";
+import { sanitize } from "@/infrastructure/logging/sanitizer.util";
 
-// Por ruta directa y no desde el barrel `../../../../inventory`: ese índice
-// arrastra el controller de inventario, y con él `@nestjs/jwt`, que solo
-// publica ESM y deja este archivo fuera del alcance de una prueba unitaria.
+// Por ruta directa y no desde el barrel `../../../../inventory`, que arrastra
+// el controlador de inventario y con él `@nestjs/jwt`. Ese solo publica ESM y
+// dejaba este archivo fuera del alcance de una prueba unitaria.
 import { StockReceivedEvent } from "@/context/inventory/domain/events/stock-received.event";
 import { StockConsumedEvent } from "@/context/inventory/domain/events/stock-consumed.event";
 import { StockWastedEvent } from "@/context/inventory/domain/events/stock-wasted.event";
@@ -122,12 +123,11 @@ export class StockMovementHandlers {
     /**
      * Arma la tanda de movimientos y la registra.
      *
-     * El armado va DENTRO del try, y esa es toda la razón de que este método
-     * exista. Antes se hacía fuera: un evento que llegara con la lista de lotes
-     * vacía o sin ella reventaba el `.map` ANTES de cualquier `catch`, el error
-     * subía hasta el publicador y de ahí a la petición, que respondía 500 con el
-     * stock ya movido. Y si el fallo ocurría fuera del ciclo HTTP, no quedaba
-     * ni esa señal: se perdía entero.
+     * Este método existe para que el armado quede dentro del `try`. Antes se
+     * hacía fuera, así que un evento que llegara sin su lista de lotes reventaba
+     * el `.map` antes de cualquier `catch`, el error subía hasta el publicador y
+     * de ahí a la petición, que respondía 500 con el stock ya movido. Y si eso
+     * pasaba fuera del ciclo HTTP se perdía entero.
      */
     private async record(
         operation: string,
@@ -180,17 +180,16 @@ export class StockMovementHandlers {
 
 
     /**
-     * Deja constancia CRÍTICA de que el stock cambió pero su movimiento no quedó
+     * Deja constancia de que el stock cambió pero su movimiento no quedó
      * registrado.
      *
-     * Los movimientos que faltaron van como campo estructurado y no dentro del
-     * texto: así se recuperan con un `jq` sobre el log y se rehacen con un
-     * script, en vez de recortándolos a mano de una línea. El evento entero
-     * viaja también, porque cuando lo que falla es el armado no hay ningún
-     * movimiento que adjuntar.
+     * Los movimientos que faltaron van como campo y no dentro del texto, para
+     * poder sacarlos con un `jq` y rehacerlos con un script en vez de
+     * recortarlos a mano. El evento entero viaja también, porque cuando lo que
+     * falla es el armado no hay ningún movimiento que adjuntar.
      *
-     * Este log debe estar conectado a alertas: un fallo aquí significa que la
-     * bitácora dejó de reflejar la realidad del inventario.
+     * Esta línea debería estar conectada a alertas. Un fallo aquí significa que
+     * la bitácora dejó de reflejar la realidad del inventario.
      */
     private logAuditFailure(
         operation: string,
@@ -207,8 +206,12 @@ export class StockMovementHandlers {
             {
                 event: event.eventName,
                 occurredOn: event.occurredOn,
-                failedMovements,
-                payload: event,
+
+                // Se sanean los dos porque se escriben enteros para poder
+                // rehacer la fila a mano, así que pasan por la misma lista que
+                // el cuerpo de una petición.
+                failedMovements: sanitize(failedMovements),
+                payload: sanitize(event),
                 err: error,
             },
             `[AUDITORIA INCOMPLETA] ${operation}: el stock se actualizó pero NO se registraron `
