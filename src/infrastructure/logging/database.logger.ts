@@ -1,9 +1,7 @@
 import { PinoLogger } from "nestjs-pino";
-import { Logger, ObjectLiteral } from "typeorm";
+import { Logger } from "typeorm";
 
-
-/** Los parámetros de una consulta, tal como los entrega TypeORM. */
-type QueryParameters = unknown[] | ObjectLiteral | undefined;
+import { QueryParameters, readableQuery } from "./query-format.util";
 
 
 /**
@@ -47,13 +45,17 @@ export class DatabaseLogger implements Logger {
     /**
      * Nivel `debug` a propósito: son cientos por minuto y en producción no se
      * miran. Con `LOG_LEVEL=info` desaparecen sin tocar la conexión.
+     *
+     * La consulta va como MENSAJE y ya con los valores puestos: los parámetros
+     * en un campo aparte obligaban a contar `$1`, `$2` con el dedo para saber
+     * qué se había buscado.
      */
     public logQuery(query: string, parameters?: QueryParameters): void {
         if (!this.logQueries) {
             return;
         };
 
-        this.logger.debug(DatabaseLogger.details(parameters), query);
+        this.logger.debug(readableQuery(query, parameters));
     };
 
 
@@ -69,7 +71,7 @@ export class DatabaseLogger implements Logger {
      */
     public logQueryError(error: string | Error, query: string, parameters?: QueryParameters): void {
         this.logger.error(
-            { ...DatabaseLogger.details(parameters), query },
+            { query: readableQuery(query, parameters) },
             error instanceof Error ? error.message : error,
         );
     };
@@ -81,10 +83,7 @@ export class DatabaseLogger implements Logger {
      * activarlo sea añadir esa opción y nada más.
      */
     public logQuerySlow(time: number, query: string, parameters?: QueryParameters): void {
-        this.logger.warn(
-            { ...DatabaseLogger.details(parameters), durationMs: time },
-            query,
-        );
+        this.logger.warn({ durationMs: time }, readableQuery(query, parameters));
     };
 
 
@@ -108,13 +107,4 @@ export class DatabaseLogger implements Logger {
         this.logger.info(message);
     };
 
-
-    /** Los parámetros solo se registran si los hay: un arreglo vacío no dice nada. */
-    private static details(parameters: QueryParameters): object {
-        if (parameters === undefined || (Array.isArray(parameters) && parameters.length === 0)) {
-            return {};
-        };
-
-        return { parameters };
-    };
 };

@@ -86,14 +86,23 @@ por eso esas líneas deberían estar conectadas a alertas.
 Salen por pino, con el `traceId` de la petición que las disparó:
 
 ```
-[10:11:52.019] DEBUG: (d6f7c5ab48c3) [TypeORM] SELECT "TenantEntity"."tenant_id" ...
-    parameters: [ "mi-negocio", false ]
-[10:11:52.161] WARN: (d6f7c5ab48c3) POST /auth/login -> 401 | 148 ms
+[2026-09-04 11:07:23.263] DEBUG: SELECT 9 cols FROM "tenants" WHERE tenant_slug = 'mi-negocio'
+    traceId: "6bc800279a48"
+    context: "TypeORM"
+[2026-09-04 11:07:23.436] WARN: POST /auth/login -> 401
+    traceId: "6bc800279a48"
 ```
 
 Antes iban por su cuenta a la consola —sin timestamp, sin nivel y sin
 identificador—, así que quedaban sueltas entre las líneas de la petición y no
 se sabía cuál venía de cuál.
+
+La consulta se escribe **para leerla**, no para volver a ejecutarla
+(`query-format.util.ts`): los valores van puestos en lugar de `$1`, `$2` —que
+obligaban a contarlos con el dedo en un arreglo aparte— y la lista de alias de
+un SELECT de TypeORM se resume en cuántas columnas son. Los valores largos se
+cortan, así que un hash no acaba entero en la consola. Si hace falta la consulta
+exacta, está en la base de datos.
 
 Hay **dos palancas** y cada una hace algo distinto:
 
@@ -116,27 +125,55 @@ apaga algo. El valor se le pasa al logger, que es quien decide.
 
 La línea que cierra la petición lleva, además del `traceId`:
 
+Cada petición deja **dos** líneas, unidas por el `traceId`:
+
+```
+[2026-09-04 11:07:23.486] INFO: --> POST /auth/login?debug=true
+    traceId: "6bc800279a48"
+    payload: {
+      "query": { "debug": "true" },
+      "body": { "username": "ana", "password": "[REDACTADO]" }
+    }
+[2026-09-04 11:07:23.436] WARN: POST /auth/login?debug=true -> 401
+    traceId: "6bc800279a48"
+    responseTime: 184
+    ip: "::1"
+```
+
 | Campo | De dónde sale |
 |---|---|
-| `req.method`, `req.url`, `res.statusCode`, `responseTime` | la petición |
-| `req.headers` | los headers tal cual, con los sensibles tapados |
-| `body` | el cuerpo con el que llegó, con los sensibles tapados |
+| `responseTime`, `ip` | cómo terminó y desde dónde |
+| `payload` | cuerpo, query string y parámetros de ruta, saneados |
 | `tenantId`, `userId`, `branchId`, `rolScope` | el token que validó `JwtAuthGuard` |
+| `req`, `res` | **solo en producción**: método, ruta, IP y `user-agent` |
 
-El usuario y el cuerpo se añaden **al cerrar** la petición (`customSuccessObject`
-/ `customErrorObject` en `logger.config.ts`) y no en el serializador: `pino-http`
-serializa el request al entrar, cuando Express todavía no parseó el cuerpo ni el
-guard resolvió el usuario. Puesto ahí, el cuerpo salía siempre vacío.
+En desarrollo `req` y `res` no se escriben: el mensaje ya dice método, ruta y
+estado, así que eran ocho líneas para repetirlo. Sus serializadores devuelven
+`undefined` en vez de quitarse —quitarlos hace que pino vuelque el objeto
+`ServerResponse` entero, doscientas líneas de sockets por petición—.
 
-En la consola de desarrollo se ocultan `req`, `res` y `responseTime` —el mensaje
-ya dice método, ruta, estado y duración— pero el `body` sí se muestra. En
-producción sale todo, que es donde se indexa.
+La línea de **entrada** solo existe en desarrollo: si el proceso se cae o se
+cuelga a mitad de una petición, la de cierre nunca se escribe y esa es la única
+constancia de cuál lo provocó. Por eso el `payload` va ahí en desarrollo y en la
+de cierre en producción: escribirlo dos veces llenaría la consola con lo mismo.
 
-> **Añadir un campo sensible a un DTO obliga a tocar `REDACTED_PATHS`.**
-> El cuerpo se registra entero salvo lo que esa lista tapa: hoy `password`,
-> `refreshToken` y `accessToken`, más los headers `authorization` y `cookie`.
-> Lo que no esté ahí acaba escrito en claro. Hay pruebas que lo comprueban
-> contra un pino real en `logger.config.spec.ts`.
+El usuario se añade **al cerrar** y no en el serializador de la petición:
+`pino-http` serializa el request al entrar, cuando el guard todavía no ha
+corrido. Lo mismo le pasaba al cuerpo, que salía siempre vacío.
+
+De los headers solo se registra el `user-agent`, y solo en producción. Los
+serializadores de serie los vuelcan enteros, y ahí viaja el `Authorization`.
+
+> **Añadir un campo sensible a un DTO obliga a tocar `sanitizer.util.ts`.**
+> El cuerpo se registra entero salvo lo que tapa `SENSITIVE_FIELDS`, y lo que no
+> esté en esa lista acaba escrito en claro.
+>
+> Hay dos capas y cubren cosas distintas. El **saneador** (`sanitize`) recorre el
+> payload entero y tapa el campo a cualquier profundidad, sin distinguir
+> mayúsculas: es el que protege el cuerpo de la petición. `redact` de pino cubre
+> las líneas escritas a mano (`logger.info({ accessToken })`), pero solo llega a
+> dos niveles y compara exacto, por eso su lista va en la grafía del código.
+> Ambas se comprueban contra un pino real en `logger.config.spec.ts`.
 >
 > El cuerpo también puede llevar datos personales (un correo, un nombre). Es el
 > precio de poder reproducir un fallo tal como llegó.
@@ -344,7 +381,7 @@ Con la aplicación levantada, cualquier error real sirve. El cliente recibe:
 Y la consola, para esa misma petición:
 
 ```
-[18:42:11.507] ERROR: (dd60de2d61ba) [AllExceptionsFilter] POST /user
+[2026-09-04 18:42:11.507] ERROR: POST /user
 QueryFailedError: DatabaseError: duplicate key value violates unique constraint "uq_users_email"
     at UserRepository.save (.../user.repository.ts:41:20)
   query: 'INSERT INTO users(email, password) VALUES ($1, $2)',
@@ -356,9 +393,13 @@ QueryFailedError: DatabaseError: duplicate key value violates unique constraint 
     constraint: 'uq_users_email',
     detail: 'Key (email)=(ana@komi.com) already exists.'
   }
+    traceId: "dd60de2d61ba"
+    context: "AllExceptionsFilter"
     code: "9999"
     httpStatus: 500
-[18:42:11.509] ERROR: (dd60de2d61ba) POST /user -> 500 | 34 ms
+[2026-09-04 18:42:11.509] ERROR: POST /user -> 500
+    traceId: "dd60de2d61ba"
+    responseTime: 34
 ```
 
 Son dos líneas que se complementan, unidas por el `traceId`: la del filtro trae

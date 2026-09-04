@@ -111,9 +111,9 @@ describe('buildLoggerParams', () => {
     });
 
 
-    describe('mensaje de la petición terminada', () => {
+    describe('mensajes de la peticion', () => {
         /** Solo ASCII: una flecha UTF-8 se ve como `ÔåÆ` en una consola que no va en UTF-8. */
-        it('dice método, ruta, estado y duración, en ASCII', () => {
+        it('al cerrar dice metodo, ruta y estado, en ASCII', () => {
             const { customSuccessMessage } = buildOptions(Enviroment.Development);
 
             const message = customSuccessMessage!(
@@ -122,12 +122,12 @@ describe('buildLoggerParams', () => {
                 12
             );
 
-            expect(message).toBe('GET /menus -> 200 | 12 ms');
+            expect(message).toBe('GET /menus -> 200');
         });
 
 
-        /** Sin duración: `pino-http` no se la pasa a este callback. */
-        it('en error dice el tipo de error en lugar de la duración', () => {
+        /** El camino del error usa el mismo mensaje: lo que cambia es el nivel. */
+        it('al fallar dice lo mismo', () => {
             const { customErrorMessage } = buildOptions(Enviroment.Development);
 
             const message = customErrorMessage!(
@@ -136,7 +136,38 @@ describe('buildLoggerParams', () => {
                 new TypeError('roto')
             );
 
-            expect(message).toBe('POST /auth/login -> 500 | TypeError');
+            expect(message).toBe('POST /auth/login -> 500');
+        });
+
+
+        /**
+         * Si el proceso se cae a mitad de una peticion, la linea de cierre no
+         * llega a escribirse: esta es la unica constancia de cual lo provoco.
+         */
+        it('al entrar la anuncia, solo en desarrollo', () => {
+            const { customReceivedMessage } = buildOptions(Enviroment.Development);
+
+            const message = customReceivedMessage!(
+                { method: 'POST', url: '/auth/login' } as IncomingMessage,
+                {} as ServerResponse
+            );
+
+            expect(message).toBe('--> POST /auth/login');
+            expect(buildOptions(Enviroment.Production).customReceivedMessage).toBeUndefined();
+        });
+
+
+        /** `originalUrl` conserva la ruta completa aunque un router la reescriba. */
+        it('prefiere la ruta original a la reescrita', () => {
+            const { customSuccessMessage } = buildOptions(Enviroment.Development);
+
+            const message = customSuccessMessage!(
+                { method: 'GET', url: '/reescrita', originalUrl: '/branch/42' } as unknown as IncomingMessage,
+                { statusCode: 200 } as ServerResponse,
+                1
+            );
+
+            expect(message).toBe('GET /branch/42 -> 200');
         });
     });
 
@@ -211,10 +242,22 @@ describe('buildLoggerParams', () => {
          * peticion: pino-http serializa el request al ENTRAR, cuando Express
          * todavia no ha parseado el cuerpo ni el guard ha resuelto el usuario.
          */
-        it('registra el cuerpo con el que llego la peticion', () => {
-            expect(closing({ body: { username: 'ana' } })).toMatchObject({
-                body: { username: 'ana' },
-            });
+        /**
+         * En desarrollo el cuerpo ya salio en la linea de entrada: repetirlo al
+         * cerrar llena la consola con lo mismo dos veces. En produccion no hay
+         * linea de entrada, asi que va aqui.
+         */
+        it('el cuerpo va aqui solo en produccion', () => {
+            const { customSuccessObject } = buildOptions(Enviroment.Production);
+
+            const record = customSuccessObject!(
+                { body: { username: 'ana' } } as unknown as IncomingMessage,
+                {} as ServerResponse,
+                {}
+            );
+
+            expect(record).toMatchObject({ payload: { body: { username: 'ana' } } });
+            expect(closing({ body: { username: 'ana' } })).not.toHaveProperty('payload');
         });
 
 
@@ -247,7 +290,7 @@ describe('buildLoggerParams', () => {
                 {}
             );
 
-            expect(record).toMatchObject({ tenantId: 'tenant-42', body: { username: 'ana' } });
+            expect(record).toMatchObject({ tenantId: 'tenant-42' });
         });
     });
 
@@ -274,27 +317,44 @@ describe('buildLoggerParams', () => {
 
 
     describe('serializadores', () => {
-        it('de la petición registra método, ruta y headers', () => {
+        /**
+         * En desarrollo no se escriben: el mensaje ya dice metodo, ruta y
+         * estado, asi que `req` y `res` eran ocho lineas para repetirlo.
+         */
+        it('en desarrollo no se registra req ni res', () => {
             const { serializers } = buildOptions(Enviroment.Development);
+
+            // Devuelven undefined, y esa es la razon de que la clave no se
+            // escriba. Sin serializador, pino volcaria el ServerResponse entero:
+            // doscientas lineas de sockets y temporizadores por peticion.
+            expect(serializers!['req']!({})).toBeUndefined();
+            expect(serializers!['res']!({})).toBeUndefined();
+        });
+
+
+        it('de la petición registra método, ruta, IP y user-agent', () => {
+            const { serializers } = buildOptions(Enviroment.Production);
 
             const serialized = serializers!['req']!({
                 method: 'POST',
-                url: '/auth/login',
-                headers: { 'content-type': 'application/json' },
-                body: { username: 'ana' },
+                originalUrl: '/auth/login',
+                ip: '::1',
+                headers: { 'user-agent': 'curl/8.19.0', authorization: 'Bearer un-token-secreto' },
+                socket: {},
             });
 
-            // El cuerpo NO: aqui todavia no existe, se agrega al cerrar.
+            // Los headers NO se vuelcan enteros: ahi viaja el Authorization.
             expect(serialized).toEqual({
                 method: 'POST',
                 url: '/auth/login',
-                headers: { 'content-type': 'application/json' },
+                ip: '::1',
+                userAgent: 'curl/8.19.0',
             });
         });
 
 
         it('de la respuesta registra solo el estado', () => {
-            const { serializers } = buildOptions(Enviroment.Development);
+            const { serializers } = buildOptions(Enviroment.Production);
 
             expect(serializers!['res']!({ statusCode: 201, headers: { 'set-cookie': 'x' } }))
                 .toEqual({ statusCode: 201 });
@@ -307,6 +367,17 @@ describe('buildLoggerParams', () => {
      * cuerpo y los headers, así que lo único que impide filtrar credenciales
      * es `redact`. Se comprueba contra un pino REAL escribiendo en memoria, no
      * mirando la lista de rutas: una ruta mal escrita pasaría ese chequeo.
+     */
+    /**
+     * Lo que de verdad importa de esta configuración: se registra el cuerpo de
+     * cada petición, así que lo único que impide filtrar credenciales es que
+     * nada se escriba sin sanear.
+     *
+     * Hay dos caminos y se prueban los dos: el cuerpo pasa por el saneador
+     * (recursivo, a cualquier profundidad) y las líneas escritas a mano por
+     * `redact` de pino. Se comprueba contra un pino REAL escribiendo en
+     * memoria, no mirando la lista de campos: un nombre mal escrito pasaría ese
+     * chequeo.
      */
     describe('lo que nunca puede quedar escrito', () => {
         const logged = (record: object): string => {
@@ -322,16 +393,18 @@ describe('buildLoggerParams', () => {
         };
 
 
-        it('tapa el token de acceso que viaja en cada petición autenticada', () => {
-            const line = logged({ req: { headers: { authorization: 'Bearer token-secreto' } } });
+        /** El cuerpo, tal como lo arma la configuración al entrar la petición. */
+        const loggedBody = (body: object): string => {
+            const { customReceivedObject } = buildOptions(Enviroment.Development);
 
-            expect(line).not.toContain('token-secreto');
-            expect(line).toContain('[REDACTADO]');
-        });
+            return logged(
+                customReceivedObject!({ body } as unknown as IncomingMessage, {} as ServerResponse) as object
+            );
+        };
 
 
         it('tapa la contraseña de un login', () => {
-            const line = logged({ body: { username: 'ana', password: 'mi-clave' } });
+            const line = loggedBody({ username: 'ana', password: 'mi-clave' });
 
             expect(line).not.toContain('mi-clave');
             // Lo que NO es secreto sigue ahí: sin eso el log no sirve.
@@ -340,16 +413,31 @@ describe('buildLoggerParams', () => {
 
 
         it('tapa el refresh token de una renovación', () => {
-            const line = logged({ body: { refreshToken: 'refresh-secreto' } });
-
-            expect(line).not.toContain('refresh-secreto');
+            expect(loggedBody({ refreshToken: 'refresh-secreto' })).not.toContain('refresh-secreto');
         });
 
 
-        it('tapa las cookies', () => {
-            const line = logged({ req: { headers: { cookie: 'session=secreto' } } });
+        /**
+         * El agujero que `redact` no cubría: su comodín llega a un nivel, así
+         * que `body.credentials.password` se escribía en claro.
+         */
+        it('tapa una contraseña anidada, mire a la profundidad que mire', () => {
+            const line = loggedBody({ credentials: { nested: { password: 'secreto-hondo' } } });
 
-            expect(line).not.toContain('session=secreto');
+            expect(line).not.toContain('secreto-hondo');
+        });
+
+
+        it('tapa un token escrito a mano en cualquier línea', () => {
+            const line = logged({ accessToken: 'token-secreto' });
+
+            expect(line).not.toContain('token-secreto');
+            expect(line).toContain('[REDACTADO]');
+        });
+
+
+        it('tapa también un secreto colgado de otro objeto', () => {
+            expect(logged({ session: { refreshToken: 'refresh-secreto' } })).not.toContain('refresh-secreto');
         });
     });
 });

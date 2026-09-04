@@ -37,23 +37,29 @@ describe('DatabaseLogger', () => {
          * En `debug` a propósito: son cientos por minuto y en producción no se
          * miran. Con LOG_LEVEL=info desaparecen sin tocar la conexión.
          */
-        it('van en debug, con la consulta como mensaje y los parámetros aparte', () => {
+        /**
+         * La consulta va con los valores puestos: los parametros en un campo
+         * aparte obligaban a contar $1, $2 con el dedo.
+         */
+        it('van en debug, con los valores ya puestos en la consulta', () => {
             const { pino, logger } = build(true);
 
             logger.logQuery(SELECT, ['mi-negocio']);
 
-            expect(pino.debug).toHaveBeenCalledWith({ parameters: ['mi-negocio'] }, SELECT);
+            expect(pino.debug).toHaveBeenCalledWith(
+                "SELECT * FROM tenants WHERE tenant_slug = 'mi-negocio'"
+            );
         });
 
 
-        it('sin parámetros no se inventa la clave', () => {
+        it('sin parámetros la consulta sale tal cual', () => {
             const { pino, logger } = build(true);
 
             logger.logQuery(SELECT, []);
             logger.logQuery(SELECT);
 
-            expect(pino.debug).toHaveBeenNthCalledWith(1, {}, SELECT);
-            expect(pino.debug).toHaveBeenNthCalledWith(2, {}, SELECT);
+            expect(pino.debug).toHaveBeenNthCalledWith(1, SELECT);
+            expect(pino.debug).toHaveBeenNthCalledWith(2, SELECT);
         });
 
 
@@ -79,7 +85,7 @@ describe('DatabaseLogger', () => {
             logger.logQueryError(new Error('duplicate key value'), SELECT, ['mi-negocio']);
 
             expect(pino.error).toHaveBeenCalledWith(
-                { parameters: ['mi-negocio'], query: SELECT },
+                { query: "SELECT * FROM tenants WHERE tenant_slug = 'mi-negocio'" },
                 'duplicate key value',
             );
         });
@@ -116,8 +122,8 @@ describe('DatabaseLogger', () => {
             logger.logQuerySlow(1500, SELECT, ['mi-negocio']);
 
             expect(pino.warn).toHaveBeenCalledWith(
-                { parameters: ['mi-negocio'], durationMs: 1500 },
-                SELECT,
+                { durationMs: 1500 },
+                "SELECT * FROM tenants WHERE tenant_slug = 'mi-negocio'",
             );
         });
     });

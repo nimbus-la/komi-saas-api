@@ -13,6 +13,7 @@ export * from './events/event-emitter.publisher';
 export * from './logging/logger.config';
 export * from './logging/logging.module';
 export * from './logging/database.logger';
+export * from './logging/sanitizer.util';
 
 
 export * from './http/all-exceptions.filter';
