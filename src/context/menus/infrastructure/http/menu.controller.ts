@@ -1,12 +1,10 @@
-import { Body, Controller, Get, Patch, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Patch } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
+import { ResponseMessage } from "@/infrastructure";
 
 import { UpdateMenuIsNewDto } from "./dto/update-menu-is-new.dto";
 import { GetMenuUseCase, UpdateMenuIsNewUseCase } from "../../application";
 
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 @Controller("menus")
 export class MenuController {
     constructor(

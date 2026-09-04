@@ -89,6 +89,18 @@ class EnviromentVariables {
     @IsInt()
     @Min(1)
     JWT_REFRESH_TTL_DAYS?: number;
+
+
+    /**
+     * Nivel mínimo que se escribe en consola. Opcional: si no se define, el
+     * entorno decide (`debug` en desarrollo, `info` en el resto).
+     *
+     * `silent` apaga el log por completo; se acepta porque en las pruebas no
+     * aporta nada y ensucia la salida.
+     */
+    @IsOptional()
+    @IsIn(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+    LOG_LEVEL?: string;
 }
 
 

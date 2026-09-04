@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
+import { ResponseMessage } from "@/infrastructure";
 import { CurrentUser } from "@/auth/infrastructure/decorators";
 import type { AuthenticatedUser } from "@/auth/infrastructure/types";
 
@@ -17,8 +17,6 @@ import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesByTenantUseCase
  * sucursal solo por su identificador, así que con el id de una sucursal ajena se
  * la podía leer, editar y desactivar desde cualquier negocio.
  */
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 @Controller("branch")
 export class BranchController {
     constructor(

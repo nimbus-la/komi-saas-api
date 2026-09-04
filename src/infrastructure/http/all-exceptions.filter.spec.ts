@@ -5,9 +5,9 @@ import {
     HttpException,
     HttpStatus,
     InternalServerErrorException,
-    Logger,
     NotFoundException,
 } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
 import { EntityNotFoundError, QueryFailedError } from 'typeorm';
 
 import { ApiResponse } from '@/interfaces';
@@ -87,20 +87,26 @@ const nodeSystemError = (): Error => Object.assign(
 
 describe('AllExceptionsFilter', () => {
     let filter: AllExceptionsFilter;
-    let warn: jest.SpyInstance;
-    let error: jest.SpyInstance;
+    let warn: jest.Mock;
+    let error: jest.Mock;
 
-    /** Todo lo que el logger de errores recibió, concatenado. */
-    const loggedError = (): string => error.mock.calls.map((call) => String(call[0])).join('\n');
+    /**
+     * Todo lo que el logger de errores recibio: los campos estructurados
+     * y el mensaje. Pino recibe `(campos, mensaje)`, hay que mirar los dos.
+     */
+    const loggedError = (): string => error.mock.calls
+        .map((call) => `${JSON.stringify(call[0])} ${String(call[1])}`)
+        .join('\n');
 
     beforeEach(() => {
-        filter = new AllExceptionsFilter();
-        warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
-        error = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
-    });
+        warn = jest.fn();
+        error = jest.fn();
 
-    afterEach(() => {
-        jest.restoreAllMocks();
+        filter = new AllExceptionsFilter({
+            setContext: jest.fn(),
+            warn,
+            error,
+        } as unknown as PinoLogger);
     });
 
 
@@ -160,12 +166,33 @@ describe('AllExceptionsFilter', () => {
             expect(error).not.toHaveBeenCalled();
         });
 
+        /**
+         * Al ser global, el filtro atiende las rutas que no existen. Antes esto
+         * respondia el 1000 de validacion: "los datos enviados no son validos"
+         * para una URL mal escrita.
+         */
+        it('una ruta inexistente responde el codigo de recurso no encontrado', () => {
+            const { host, captured } = createHost({ method: 'GET', originalUrl: '/no-existe' });
+
+            filter.catch(new NotFoundException(), host);
+
+            expect(captured.status).toBe(HttpStatus.NOT_FOUND);
+            expect(captured.body).toMatchObject({
+                code: RESPONSE_CODE.NOT_FOUND,
+                message: 'El recurso solicitado no existe.',
+            });
+        });
+
+
         it('un 4xx registra el payload que armó Nest', () => {
             const { host } = createHost();
 
             filter.catch(new BadRequestException(['email must be an email']), host);
 
-            expect(warn).toHaveBeenCalledWith(expect.stringContaining('email must be an email'));
+            expect(warn).toHaveBeenCalledWith(
+                expect.objectContaining({ httpStatus: HttpStatus.BAD_REQUEST }),
+                expect.stringContaining('email must be an email'),
+            );
         });
 
         it('InternalServerErrorException se vuelca completo, con stack', () => {
@@ -266,7 +293,6 @@ describe('AllExceptionsFilter', () => {
 
             // El mismo que ya viajó en el header X-Request-Id al entrar.
             expect(captured.body?.traceId).toBe('front-abc123');
-            expect(loggedError()).toContain('front-abc123');
         });
 
         it('genera uno propio si el filtro se usa sin el middleware delante', () => {
@@ -295,20 +321,28 @@ describe('AllExceptionsFilter', () => {
             expect(primera.captured.body?.traceId).not.toBe(segunda.captured.body?.traceId);
         });
 
-        it('es el mismo que quedó en la consola, para poder cruzarlos', () => {
-            const { host, captured } = createHost();
+        /**
+         * El filtro ya NO lo escribe en el mensaje: lo pone pino en cada
+         * linea de la peticion. A mano se imprimia dos veces seguidas.
+         */
+        it('no se repite dentro del mensaje: de eso se encarga pino', () => {
+            const { host, captured } = createHost({ method: 'POST', originalUrl: '/user', requestId: 'front-abc123' });
 
             filter.catch(queryFailedError(), host);
 
-            expect(loggedError()).toContain(captured.body?.traceId ?? 'sin-trace');
+            expect(captured.body?.traceId).toBe('front-abc123');
+            expect(loggedError()).not.toContain('front-abc123');
         });
 
-        it('también acompaña a los errores de dominio, que se loguean como warn', () => {
-            const { host, captured } = createHost();
+        it('los errores de dominio se loguean como warn, con su codigo', () => {
+            const { host } = createHost();
 
             filter.catch(new ItemAlreadyExistsExceptionStub(), host);
 
-            expect(warn).toHaveBeenCalledWith(expect.stringContaining(captured.body?.traceId ?? 'sin-trace'));
+            expect(warn).toHaveBeenCalledWith(
+                { code: '1302', httpStatus: HttpStatus.CONFLICT },
+                expect.any(String),
+            );
         });
     });
 
@@ -333,7 +367,7 @@ describe('AllExceptionsFilter', () => {
             filter.catch(new ItemAlreadyExistsExceptionStub(), host);
 
             expect(JSON.stringify(captured.body)).not.toContain('Harina');
-            expect(warn).toHaveBeenCalledWith(expect.stringContaining('Harina'));
+            expect(warn).toHaveBeenCalledWith(expect.any(Object), expect.stringContaining('Harina'));
         });
 
         it('el sobre siempre tiene la misma forma', () => {

@@ -6,11 +6,8 @@ import {
   Patch,
   Post,
   Query,
-  UseFilters,
-  UseInterceptors,
 } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
 import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -28,8 +25,6 @@ import {
 import { ReassignUserDto } from "./dto/reassign-user.dto";
 import { SearchUsersDto } from "./dto/search-users.dto";
 
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 @Controller("user")
 export class UserController {
   constructor(

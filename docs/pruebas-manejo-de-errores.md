@@ -13,9 +13,16 @@ Cuatro caminos, según de dónde venga la excepción:
 | Excepción | Al cliente | A la consola |
 |---|---|---|
 | `DomainException` | código y estado del catálogo | `warn` de una línea con el `detail` |
+| `HttpException` **401** | su propio estado, código `1001` | `warn` con el payload de Nest |
+| `HttpException` **404** | su propio estado, código `2000` | `warn` con el payload de Nest |
 | `HttpException` **4xx** | su propio estado, código `1000` | `warn` con el payload de Nest |
 | `HttpException` **5xx** | su propio estado, código `1000` | `error` con el **objeto completo** |
 | **Todo lo demás** | `500` / `9999` genérico | `error` con el **objeto completo** |
+
+El filtro es **global** (`APP_FILTER` en `AppModule`), igual que
+`ResponseInterceptor` (`APP_INTERCEPTOR`). No hay que acordarse de decorar cada
+controller, y también quedan cubiertas las rutas que no existen: por eso el 404
+tiene su propia entrada.
 
 El volcado sale de `util.inspect(exception, { depth: 5 })`: el stack y, en el
 caso de TypeORM, también `query`, `parameters` y el `driverError` con su
@@ -38,6 +45,138 @@ le asigna un identificador a **cada** petición, termine bien o mal:
 
 El filtro ya no lo fabrica: lo lee de `req.requestId`, así que el `traceId` del
 cuerpo y el header de la respuesta son el mismo valor.
+
+Y va en el cuerpo de **toda** respuesta, no solo en las de error:
+`ResponseInterceptor` lo añade también al sobre de éxito. Un "esto se guardó
+mal" que no produjo ningún error sigue teniendo así por dónde buscarse en el
+log.
+
+### Lo que falla fuera de una petición
+
+Un error solo llega a `AllExceptionsFilter` si sube por el ciclo HTTP. Lo que
+ocurre en un handler de eventos, dentro de un `catch` que devuelve `null`, o
+después de responder, no pasa por ahí. Esos sitios registran su propia línea:
+
+| Dónde | Nivel | Qué deja escrito |
+|---|---|---|
+| `EventEmitterPublisher` | `error` | el evento que no se pudo procesar, con su payload |
+| `StockMovementHandlers` | `error` | `[AUDITORIA INCOMPLETA]` con los movimientos que faltaron |
+| `JwtAuthGuard` | `debug` | por qué se rechazó de verdad el token |
+| Adaptadores de auth | `debug` | por qué se respondió "no existe" |
+| `Argon2PasswordVerifier` | `debug` | que el hash guardado es ilegible |
+| `main.ts` | `fatal` | excepciones y promesas sin manejar, antes de salir |
+
+Las líneas en `debug` son pistas, no incidencias: al cliente se le sigue
+respondiendo lo mismo de siempre —"credenciales inválidas", "no existe"— porque
+distinguir los casos hacia fuera le regala información a quien esté probando.
+Para verlas hace falta `LOG_LEVEL=debug`, que es el valor por defecto en
+desarrollo.
+
+**Un evento que falla ya no tumba la petición.** Cuando el publicador corre, la
+operación de negocio ya se guardó: el stock movido, el usuario creado. Antes el
+error subía y la petición respondía 500 por algo que sí había ocurrido, así que
+quien reintentaba lo hacía dos veces. Ahora cada evento se emite por separado
+—uno roto no cancela a los siguientes—, el fallo queda registrado con su payload
+y la respuesta sigue siendo la que corresponde al hecho ya persistido. La
+constancia en el log es lo que permite rehacer a mano lo que quedó a medias, y
+por eso esas líneas deberían estar conectadas a alertas.
+
+### Las consultas a la base
+
+Salen por pino, con el `traceId` de la petición que las disparó:
+
+```
+[2026-09-04 11:07:23.263] DEBUG: SELECT 9 cols FROM "tenants" WHERE tenant_slug = 'mi-negocio'
+    traceId: "6bc800279a48"
+    context: "TypeORM"
+[2026-09-04 11:07:23.436] WARN: POST /auth/login -> 401
+    traceId: "6bc800279a48"
+```
+
+Antes iban por su cuenta a la consola —sin timestamp, sin nivel y sin
+identificador—, así que quedaban sueltas entre las líneas de la petición y no
+se sabía cuál venía de cuál.
+
+La consulta se escribe **para leerla**, no para volver a ejecutarla
+(`query-format.util.ts`): los valores van puestos en lugar de `$1`, `$2` —que
+obligaban a contarlos con el dedo en un arreglo aparte— y la lista de alias de
+un SELECT de TypeORM se resume en cuántas columnas son. Los valores largos se
+cortan, así que un hash no acaba entero en la consola. Si hace falta la consulta
+exacta, está en la base de datos.
+
+Hay **dos palancas** y cada una hace algo distinto:
+
+| Variable | Qué decide |
+|---|---|
+| `DB_LOGGING` | si TypeORM **emite** las consultas normales |
+| `LOG_LEVEL` | si se **ven** (van en `debug`, así que `info` las esconde) |
+
+Las consultas que **fallan** se registran siempre, aunque `DB_LOGGING` esté en
+`false`: si una revienta dentro de un handler de eventos o de un `catch` que se
+la traga, esa línea es la única constancia de que ocurrió. En una petición HTTP
+se verá dos veces —aquí en el instante exacto, y al final en el filtro con el
+volcado completo—, y las une el `traceId`.
+
+`logging` ya no se le pasa a TypeORM: con un logger propio, TypeORM llama a sus
+métodos siempre y no consulta esa opción, así que dejarla ahí haría creer que
+apaga algo. El valor se le pasa al logger, que es quien decide.
+
+### Qué queda registrado de cada petición
+
+La línea que cierra la petición lleva, además del `traceId`:
+
+Cada petición deja **dos** líneas, unidas por el `traceId`:
+
+```
+[2026-09-04 11:07:23.486] INFO: --> POST /auth/login?debug=true
+    traceId: "6bc800279a48"
+    payload: {
+      "query": { "debug": "true" },
+      "body": { "username": "ana", "password": "[REDACTADO]" }
+    }
+[2026-09-04 11:07:23.436] WARN: POST /auth/login?debug=true -> 401
+    traceId: "6bc800279a48"
+    responseTime: 184
+    ip: "::1"
+```
+
+| Campo | De dónde sale |
+|---|---|
+| `responseTime`, `ip` | cómo terminó y desde dónde |
+| `payload` | cuerpo, query string y parámetros de ruta, saneados |
+| `tenantId`, `userId`, `branchId`, `rolScope` | el token que validó `JwtAuthGuard` |
+| `req`, `res` | **solo en producción**: método, ruta, IP y `user-agent` |
+
+En desarrollo `req` y `res` no se escriben: el mensaje ya dice método, ruta y
+estado, así que eran ocho líneas para repetirlo. Sus serializadores devuelven
+`undefined` en vez de quitarse —quitarlos hace que pino vuelque el objeto
+`ServerResponse` entero, doscientas líneas de sockets por petición—.
+
+La línea de **entrada** solo existe en desarrollo: si el proceso se cae o se
+cuelga a mitad de una petición, la de cierre nunca se escribe y esa es la única
+constancia de cuál lo provocó. Por eso el `payload` va ahí en desarrollo y en la
+de cierre en producción: escribirlo dos veces llenaría la consola con lo mismo.
+
+El usuario se añade **al cerrar** y no en el serializador de la petición:
+`pino-http` serializa el request al entrar, cuando el guard todavía no ha
+corrido. Lo mismo le pasaba al cuerpo, que salía siempre vacío.
+
+De los headers solo se registra el `user-agent`, y solo en producción. Los
+serializadores de serie los vuelcan enteros, y ahí viaja el `Authorization`.
+
+> **Añadir un campo sensible a un DTO obliga a tocar `sanitizer.util.ts`.**
+> El cuerpo se registra entero salvo lo que tapa `SENSITIVE_FIELDS`, y lo que no
+> esté en esa lista acaba escrito en claro.
+>
+> Hay dos capas y cubren cosas distintas. El **saneador** (`sanitize`) recorre el
+> payload entero y tapa el campo a cualquier profundidad, sin distinguir
+> mayúsculas: es el que protege el cuerpo de la petición. `redact` de pino cubre
+> las líneas escritas a mano (`logger.info({ accessToken })`), pero solo llega a
+> dos niveles y compara exacto, por eso su lista va en la grafía del código.
+> Ambas se comprueban contra un pino real en `logger.config.spec.ts`.
+>
+> El cuerpo también puede llevar datos personales (un correo, un nombre). Es el
+> precio de poder reproducir un fallo tal como llegó.
 
 Se acepta el del cliente a propósito: así el front conserva la referencia
 aunque la petición nunca llegue al servidor —timeout, red caída—, que es justo
@@ -242,7 +381,7 @@ Con la aplicación levantada, cualquier error real sirve. El cliente recibe:
 Y la consola, para esa misma petición:
 
 ```
-ERROR [AllExceptionsFilter] [dd60de2d61ba] [9999] POST /user → HTTP 500
+[2026-09-04 18:42:11.507] ERROR: POST /user
 QueryFailedError: DatabaseError: duplicate key value violates unique constraint "uq_users_email"
     at UserRepository.save (.../user.repository.ts:41:20)
   query: 'INSERT INTO users(email, password) VALUES ($1, $2)',
@@ -254,7 +393,19 @@ QueryFailedError: DatabaseError: duplicate key value violates unique constraint 
     constraint: 'uq_users_email',
     detail: 'Key (email)=(ana@komi.com) already exists.'
   }
+    traceId: "dd60de2d61ba"
+    context: "AllExceptionsFilter"
+    code: "9999"
+    httpStatus: 500
+[2026-09-04 18:42:11.509] ERROR: POST /user -> 500
+    traceId: "dd60de2d61ba"
+    responseTime: 34
 ```
+
+Son dos líneas que se complementan, unidas por el `traceId`: la del filtro trae
+el volcado del fallo, y la de cierre dice cómo terminó la petición y cuánto
+tardó. El identificador lo pone pino en cada línea de la petición, así que el
+filtro ya no lo escribe dentro del mensaje.
 
 Se le pide el `traceId` a quien reporta el error y se llega a la línea exacta.
 

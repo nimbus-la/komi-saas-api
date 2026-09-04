@@ -1,4 +1,5 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
 import { Reflector } from '@nestjs/core';
 
 /**
@@ -86,6 +87,7 @@ const buildGuard = (options: {
         { verifyAsync } as unknown as JwtService,
         { getAllAndOverride: jest.fn().mockReturnValue(options.isPublic ?? false) } as unknown as Reflector,
         { findById } as unknown as SessionRepository,
+        { setContext: jest.fn(), debug: jest.fn() } as unknown as PinoLogger,
     );
 
     return { guard, findById, verifyAsync };

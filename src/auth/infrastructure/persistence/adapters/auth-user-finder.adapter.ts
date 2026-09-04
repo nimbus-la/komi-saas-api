@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 
 import { UserAggregate, UserId, UserName, UserRepository, UserTenantId } from "@/context/user/domain";
 import { AuthUserCredentials, AuthUserFinder } from "../../../application";
@@ -15,8 +16,11 @@ import { AuthUserCredentials, AuthUserFinder } from "../../../application";
 @Injectable()
 export class AuthUserFinderAdapter implements AuthUserFinder {
     constructor(
-        private readonly usersRepository: UserRepository
-    ) { }
+        private readonly usersRepository: UserRepository,
+        private readonly logger: PinoLogger
+    ) {
+        this.logger.setContext(AuthUserFinderAdapter.name);
+    }
 
 
     public async findByUserId(tenantId: string, userId: string): Promise<AuthUserCredentials | null> {
@@ -24,7 +28,14 @@ export class AuthUserFinderAdapter implements AuthUserFinder {
 
         try {
             user = UserId.create(userId);
-        } catch (error) {
+        } catch (error: unknown) {
+            // "No existe" y "llegó con un formato imposible" se responden igual
+            // hacia arriba, y deben seguir haciéndolo. Pero son cosas muy
+            // distintas: lo segundo es un identificador que alguien construyó
+            // mal, y sin esta línea se investigaba como si el usuario se
+            // hubiera borrado.
+            this.logger.debug({ userId, err: error }, 'El identificador de usuario no es válido: se responde como inexistente');
+
             return null;
         }
 
@@ -44,9 +55,11 @@ export class AuthUserFinderAdapter implements AuthUserFinder {
 
         try {
             name = UserName.create(userName);
-        } catch {
+        } catch (error: unknown) {
             // Un username con caracteres especiales no permitidos hace fallar el value object.
             // Aquí eso significa "no existe".
+            this.logger.debug({ userName, err: error }, 'El nombre de usuario no es válido: se responde como inexistente');
+
             return null;
         }
 

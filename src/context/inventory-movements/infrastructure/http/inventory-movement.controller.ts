@@ -1,14 +1,11 @@
-import { Controller, Get, Query, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Controller, Get, Query } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor } from "@/infrastructure";
 import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 
 import { SearchMovementsUseCase } from "../../application";
 import { SearchInventoryMovementsDto } from "./dtos/search-movement.dto";
 
 
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 @Controller('inventory/movements')
 export class InventoryMovementController {
     constructor(

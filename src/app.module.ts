@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
-import { AppConfigModule, DatabaseModule } from './infrastructure';
+import { AllExceptionsFilter, AppConfigModule, DatabaseModule, LoggingModule, ResponseInterceptor } from './infrastructure';
 import { TenantModule } from './context/tenants/tenant.module';
 import { ProductsModule } from './context/products/products.module';
 import { CategoriesModule } from './context/product-categories/categories.module';
@@ -16,6 +17,7 @@ import { AuthModule } from './auth';
   imports: [
     EventEmitterModule.forRoot(),
     AppConfigModule,
+    LoggingModule,
     DatabaseModule,
     AuthModule,
     InventoryModule,
@@ -26,6 +28,19 @@ import { AuthModule } from './auth';
     RolModule,
     MenusModule,
     UserModule,
+  ],
+
+  /**
+   * Filtro e interceptor GLOBALES, no por controlador.
+   *
+   * Colgados de cada controller solo cubrían sus rutas: una ruta que no existe,
+   * un error en un middleware o un controller nuevo al que se le olvidara el
+   * decorador respondían con el error crudo de Nest, sin código de catálogo y
+   * sin traceId. Aquí no hay nada que recordar poner.
+   */
+  providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
   ],
 })
 

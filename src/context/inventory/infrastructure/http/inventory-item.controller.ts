@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Patch, Post, Query, UseFilters, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Patch, Post, Query } from "@nestjs/common";
 
-import { AllExceptionsFilter, ResponseInterceptor, ResponseMessage } from "@/infrastructure";
+import { ResponseMessage } from "@/infrastructure";
 import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 
 import { ConsumeStockUseCase, CreateInventoryItemUseCase, FindInventoryItemUseCase, ReceiveStockUseCase, SearchInventoryItemsUseCase, SearchItemBatchesUseCase, SetGlobalMinimumStockUseCase, SetBranchMinimumStockUseCase, UpdateInventoryItemUseCase } from "../../application";
@@ -19,8 +19,6 @@ import { FindInventoryItemDto } from "./dtos/find-item.dto";
 import { SearchItemBatchesDto } from "./dtos/search-item-batches.dto";
 
 
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(AllExceptionsFilter)
 @Controller('inventory/item')
 export class InventoryItemController {
     constructor(
