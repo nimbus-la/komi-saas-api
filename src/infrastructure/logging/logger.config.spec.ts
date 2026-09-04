@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 
 import { ConfigService } from '@nestjs/config';
+import { pino } from 'pino';
 import { Options } from 'pino-http';
 
 import { Enviroment } from '../config/env.validation';
@@ -172,21 +173,183 @@ describe('buildLoggerParams', () => {
     });
 
 
-    describe('serializadores', () => {
+    describe('lo que se sabe solo al cerrar la peticion', () => {
+        const closing = (req: object, base: object = { res: { statusCode: 200 } }) => {
+            const { customSuccessObject } = buildOptions(Enviroment.Development);
+
+            return customSuccessObject!(req as IncomingMessage, {} as ServerResponse, base);
+        };
+
+
+        const user = {
+            userId: 'user-1',
+            tenantId: 'tenant-42',
+            branchId: 'branch-7',
+            rolScope: 'ADMIN',
+            sessionId: 'sesion-viva',
+        };
+
+
+        it('registra el negocio, el usuario, la sucursal y el alcance del rol', () => {
+            expect(closing({ user })).toMatchObject({
+                tenantId: 'tenant-42',
+                userId: 'user-1',
+                branchId: 'branch-7',
+                rolScope: 'ADMIN',
+            });
+        });
+
+
+        /** Identifica una sesion viva y no hace falta para diagnosticar nada. */
+        it('no registra el identificador de sesion', () => {
+            expect(closing({ user })).not.toHaveProperty('sessionId');
+        });
+
+
         /**
-         * Los de serie vuelcan los headers completos, y ahí viaja el
-         * `Authorization`. Este es el chequeo de que no se filtra.
+         * El motivo de hacerlo al cerrar y no en el serializador de la
+         * peticion: pino-http serializa el request al ENTRAR, cuando Express
+         * todavia no ha parseado el cuerpo ni el guard ha resuelto el usuario.
          */
-        it('la petición se reduce a método y ruta: ni headers ni token', () => {
+        it('registra el cuerpo con el que llego la peticion', () => {
+            expect(closing({ body: { username: 'ana' } })).toMatchObject({
+                body: { username: 'ana' },
+            });
+        });
+
+
+        it('conserva lo que ya traia la linea', () => {
+            expect(closing({ user }, { res: { statusCode: 201 } })).toMatchObject({
+                res: { statusCode: 201 },
+            });
+        });
+
+
+        it('una peticion anonima y sin cuerpo no agrega ninguna clave', () => {
+            expect(closing({})).toEqual({ res: { statusCode: 200 } });
+        });
+
+
+        /** Express deja `req.body` como objeto vacio en cada GET. */
+        it('un cuerpo vacio no se registra', () => {
+            expect(closing({ body: {} })).toEqual({ res: { statusCode: 200 } });
+        });
+
+
+        /** El camino del error tiene que enterarse igual que el del exito. */
+        it('el camino del error registra lo mismo', () => {
+            const { customErrorObject } = buildOptions(Enviroment.Development);
+
+            const record = customErrorObject!(
+                { user, body: { username: 'ana' } } as unknown as IncomingMessage,
+                {} as ServerResponse,
+                new TypeError('roto'),
+                {}
+            );
+
+            expect(record).toMatchObject({ tenantId: 'tenant-42', body: { username: 'ana' } });
+        });
+    });
+
+
+    describe('preflight', () => {
+        const ignores = (method: string): boolean => {
+            const { autoLogging } = buildOptions(Enviroment.Development);
+
+            return (autoLogging as { ignore: (req: IncomingMessage) => boolean })
+                .ignore({ method } as IncomingMessage);
+        };
+
+
+        it('el OPTIONS del navegador no se registra: lo responde CORS', () => {
+            expect(ignores('OPTIONS')).toBe(true);
+        });
+
+
+        it('el resto de peticiones si', () => {
+            expect(ignores('GET')).toBe(false);
+            expect(ignores('POST')).toBe(false);
+        });
+    });
+
+
+    describe('serializadores', () => {
+        it('de la petición registra método, ruta y headers', () => {
             const { serializers } = buildOptions(Enviroment.Development);
 
             const serialized = serializers!['req']!({
-                method: 'GET',
-                url: '/menus',
-                headers: { authorization: 'Bearer un-token-secreto' },
+                method: 'POST',
+                url: '/auth/login',
+                headers: { 'content-type': 'application/json' },
+                body: { username: 'ana' },
             });
 
-            expect(serialized).toEqual({ method: 'GET', url: '/menus' });
+            // El cuerpo NO: aqui todavia no existe, se agrega al cerrar.
+            expect(serialized).toEqual({
+                method: 'POST',
+                url: '/auth/login',
+                headers: { 'content-type': 'application/json' },
+            });
+        });
+
+
+        it('de la respuesta registra solo el estado', () => {
+            const { serializers } = buildOptions(Enviroment.Development);
+
+            expect(serializers!['res']!({ statusCode: 201, headers: { 'set-cookie': 'x' } }))
+                .toEqual({ statusCode: 201 });
+        });
+    });
+
+
+    /**
+     * La prueba que de verdad importa de esta configuración: se registra el
+     * cuerpo y los headers, así que lo único que impide filtrar credenciales
+     * es `redact`. Se comprueba contra un pino REAL escribiendo en memoria, no
+     * mirando la lista de rutas: una ruta mal escrita pasaría ese chequeo.
+     */
+    describe('lo que nunca puede quedar escrito', () => {
+        const logged = (record: object): string => {
+            const written: string[] = [];
+            const logger = pino(
+                buildOptions(Enviroment.Production),
+                { write: (line: string) => { written.push(line); } }
+            );
+
+            logger.info(record, 'peticion');
+
+            return written.join('');
+        };
+
+
+        it('tapa el token de acceso que viaja en cada petición autenticada', () => {
+            const line = logged({ req: { headers: { authorization: 'Bearer token-secreto' } } });
+
+            expect(line).not.toContain('token-secreto');
+            expect(line).toContain('[REDACTADO]');
+        });
+
+
+        it('tapa la contraseña de un login', () => {
+            const line = logged({ body: { username: 'ana', password: 'mi-clave' } });
+
+            expect(line).not.toContain('mi-clave');
+            // Lo que NO es secreto sigue ahí: sin eso el log no sirve.
+            expect(line).toContain('ana');
+        });
+
+
+        it('tapa el refresh token de una renovación', () => {
+            const line = logged({ body: { refreshToken: 'refresh-secreto' } });
+
+            expect(line).not.toContain('refresh-secreto');
+        });
+
+
+        it('tapa las cookies', () => {
+            const line = logged({ req: { headers: { cookie: 'session=secreto' } } });
+
+            expect(line).not.toContain('session=secreto');
         });
     });
 });

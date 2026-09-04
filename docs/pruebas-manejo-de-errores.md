@@ -51,6 +51,35 @@ Y va en el cuerpo de **toda** respuesta, no solo en las de error:
 mal" que no produjo ningún error sigue teniendo así por dónde buscarse en el
 log.
 
+### Qué queda registrado de cada petición
+
+La línea que cierra la petición lleva, además del `traceId`:
+
+| Campo | De dónde sale |
+|---|---|
+| `req.method`, `req.url`, `res.statusCode`, `responseTime` | la petición |
+| `req.headers` | los headers tal cual, con los sensibles tapados |
+| `body` | el cuerpo con el que llegó, con los sensibles tapados |
+| `tenantId`, `userId`, `branchId`, `rolScope` | el token que validó `JwtAuthGuard` |
+
+El usuario y el cuerpo se añaden **al cerrar** la petición (`customSuccessObject`
+/ `customErrorObject` en `logger.config.ts`) y no en el serializador: `pino-http`
+serializa el request al entrar, cuando Express todavía no parseó el cuerpo ni el
+guard resolvió el usuario. Puesto ahí, el cuerpo salía siempre vacío.
+
+En la consola de desarrollo se ocultan `req`, `res` y `responseTime` —el mensaje
+ya dice método, ruta, estado y duración— pero el `body` sí se muestra. En
+producción sale todo, que es donde se indexa.
+
+> **Añadir un campo sensible a un DTO obliga a tocar `REDACTED_PATHS`.**
+> El cuerpo se registra entero salvo lo que esa lista tapa: hoy `password`,
+> `refreshToken` y `accessToken`, más los headers `authorization` y `cookie`.
+> Lo que no esté ahí acaba escrito en claro. Hay pruebas que lo comprueban
+> contra un pino real en `logger.config.spec.ts`.
+>
+> El cuerpo también puede llevar datos personales (un correo, un nombre). Es el
+> precio de poder reproducir un fallo tal como llegó.
+
 Se acepta el del cliente a propósito: así el front conserva la referencia
 aunque la petición nunca llegue al servidor —timeout, red caída—, que es justo
 cuando más falta hace. Y se puede aceptar sin riesgo porque el identificador

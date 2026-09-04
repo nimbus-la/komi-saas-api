@@ -5,6 +5,8 @@ import { Params } from "nestjs-pino";
 import { LevelWithSilent } from "pino";
 import { Options } from "pino-http";
 
+import type { AuthenticatedUser } from "@/auth/infrastructure/types";
+
 import { Enviroment } from "../config/env.validation";
 // Por ruta directa y no desde el barrel `@/infrastructure`: ese índice exporta
 // también este archivo, así que importarlo desde ahí sería una dependencia
@@ -20,6 +22,21 @@ import { RequestWithId, resolveRequestId } from "../http/request-id.middleware";
  * igual en los tres sitios para que buscarlo sea un solo grep.
  */
 const TRACE_ID_KEY = 'traceId';
+
+
+/**
+ * La petición con lo que le van colgando por el camino: el cuerpo que parseó
+ * Express y el usuario que resolvió `JwtAuthGuard`.
+ *
+ * El tipo de `AuthenticatedUser` se importa en vez de redeclararlo aquí: si
+ * mañana ese payload cambia de forma, esto tiene que dejar de compilar, no
+ * seguir escribiendo un `tenantId` que ya no existe. Es `import type`, así que
+ * no crea ninguna dependencia real de infraestructura hacia auth.
+ */
+type LoggedRequest = IncomingMessage & {
+    user?: AuthenticatedUser;
+    body?: unknown;
+};
 
 
 /**
@@ -99,6 +116,79 @@ const requestLevel = (_req: IncomingMessage, res: ServerResponse, error?: Error)
 
 
 /**
+ * Lo que solo se sabe cuando la petición TERMINA: quién la hizo —el guard ya
+ * validó el token— y con qué cuerpo llegó —Express ya lo parseó—.
+ *
+ * Va aquí y no en el serializador de la petición porque `pino-http` serializa
+ * el request al ENTRAR, cuando no existe ninguna de las dos cosas: el cuerpo
+ * salía siempre vacío y el usuario no salía nunca.
+ *
+ * Con esto, "algo raro pasó con el inventario del negocio 42" se convierte en
+ * un filtro por `tenantId`, y un fallo se puede reproducir con el cuerpo exacto
+ * que lo provocó en vez de pidiéndole al usuario que lo repita.
+ *
+ * NO se registra el `sessionId`: identifica una sesión viva y no hace falta
+ * para diagnosticar nada.
+ */
+const closingContext = (req: IncomingMessage, base: object): object => {
+    const { user, body } = req as LoggedRequest;
+
+    return {
+        ...base,
+
+        ...(user === undefined ? {} : {
+            tenantId: user.tenantId,
+            userId: user.userId,
+            branchId: user.branchId,
+            rolScope: user.rolScope,
+        }),
+
+        ...(isEmpty(body) ? {} : { body }),
+    };
+};
+
+
+/**
+ * Un GET no trae cuerpo, pero Express igual deja `req.body` como objeto vacío.
+ * Sin esta comprobación, cada lectura arrastraría un `body: {}` que no dice
+ * nada.
+ */
+const isEmpty = (body: unknown): boolean =>
+    body === undefined
+    || body === null
+    || (typeof body === 'object' && Object.keys(body).length === 0);
+
+
+/**
+ * Lo que NUNCA puede acabar escrito, ni en desarrollo.
+ *
+ * Loguear el cuerpo es lo que permite reproducir un fallo sin adivinar, pero
+ * por ahí pasan la contraseña de un login y el refresh token de una renovación;
+ * y en `Authorization` viaja el access token de CADA petición autenticada. Un
+ * secreto en el log es un secreto filtrado: el log se copia, se pega en un
+ * ticket y se manda por chat.
+ *
+ * Las rutas que no existen en una petición concreta se ignoran solas, así que
+ * cubrir de más no cuesta nada.
+ */
+const REDACTED_PATHS = [
+    'req.headers.authorization',
+    'req.headers.cookie',
+    'body.password',
+    'body.refreshToken',
+    'body.accessToken',
+];
+
+
+/**
+ * El preflight del navegador no es una petición de negocio: lo responde CORS
+ * antes de llegar a ningún controller. Registrarlo solo duplica cada llamada
+ * del front en el log.
+ */
+const isPreflight = (req: IncomingMessage): boolean => req.method === 'OPTIONS';
+
+
+/**
  * Consola legible para desarrollo. En producción NO se usa: allí la salida es
  * JSON por línea, que es lo que un agregador (Loki, Datadog, CloudWatch) sabe
  * indexar.
@@ -107,10 +197,11 @@ const requestLevel = (_req: IncomingMessage, res: ServerResponse, error?: Error)
  * mensaje, y `ignore` los quita del objeto de abajo para no imprimirlos dos
  * veces. Queda: `14:03:22.123 INFO (a1b2c3d4e5f6) [AuthController] mensaje`.
  *
- * `req`, `res` y `responseTime` también se ocultan AQUÍ, no en el logger: el
- * mensaje ya dice método, ruta, estado y duración, así que en consola son la
- * misma información ocupando seis líneas. En producción siguen saliendo, que
- * es donde importan: ahí son campos que el agregador indexa y filtra.
+ * `req`, `res` y `responseTime` se ocultan en consola: el método, la ruta, el
+ * estado y la duración ya están en el mensaje, y los headers son quince líneas
+ * de las que ninguna ayuda a depurar. El CUERPO sí se ve —va como campo
+ * aparte—, que es lo que hace falta para reproducir un fallo. En producción
+ * sale todo: allí son campos que un agregador indexa, no texto que alguien lee.
  */
 const PRETTY_TRANSPORT = {
     target: 'pino-pretty',
@@ -145,14 +236,26 @@ export const buildLoggerParams = (configService: ConfigService): Params => {
         customLogLevel: requestLevel,
         customSuccessMessage: requestMessage,
         customErrorMessage: requestErrorMessage,
+        autoLogging: { ignore: isPreflight },
+        redact: { paths: REDACTED_PATHS, censor: '[REDACTADO]' },
+
+        // El usuario y el cuerpo se añaden al cerrar la petición, que es cuando
+        // existen. Los dos caminos —terminó bien o terminó con un error
+        // colgando— tienen que enterarse igual.
+        customSuccessObject: (req, _res, val: object) => closingContext(req, val),
+        customErrorObject: (req, _res, _error, val: object) => closingContext(req, val),
 
         /**
-         * Serializadores recortados a lo imprescindible. Los de serie vuelcan
-         * los headers completos, y ahí viaja el `Authorization`: un token de
-         * acceso en la consola es una credencial filtrada.
+         * Serializadores escritos a mano y no los de serie: aquellos vuelcan
+         * también `query`, `params`, la IP y el puerto de origen, que no se
+         * usan para nada y engordan cada línea.
          */
         serializers: {
-            req: (req: IncomingMessage) => ({ method: req.method, url: req.url }),
+            req: (req: IncomingMessage) => ({
+                method: req.method,
+                url: req.url,
+                headers: req.headers,
+            }),
             res: (res: ServerResponse) => ({ statusCode: res.statusCode }),
         },
 
