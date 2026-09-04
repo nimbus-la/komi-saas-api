@@ -7,11 +7,8 @@ import { Options } from "pino-http";
 import type { AuthenticatedUser } from "@/auth/infrastructure/types";
 import { LoggingConfig } from "@/interfaces";
 
-// Por ruta directa y no desde el barrel `@/infrastructure`: ese índice exporta
-// también este archivo, así que importarlo desde ahí sería una dependencia
-// circular con el módulo a medio construir.
-import { RequestWithId, resolveRequestId } from "../http/request-id.middleware";
 import { REDACTED, sanitize } from "./sanitizer.util";
+import { resolveTraceId, TRACE_ID_HEADER } from "./trace-id.util";
 
 
 
@@ -44,23 +41,20 @@ type LoggedRequest = IncomingMessage & {
 
 
 /**
- * Identificador de la petición para pino.
+ * El identificador de la petición nace aquí, antes que cualquier guard, pipe o
+ * controlador, y sale de inmediato por el header: el cliente lo tiene aunque
+ * la petición termine en error.
  *
- * NO genera uno nuevo: reutiliza el que `requestIdMiddleware` ya puso al
- * entrar la petición. Si pino fabricara el suyo habría dos identificadores
- * distintos para la misma petición —uno en el log y otro en el header y en el
- * cuerpo del error— y la correlación, que es justo el objetivo, no existiría.
- *
- * El respaldo cubre el caso de que este logger se monte sin ese middleware
- * delante: entonces resuelve el identificador igual que él y lo deja escrito
- * en la petición, para que el filtro de excepciones encuentre el mismo valor.
+ * `pino-http` lo deja en `req.id`, y de ahí lo leen el filtro de excepciones y
+ * el interceptor de respuesta para ponerlo en el sobre. Es el MISMO valor en
+ * los tres sitios —header, log y cuerpo—, que es lo que permite cruzarlos.
  */
-const genReqId = (req: IncomingMessage): string => {
-    const request = req as unknown as RequestWithId;
+const genReqId = (req: IncomingMessage, res: ServerResponse): string => {
+    const traceId = resolveTraceId(req.headers['x-request-id']);
 
-    request.requestId ??= resolveRequestId(request.headers['x-request-id']);
+    res.setHeader(TRACE_ID_HEADER, traceId);
 
-    return request.requestId;
+    return traceId;
 };
 
 

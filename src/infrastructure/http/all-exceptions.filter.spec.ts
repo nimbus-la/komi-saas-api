@@ -35,7 +35,7 @@ interface CapturedResponse {
  * `ArgumentsHost` mínimo: solo lo que el filtro consulta. Evita levantar Nest
  * entero para verificar qué status, qué cuerpo y qué log se producen.
  */
-const createHost = (request: { method?: string; originalUrl?: string; requestId?: string } | null = { method: 'POST', originalUrl: '/user' }) => {
+const createHost = (request: { method?: string; originalUrl?: string; id?: string } | null = { method: 'POST', originalUrl: '/user' }) => {
     const captured: CapturedResponse = { status: null, body: null };
 
     const response = {
@@ -293,8 +293,8 @@ describe('AllExceptionsFilter', () => {
 
 
     describe('traceId', () => {
-        it('reutiliza el identificador que puso requestIdMiddleware', () => {
-            const { host, captured } = createHost({ method: 'POST', originalUrl: '/user', requestId: 'front-abc123' });
+        it('reutiliza el identificador que puso pino-http en req.id', () => {
+            const { host, captured } = createHost({ method: 'POST', originalUrl: '/user', id: 'front-abc123' });
 
             filter.catch(new TypeError('boom'), host);
 
@@ -302,7 +302,7 @@ describe('AllExceptionsFilter', () => {
             expect(captured.body?.traceId).toBe('front-abc123');
         });
 
-        it('genera uno propio si el filtro se usa sin el middleware delante', () => {
+        it('genera uno propio si se usa fuera del ciclo del logger', () => {
             const { host, captured } = createHost({ method: 'POST', originalUrl: '/user' });
 
             filter.catch(new TypeError('boom'), host);
@@ -333,7 +333,7 @@ describe('AllExceptionsFilter', () => {
          * linea de la peticion. A mano se imprimia dos veces seguidas.
          */
         it('no se repite dentro del mensaje: de eso se encarga pino', () => {
-            const { host, captured } = createHost({ method: 'POST', originalUrl: '/user', requestId: 'front-abc123' });
+            const { host, captured } = createHost({ method: 'POST', originalUrl: '/user', id: 'front-abc123' });
 
             filter.catch(queryFailedError(), host);
 

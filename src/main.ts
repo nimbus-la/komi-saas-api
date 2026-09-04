@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { Logger as PinoNestLogger, PinoLogger } from 'nestjs-pino';
 
-import { buildCorsOptions, registerProcessErrorHandlers, requestIdMiddleware } from './infrastructure';
+import { buildCorsOptions, registerProcessErrorHandlers } from './infrastructure';
 import { CorsConfig } from './interfaces';
 
 async function bootstrap() {
@@ -26,10 +26,6 @@ async function bootstrap() {
   // CORS primero: el preflight (OPTIONS) debe resolverse antes de
   // cualquier pipe, guard o interceptor que pudiera rechazarlo.
   app.enableCors(buildCorsOptions(configService.getOrThrow<CorsConfig>('cors')));
-
-  // Antes que pipes, guards e interceptores: así toda petición tiene un
-  // identificador desde el primer instante, no solo las que fallan.
-  app.use(requestIdMiddleware);
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -11,7 +11,7 @@ import { DomainException } from "@/shared/domain/domain.exception";
 import { RESPONSE_CATALOG } from "@/shared/response-catalog";
 import { CatalogEntryResponse, ErrorCategory, RESPONSE_CODE } from "@/utils";
 import { ApiResponse } from "@/interfaces";
-import { createRequestId, RequestWithId } from "./request-id.middleware";
+import { createTraceId } from "../logging/trace-id.util";
 
 
 
@@ -63,13 +63,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     public catch(exception: unknown, host: ArgumentsHost): void {
         const http = host.switchToHttp();
         const response = http.getResponse<Response>();
-        const request = http.getRequest<RequestWithId>();
+        const request = http.getRequest<Request | undefined>();
 
-        // El identificador lo puso `requestIdMiddleware` al entrar la petición,
-        // así que es el mismo que ya viajó en el header `X-Request-Id` y el que
-        // llevan las demás líneas de log de esta petición. El respaldo cubre el
-        // caso de que el filtro se use sin ese middleware delante.
-        const traceId = request?.requestId ?? createRequestId();
+        // El identificador lo puso `pino-http` al entrar la petición, así que es
+        // el mismo que ya viajó en el header `X-Request-Id` y el que llevan las
+        // demás líneas de log de esta petición. El respaldo cubre el caso de que
+        // el filtro se use fuera de ese ciclo: una prueba, otro transporte.
+        const traceId = AllExceptionsFilter.traceIdOf(request);
         const origin = AllExceptionsFilter.describeRequest(request);
 
         const envelope = this.toEnvelope(exception, traceId, origin);
@@ -88,6 +88,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
      */
     private static header(origin: string, httpStatus: number): string {
         return `${origin} -> HTTP ${httpStatus}`;
+    };
+
+
+    /** `pino-http` deja el identificador en `req.id` al abrir la petición. */
+    private static traceIdOf(request: Request | undefined): string {
+        const incoming: unknown = request?.id;
+
+        return typeof incoming === 'string' ? incoming : createTraceId();
     };
 
 

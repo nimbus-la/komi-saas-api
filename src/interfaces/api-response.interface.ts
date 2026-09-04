@@ -12,7 +12,7 @@ export interface ApiResponse<T = unknown> {
      *
      * Va en TODA respuesta, exitosa o no: es la referencia con la que se busca
      * qué pasó de verdad. El cliente lo reporta, soporte lo busca. Solo falta
-     * si la respuesta se armó sin el `requestIdMiddleware` delante.
+     * si la respuesta se armó fuera del ciclo HTTP que abre el logger.
      */
     traceId?: string;
 };

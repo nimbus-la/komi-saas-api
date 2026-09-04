@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { Reflector } from "@nestjs/core";
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
 
@@ -6,7 +6,6 @@ import { map, Observable } from "rxjs";
 
 import { ApiResponse } from "@/interfaces";
 import { RESPONSE_CODE, ResponseStatus } from "@/utils";
-import { RequestWithId } from "./request-id.middleware";
 import { RESPONSE_MESSAGE_KEY } from "./response-message.decorator";
 
 
@@ -29,7 +28,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
          * dónde empezar a buscar en el log. Limitarlo a los errores solo sirve
          * cuando el fallo se manifiesta como error, que es justo el caso fácil.
          */
-        const traceId = context.switchToHttp().getRequest<RequestWithId>().requestId;
+        const traceId: unknown = context.switchToHttp().getRequest<Request>().id;
 
         return next.handle().pipe(
             map((data) => {
@@ -44,7 +43,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
                         httpStatus,
                         message: 'No se encontraron resultados.',
                         content: null,
-                        ...(traceId !== undefined ? { traceId } : {}),
+                        ...(typeof traceId === 'string' ? { traceId } : {}),
                     };
                 };
 
@@ -54,7 +53,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
                     httpStatus,
                     message,
                     content: (data ?? null) as T | null,
-                    ...(traceId !== undefined ? { traceId } : {}),
+                    ...(typeof traceId === 'string' ? { traceId } : {}),
                 };
             })
         );

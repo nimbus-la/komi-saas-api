@@ -11,12 +11,12 @@ import { ResponseInterceptor } from './response.interceptor';
 
 /**
  * `ExecutionContext` mínimo: solo el estado de la respuesta y el identificador
- * que dejó `requestIdMiddleware` en la petición.
+ * que dejó `pino-http` en `req.id`.
  */
-const createContext = (statusCode: number, requestId: string | undefined): ExecutionContext => ({
+const createContext = (statusCode: number, traceId: string | undefined): ExecutionContext => ({
     switchToHttp: () => ({
         getResponse: () => ({ statusCode }),
-        getRequest: () => (requestId === undefined ? {} : { requestId }),
+        getRequest: () => (traceId === undefined ? {} : { id: traceId }),
     }),
     getHandler: () => () => undefined,
 }) as unknown as ExecutionContext;
@@ -32,10 +32,10 @@ const createInterceptor = (message?: string): ResponseInterceptor<unknown> =>
 
 const intercept = async <T>(
     data: T,
-    options: { statusCode?: number; requestId?: string | undefined; message?: string } = {}
+    options: { statusCode?: number; traceId?: string | undefined; message?: string } = {}
 ): Promise<ApiResponse<unknown>> => firstValueFrom(
     createInterceptor(options.message).intercept(
-        createContext(options.statusCode ?? 200, 'requestId' in options ? options.requestId : 'abc123def456'),
+        createContext(options.statusCode ?? 200, 'traceId' in options ? options.traceId : 'abc123def456'),
         createHandler(data)
     )
 );
@@ -64,9 +64,9 @@ describe('ResponseInterceptor', () => {
         });
 
 
-        /** Sin el middleware delante no hay identificador: la clave no se inventa. */
+        /** Fuera del ciclo del logger no hay identificador: la clave no se inventa. */
         it('no aparece si la petición no trae ninguno', async () => {
-            const response = await intercept({ id: 42 }, { requestId: undefined });
+            const response = await intercept({ id: 42 }, { traceId: undefined });
 
             expect('traceId' in response).toBe(false);
         });

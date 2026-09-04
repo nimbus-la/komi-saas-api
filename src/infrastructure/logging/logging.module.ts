@@ -12,10 +12,8 @@ import { buildLoggerParams } from "./logger.config";
  * de datos o CORS: nada de leer `process.env` suelto dentro del logger.
  *
  * `LoggerModule` monta su propio middleware, que es el que abre el contexto de
- * petición (`AsyncLocalStorage`) del que sale el `traceId` en cada línea. Ese
- * middleware corre DESPUÉS del `requestIdMiddleware` de `main.ts`, que se
- * registra directamente sobre Express al arrancar; por eso pino encuentra el
- * identificador ya puesto y no tiene que fabricar otro.
+ * petición (`AsyncLocalStorage`) del que sale el `traceId` en cada línea, y el
+ * que genera ese identificador y lo devuelve en el header `X-Request-Id`.
  */
 /**
  * Global como el de configuración: escribir en el log es algo que hace

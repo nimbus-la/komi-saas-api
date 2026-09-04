@@ -5,7 +5,6 @@ import { Options } from 'pino-http';
 
 import { LoggingConfig } from '@/interfaces';
 
-import { RequestWithId } from '../http/request-id.middleware';
 import { buildLoggerParams } from './logger.config';
 
 
@@ -23,18 +22,19 @@ const buildOptions = (config: LoggingConfig): Options =>
     buildLoggerParams(config).pinoHttp as Options;
 
 
-/** Petición mínima para `genReqId`, con los headers que el respaldo consulta. */
-const createRequest = (
-    headers: Record<string, string> = {},
-    requestId?: string
-): IncomingMessage => {
-    const request = { headers } as unknown as RequestWithId;
+/** Petición mínima para `genReqId`: solo los headers que consulta. */
+const createRequest = (headers: Record<string, string> = {}): IncomingMessage =>
+    ({ headers }) as unknown as IncomingMessage;
 
-    if (requestId !== undefined) {
-        request.requestId = requestId;
+
+/** Respuesta mínima: `genReqId` devuelve el identificador por el header. */
+const createResponse = () => {
+    const headers: Record<string, unknown> = {};
+
+    return {
+        headers,
+        response: { setHeader: (key: string, value: unknown) => { headers[key] = value; } } as unknown as ServerResponse,
     };
-
-    return request as unknown as IncomingMessage;
 };
 
 
@@ -64,39 +64,43 @@ describe('buildLoggerParams', () => {
 
 
     describe('identificador de la petición', () => {
-        /**
-         * La razón de ser de toda la configuración: el `traceId` del log tiene
-         * que ser el MISMO que ya puso `requestIdMiddleware`, no uno nuevo.
-         */
-        it('reutiliza el requestId que dejó el middleware', () => {
+        const generate = (headers: Record<string, string> = {}) => {
+            const { headers: sent, response } = createResponse();
             const genReqId = buildOptions(DEV).genReqId!;
-            const request = createRequest({}, 'abc123def456');
 
-            expect(genReqId(request, {} as ServerResponse)).toBe('abc123def456');
-        });
+            return { traceId: genReqId(createRequest(headers), response), sent };
+        };
 
 
-        it('sin middleware delante, respeta el identificador válido del cliente', () => {
-            const genReqId = buildOptions(DEV).genReqId!;
-            const request = createRequest({ 'x-request-id': 'id-del-cliente-1' });
-
-            expect(genReqId(request, {} as ServerResponse)).toBe('id-del-cliente-1');
+        it('genera uno propio de 12 caracteres', () => {
+            expect(generate().traceId).toMatch(/^[a-f0-9]{12}$/);
         });
 
 
         /**
-         * Además de devolverlo, lo deja escrito en la petición: así el filtro de
-         * excepciones lee ese mismo valor y el cuerpo del error, el header y el
-         * log siguen coincidiendo.
+         * Se acepta el del cliente a proposito: asi el front conserva la
+         * referencia aunque la peticion nunca llegue al servidor. No es una
+         * frontera de seguridad, solo correlaciona.
          */
-        it('sin middleware ni header, genera uno y lo deja en la petición', () => {
-            const genReqId = buildOptions(DEV).genReqId!;
-            const request = createRequest();
+        it('respeta el identificador válido que mande el cliente', () => {
+            expect(generate({ 'x-request-id': 'id-del-cliente-1' }).traceId).toBe('id-del-cliente-1');
+        });
 
-            const generated = genReqId(request, {} as ServerResponse);
 
-            expect(generated).toMatch(/^[a-f0-9]{12}$/);
-            expect((request as unknown as RequestWithId).requestId).toBe(generated);
+        it('descarta el que no cumple el formato', () => {
+            expect(generate({ 'x-request-id': 'corto' }).traceId).not.toBe('corto');
+            expect(generate({ 'x-request-id': 'con espacios y simbolos !' }).traceId).toMatch(/^[a-f0-9]{12}$/);
+        });
+
+
+        /**
+         * Sale por el header en el acto: el cliente lo tiene aunque la peticion
+         * termine en error, y es el MISMO valor que va en el cuerpo y en el log.
+         */
+        it('lo devuelve en el header X-Request-Id', () => {
+            const { traceId, sent } = generate();
+
+            expect(sent['X-Request-Id']).toBe(traceId);
         });
     });
 

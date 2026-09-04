@@ -40,16 +40,22 @@ forma de ubicarlo.
 
 ### El identificador de la petición
 
-`requestIdMiddleware` corre antes que todo lo demás (`app.use` en `main.ts`) y
-le asigna un identificador a **cada** petición, termine bien o mal:
+Lo genera `pino-http` (`genReqId` en `logger.config.ts`) al abrir la petición,
+antes que cualquier guard, pipe o controlador, y le asigna uno a **cada**
+petición, termine bien o mal:
 
 - Si el cliente mandó `X-Request-Id` y supera la validación, se respeta.
 - Si no, se genera uno de 12 caracteres hexadecimales.
 - Siempre se devuelve en el header `X-Request-Id`, también en las respuestas
   exitosas.
 
-El filtro ya no lo fabrica: lo lee de `req.requestId`, así que el `traceId` del
-cuerpo y el header de la respuesta son el mismo valor.
+El filtro no lo fabrica: lo lee de `req.id`, donde lo dejó `pino-http`, así que
+el `traceId` del cuerpo, el header de la respuesta y cada línea del log son el
+mismo valor.
+
+Ya no hay un middleware propio para esto. Lo hubo, y hacía lo mismo un paso
+antes; con el logger en su sitio era una pieza de más que había que mantener
+sincronizada con `genReqId`.
 
 Y va en el cuerpo de **toda** respuesta, no solo en las de error:
 `ResponseInterceptor` lo añade también al sobre de éxito. Un "esto se guardó
