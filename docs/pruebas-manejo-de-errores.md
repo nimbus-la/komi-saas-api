@@ -28,6 +28,11 @@ El volcado sale de `util.inspect(exception, { depth: 5 })`: el stack y, en el
 caso de TypeORM, también `query`, `parameters` y el `driverError` con su
 SQLSTATE, tabla y restricción.
 
+El mensaje de la línea es siempre `MÉTODO /ruta -> HTTP <estado>`, y el detalle
+—el texto de la excepción de dominio, el payload de validación de Nest— va como
+campo `detail`. Incrustado en el mensaje, un payload de validación eran
+trescientos caracteres de JSON que ni se leían ni se podían filtrar.
+
 La distinción entre 4xx y 5xx del framework importa: un 400 o un 403 es un
 rechazo deliberado de un guard o un pipe y el payload de Nest ya lo dice todo,
 pero un `InternalServerErrorException` es un fallo nuestro y sin stack no hay
@@ -145,12 +150,36 @@ Cada petición deja **dos** líneas, unidas por el `traceId`:
 | `responseTime`, `ip` | cómo terminó y desde dónde |
 | `payload` | cuerpo, query string y parámetros de ruta, saneados |
 | `tenantId`, `userId`, `branchId`, `rolScope` | el token que validó `JwtAuthGuard` |
-| `req`, `res` | **solo en producción**: método, ruta, IP y `user-agent` |
+| `req`, `res` | **solo en JSON**: método, ruta, IP y `user-agent` |
 
-En desarrollo `req` y `res` no se escriben: el mensaje ya dice método, ruta y
-estado, así que eran ocho líneas para repetirlo. Sus serializadores devuelven
-`undefined` en vez de quitarse —quitarlos hace que pino vuelque el objeto
-`ServerResponse` entero, doscientas líneas de sockets por petición—.
+Con la consola legible, `req` y `res` no se escriben: el mensaje ya dice método,
+ruta y estado, así que eran ocho líneas para repetirlo. Sus serializadores
+devuelven `undefined` en vez de quitarse —quitarlos hace que pino vuelque el
+objeto `ServerResponse` entero, doscientas líneas de sockets por petición—.
+
+### Las tres palancas del log
+
+Todas opcionales: sin ninguna, la aplicación loguea bien y el entorno decide.
+
+| Variable | Qué hace | En producción |
+|---|---|---|
+| `LOG_LEVEL` | nivel mínimo que se escribe | por defecto `info` |
+| `LOG_PRETTY` | consola legible en vez de JSON | **siempre NO** |
+| `LOG_REQUEST_PAYLOAD` | registrar el cuerpo de cada petición | **siempre NO** |
+
+Las dos últimas se ignoran en producción diga lo que diga la variable, y por
+motivos distintos. `pino-pretty` es dependencia de desarrollo: allí no está
+instalado y activarlo tumbaría el arranque. Y el cuerpo de una petición son
+datos del cliente, no material de depuración: un log se copia, se pega en un
+ticket y se archiva.
+
+`LOG_REQUEST_PAYLOAD=false` en desarrollo apaga el cuerpo sin apagar el log,
+que es lo que hace falta cuando se trabaja con datos reales. Con él se va
+también la línea de entrada: sin cuerpo que mostrar, no aporta nada que la de
+cierre no diga ya.
+
+Todo esto vive en `logging.config.ts`, con su spec. La fábrica de pino
+(`logger.config.ts`) recibe la decisión ya tomada y no conoce el entorno.
 
 La línea de **entrada** solo existe en desarrollo: si el proceso se cae o se
 cuelga a mitad de una petición, la de cierre nunca se escribe y esa es la única
@@ -381,7 +410,7 @@ Con la aplicación levantada, cualquier error real sirve. El cliente recibe:
 Y la consola, para esa misma petición:
 
 ```
-[2026-09-04 18:42:11.507] ERROR: POST /user
+[2026-09-04 18:42:11.507] ERROR: POST /user -> HTTP 500
 QueryFailedError: DatabaseError: duplicate key value violates unique constraint "uq_users_email"
     at UserRepository.save (.../user.repository.ts:41:20)
   query: 'INSERT INTO users(email, password) VALUES ($1, $2)',

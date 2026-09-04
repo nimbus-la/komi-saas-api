@@ -91,6 +91,16 @@ export const sanitize = (value: unknown, depth = 0): unknown => {
         return value;
     };
 
+    /**
+     * Un búfer no se recorre campo a campo: `Object.entries` lo convertiría en
+     * un objeto con una clave numérica por byte, así que un adjunto de un mega
+     * serían un millón de claves. Del contenido no hay nada que leer; lo único
+     * que dice algo es que estaba y cuánto ocupaba.
+     */
+    if (Buffer.isBuffer(value)) {
+        return `[Buffer ${value.byteLength} bytes]`;
+    };
+
     if (depth >= MAX_DEPTH) {
         return '[PROFUNDIDAD MAXIMA]';
     };

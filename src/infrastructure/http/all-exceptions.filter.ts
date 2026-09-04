@@ -78,6 +78,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
 
+    /**
+     * La cabecera de la línea: qué petición y con qué estado terminó.
+     *
+     * El detalle —el mensaje del dominio, el payload de validación de Nest— va
+     * como CAMPO y ya no incrustado aquí. Metido en el texto, un payload de
+     * validación era un JSON de trescientos caracteres dentro del mensaje: no
+     * se leía y tampoco se podía filtrar por él.
+     */
+    private static header(origin: string, httpStatus: number): string {
+        return `${origin} -> HTTP ${httpStatus}`;
+    };
+
+
     /** Método y ruta, para saber qué petición produjo el error. */
     private static describeRequest(request: Request | undefined): string {
         if (request === undefined) {
@@ -111,7 +124,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
             // Regla de negocio violada: se sabe qué pasó, basta una línea.
             // El DETALLE técnico va SOLO al log, nunca a la respuesta.
-            this.logger.warn({ code: exception.code, httpStatus }, `${origin} | ${exception.detail}`);
+            this.logger.warn(
+                { code: exception.code, httpStatus, detail: exception.detail },
+                AllExceptionsFilter.header(origin, httpStatus),
+            );
 
             return {
                 status: entry.status,
@@ -137,7 +153,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
             } else {
                 // Un 4xx sí es un rechazo deliberado de un guard o un pipe:
                 // el payload de Nest ya dice todo lo que hay que saber.
-                this.logger.warn({ code, httpStatus }, `${origin} | ${JSON.stringify(exception.getResponse())}`);
+                this.logger.warn(
+                    { code, httpStatus, detail: exception.getResponse() },
+                    AllExceptionsFilter.header(origin, httpStatus),
+                );
             };
 
             return {

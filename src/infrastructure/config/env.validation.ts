@@ -1,6 +1,8 @@
 import { plainToInstance } from "class-transformer";
 import { IsEnum, IsIn, IsInt, IsOptional, IsString, Min, MinLength, validateSync } from "class-validator";
 
+import { LOG_LEVELS } from "@/interfaces";
+
 
 export enum Enviroment {
     Development = 'development',
@@ -92,15 +94,30 @@ class EnviromentVariables {
 
 
     /**
-     * Nivel mínimo que se escribe en consola. Opcional: si no se define, el
-     * entorno decide (`debug` en desarrollo, `info` en el resto).
-     *
-     * `silent` apaga el log por completo; se acepta porque en las pruebas no
-     * aporta nada y ensucia la salida.
+     * Nivel mínimo que se escribe. Opcional: sin definir, decide el entorno
+     * (`debug` en desarrollo, `info` en producción, `silent` en pruebas).
      */
     @IsOptional()
-    @IsIn(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+    @IsIn([...LOG_LEVELS])
     LOG_LEVEL?: string;
+
+
+    /**
+     * Salida coloreada y legible (pino-pretty) en vez de JSON. Solo 'true' o
+     * 'false' literales. En producción se ignora: allí el log es JSON siempre.
+     */
+    @IsOptional()
+    @IsIn(['true', 'false'])
+    LOG_PRETTY?: string;
+
+
+    /**
+     * Registrar el cuerpo, la query y los parámetros de cada petición. Sirve
+     * para APAGARLO en desarrollo; en producción no se activa nunca.
+     */
+    @IsOptional()
+    @IsIn(['true', 'false'])
+    LOG_REQUEST_PAYLOAD?: string;
 }
 
 

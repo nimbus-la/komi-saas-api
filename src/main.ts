@@ -62,4 +62,14 @@ async function bootstrap() {
 };
 
 
-bootstrap();
+/**
+ * El arranque puede fallar ANTES de que exista un logger: una variable de
+ * entorno inválida, la base de datos caída, un módulo que no resuelve. Ahí no
+ * hay pino todavía —ni handlers de proceso, que se registran más abajo—, así
+ * que solo queda stderr. Lo que no puede pasar es que el error se pierda y el
+ * proceso muera en silencio.
+ */
+bootstrap().catch((error: unknown) => {
+  console.error('El arranque falló y la aplicación no llegó a levantar:', error);
+  process.exit(1);
+});

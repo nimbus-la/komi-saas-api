@@ -113,6 +113,17 @@ describe('sanitize', () => {
         });
 
 
+        /**
+         * Recorrerlo campo a campo lo convertiria en un objeto con una clave
+         * por byte: un adjunto de un mega serian un millon de claves.
+         */
+        it('resume los buferes en vez de recorrerlos', () => {
+            const adjunto = Buffer.alloc(1_024);
+
+            expect(sanitize({ adjunto })).toEqual({ adjunto: '[Buffer 1024 bytes]' });
+        });
+
+
         /** Pino tiene su propio serializador de errores y saca mas que este. */
         it('deja el error para que lo serialice pino', () => {
             const err = new TypeError('roto');

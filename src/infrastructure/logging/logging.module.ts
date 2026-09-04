@@ -2,6 +2,8 @@ import { Global, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { LoggerModule } from "nestjs-pino";
 
+import { LoggingConfig } from "@/interfaces";
+
 import { buildLoggerParams } from "./logger.config";
 
 
@@ -27,7 +29,8 @@ import { buildLoggerParams } from "./logger.config";
     imports: [
         LoggerModule.forRootAsync({
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => buildLoggerParams(configService),
+            useFactory: (configService: ConfigService) =>
+                buildLoggerParams(configService.getOrThrow<LoggingConfig>('logging')),
         }),
     ],
 

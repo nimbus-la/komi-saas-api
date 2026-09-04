@@ -1,28 +1,26 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 
-import { ConfigService } from '@nestjs/config';
 import { pino } from 'pino';
 import { Options } from 'pino-http';
 
-import { Enviroment } from '../config/env.validation';
+import { LoggingConfig } from '@/interfaces';
+
 import { RequestWithId } from '../http/request-id.middleware';
 import { buildLoggerParams } from './logger.config';
 
 
 /**
- * `ConfigService` mínimo: solo `NODE_ENV` y `LOG_LEVEL`, que es todo lo que
- * consulta la fábrica. Evita levantar el módulo de configuración entero.
+ * Las dos configuraciones que de verdad se dan: la consola de desarrollo y el
+ * JSON de produccion. Que un entorno resuelva a una u otra es cosa de
+ * `logging.config.ts` y se prueba alli.
  */
-const createConfigService = (env: Enviroment, logLevel?: string): ConfigService =>
-    ({
-        getOrThrow: () => env,
-        get: () => logLevel,
-    }) as unknown as ConfigService;
+const DEV: LoggingConfig = { level: 'debug', pretty: true, logRequestPayload: true };
+const PROD: LoggingConfig = { level: 'info', pretty: false, logRequestPayload: false };
 
 
 /** Los `pinoHttp` de la fábrica, ya tipados: nunca es un stream ni una tupla. */
-const buildOptions = (env: Enviroment, logLevel?: string): Options =>
-    buildLoggerParams(createConfigService(env, logLevel)).pinoHttp as Options;
+const buildOptions = (config: LoggingConfig): Options =>
+    buildLoggerParams(config).pinoHttp as Options;
 
 
 /** Petición mínima para `genReqId`, con los headers que el respaldo consulta. */
@@ -42,24 +40,16 @@ const createRequest = (
 
 
 describe('buildLoggerParams', () => {
-    describe('nivel de log', () => {
-        it('respeta LOG_LEVEL cuando está definido, sin importar el entorno', () => {
-            expect(buildOptions(Enviroment.Development, 'warn').level).toBe('warn');
-            expect(buildOptions(Enviroment.Production, 'trace').level).toBe('trace');
-        });
-
-
-        it('sin LOG_LEVEL cae a debug en desarrollo y a info en el resto', () => {
-            expect(buildOptions(Enviroment.Development).level).toBe('debug');
-            expect(buildOptions(Enviroment.Production).level).toBe('info');
-            expect(buildOptions(Enviroment.Test).level).toBe('info');
-        });
-    });
-
-
     describe('salida', () => {
-        it('usa pino-pretty solo en desarrollo', () => {
-            expect(buildOptions(Enviroment.Development).transport).toMatchObject({ target: 'pino-pretty' });
+        it('con la consola legible monta pino-pretty', () => {
+            expect(buildOptions(DEV).transport).toMatchObject({ target: 'pino-pretty' });
+        });
+
+
+        /** El nivel llega decidido: la fabrica no lo interpreta. */
+        it('usa el nivel que le den', () => {
+            expect(buildOptions({ ...DEV, level: 'warn' }).level).toBe('warn');
+            expect(buildOptions(PROD).level).toBe('info');
         });
 
 
@@ -67,8 +57,8 @@ describe('buildLoggerParams', () => {
          * En producción la salida DEBE ser JSON por línea: es lo que un
          * agregador sabe indexar, y `pino-pretty` además cuesta un worker.
          */
-        it('en producción no monta transporte: JSON crudo', () => {
-            expect(buildOptions(Enviroment.Production).transport).toBeUndefined();
+        it('sin ella no monta transporte: JSON crudo', () => {
+            expect(buildOptions(PROD).transport).toBeUndefined();
         });
     });
 
@@ -79,7 +69,7 @@ describe('buildLoggerParams', () => {
          * que ser el MISMO que ya puso `requestIdMiddleware`, no uno nuevo.
          */
         it('reutiliza el requestId que dejó el middleware', () => {
-            const genReqId = buildOptions(Enviroment.Development).genReqId!;
+            const genReqId = buildOptions(DEV).genReqId!;
             const request = createRequest({}, 'abc123def456');
 
             expect(genReqId(request, {} as ServerResponse)).toBe('abc123def456');
@@ -87,7 +77,7 @@ describe('buildLoggerParams', () => {
 
 
         it('sin middleware delante, respeta el identificador válido del cliente', () => {
-            const genReqId = buildOptions(Enviroment.Development).genReqId!;
+            const genReqId = buildOptions(DEV).genReqId!;
             const request = createRequest({ 'x-request-id': 'id-del-cliente-1' });
 
             expect(genReqId(request, {} as ServerResponse)).toBe('id-del-cliente-1');
@@ -100,7 +90,7 @@ describe('buildLoggerParams', () => {
          * log siguen coincidiendo.
          */
         it('sin middleware ni header, genera uno y lo deja en la petición', () => {
-            const genReqId = buildOptions(Enviroment.Development).genReqId!;
+            const genReqId = buildOptions(DEV).genReqId!;
             const request = createRequest();
 
             const generated = genReqId(request, {} as ServerResponse);
@@ -114,7 +104,7 @@ describe('buildLoggerParams', () => {
     describe('mensajes de la peticion', () => {
         /** Solo ASCII: una flecha UTF-8 se ve como `ÔåÆ` en una consola que no va en UTF-8. */
         it('al cerrar dice metodo, ruta y estado, en ASCII', () => {
-            const { customSuccessMessage } = buildOptions(Enviroment.Development);
+            const { customSuccessMessage } = buildOptions(DEV);
 
             const message = customSuccessMessage!(
                 { method: 'GET', url: '/menus' } as IncomingMessage,
@@ -128,7 +118,7 @@ describe('buildLoggerParams', () => {
 
         /** El camino del error usa el mismo mensaje: lo que cambia es el nivel. */
         it('al fallar dice lo mismo', () => {
-            const { customErrorMessage } = buildOptions(Enviroment.Development);
+            const { customErrorMessage } = buildOptions(DEV);
 
             const message = customErrorMessage!(
                 { method: 'POST', url: '/auth/login' } as IncomingMessage,
@@ -144,8 +134,18 @@ describe('buildLoggerParams', () => {
          * Si el proceso se cae a mitad de una peticion, la linea de cierre no
          * llega a escribirse: esta es la unica constancia de cual lo provoco.
          */
-        it('al entrar la anuncia, solo en desarrollo', () => {
-            const { customReceivedMessage } = buildOptions(Enviroment.Development);
+        /**
+         * Va atada a `logRequestPayload` y no al formato: si el cuerpo no se
+         * puede registrar, esta linea no aporta nada que la de cierre no diga.
+         */
+        it('sin permiso para registrar el cuerpo, no se anuncia la entrada', () => {
+            expect(buildOptions(PROD).customReceivedMessage).toBeUndefined();
+            expect(buildOptions({ ...DEV, logRequestPayload: false }).customReceivedMessage).toBeUndefined();
+        });
+
+
+        it('al entrar la anuncia', () => {
+            const { customReceivedMessage } = buildOptions(DEV);
 
             const message = customReceivedMessage!(
                 { method: 'POST', url: '/auth/login' } as IncomingMessage,
@@ -153,13 +153,12 @@ describe('buildLoggerParams', () => {
             );
 
             expect(message).toBe('--> POST /auth/login');
-            expect(buildOptions(Enviroment.Production).customReceivedMessage).toBeUndefined();
         });
 
 
         /** `originalUrl` conserva la ruta completa aunque un router la reescriba. */
         it('prefiere la ruta original a la reescrita', () => {
-            const { customSuccessMessage } = buildOptions(Enviroment.Development);
+            const { customSuccessMessage } = buildOptions(DEV);
 
             const message = customSuccessMessage!(
                 { method: 'GET', url: '/reescrita', originalUrl: '/branch/42' } as unknown as IncomingMessage,
@@ -174,7 +173,7 @@ describe('buildLoggerParams', () => {
 
     describe('nivel de la linea de peticion', () => {
         const levelFor = (statusCode: number, error?: Error) => {
-            const { customLogLevel } = buildOptions(Enviroment.Development);
+            const { customLogLevel } = buildOptions(DEV);
 
             return customLogLevel!(
                 {} as IncomingMessage,
@@ -206,7 +205,7 @@ describe('buildLoggerParams', () => {
 
     describe('lo que se sabe solo al cerrar la peticion', () => {
         const closing = (req: object, base: object = { res: { statusCode: 200 } }) => {
-            const { customSuccessObject } = buildOptions(Enviroment.Development);
+            const { customSuccessObject } = buildOptions(DEV);
 
             return customSuccessObject!(req as IncomingMessage, {} as ServerResponse, base);
         };
@@ -243,21 +242,21 @@ describe('buildLoggerParams', () => {
          * todavia no ha parseado el cuerpo ni el guard ha resuelto el usuario.
          */
         /**
-         * En desarrollo el cuerpo ya salio en la linea de entrada: repetirlo al
-         * cerrar llena la consola con lo mismo dos veces. En produccion no hay
-         * linea de entrada, asi que va aqui.
+         * El cuerpo sale en la linea de ENTRADA, nunca aqui: repetirlo llena la
+         * consola con lo mismo dos veces. Y donde no se anuncia la entrada
+         * —produccion— es porque no se puede registrar el cuerpo en absoluto.
          */
-        it('el cuerpo va aqui solo en produccion', () => {
-            const { customSuccessObject } = buildOptions(Enviroment.Production);
+        it('el cuerpo no se repite al cerrar', () => {
+            expect(closing({ body: { username: 'ana' } })).not.toHaveProperty('payload');
 
+            const { customSuccessObject } = buildOptions(PROD);
             const record = customSuccessObject!(
                 { body: { username: 'ana' } } as unknown as IncomingMessage,
                 {} as ServerResponse,
                 {}
             );
 
-            expect(record).toMatchObject({ payload: { body: { username: 'ana' } } });
-            expect(closing({ body: { username: 'ana' } })).not.toHaveProperty('payload');
+            expect(record).not.toHaveProperty('payload');
         });
 
 
@@ -281,7 +280,7 @@ describe('buildLoggerParams', () => {
 
         /** El camino del error tiene que enterarse igual que el del exito. */
         it('el camino del error registra lo mismo', () => {
-            const { customErrorObject } = buildOptions(Enviroment.Development);
+            const { customErrorObject } = buildOptions(DEV);
 
             const record = customErrorObject!(
                 { user, body: { username: 'ana' } } as unknown as IncomingMessage,
@@ -297,7 +296,7 @@ describe('buildLoggerParams', () => {
 
     describe('preflight', () => {
         const ignores = (method: string): boolean => {
-            const { autoLogging } = buildOptions(Enviroment.Development);
+            const { autoLogging } = buildOptions(DEV);
 
             return (autoLogging as { ignore: (req: IncomingMessage) => boolean })
                 .ignore({ method } as IncomingMessage);
@@ -322,7 +321,7 @@ describe('buildLoggerParams', () => {
          * estado, asi que `req` y `res` eran ocho lineas para repetirlo.
          */
         it('en desarrollo no se registra req ni res', () => {
-            const { serializers } = buildOptions(Enviroment.Development);
+            const { serializers } = buildOptions(DEV);
 
             // Devuelven undefined, y esa es la razon de que la clave no se
             // escriba. Sin serializador, pino volcaria el ServerResponse entero:
@@ -333,7 +332,7 @@ describe('buildLoggerParams', () => {
 
 
         it('de la petición registra método, ruta, IP y user-agent', () => {
-            const { serializers } = buildOptions(Enviroment.Production);
+            const { serializers } = buildOptions(PROD);
 
             const serialized = serializers!['req']!({
                 method: 'POST',
@@ -354,7 +353,7 @@ describe('buildLoggerParams', () => {
 
 
         it('de la respuesta registra solo el estado', () => {
-            const { serializers } = buildOptions(Enviroment.Production);
+            const { serializers } = buildOptions(PROD);
 
             expect(serializers!['res']!({ statusCode: 201, headers: { 'set-cookie': 'x' } }))
                 .toEqual({ statusCode: 201 });
@@ -383,7 +382,7 @@ describe('buildLoggerParams', () => {
         const logged = (record: object): string => {
             const written: string[] = [];
             const logger = pino(
-                buildOptions(Enviroment.Production),
+                buildOptions(PROD),
                 { write: (line: string) => { written.push(line); } }
             );
 
@@ -395,7 +394,7 @@ describe('buildLoggerParams', () => {
 
         /** El cuerpo, tal como lo arma la configuración al entrar la petición. */
         const loggedBody = (body: object): string => {
-            const { customReceivedObject } = buildOptions(Enviroment.Development);
+            const { customReceivedObject } = buildOptions(DEV);
 
             return logged(
                 customReceivedObject!({ body } as unknown as IncomingMessage, {} as ServerResponse) as object

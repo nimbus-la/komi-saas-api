@@ -1,13 +1,12 @@
 import { IncomingMessage, ServerResponse } from "node:http";
 
-import { ConfigService } from "@nestjs/config";
 import { Params } from "nestjs-pino";
-import { LevelWithSilent, stdTimeFunctions } from "pino";
+import { stdTimeFunctions } from "pino";
 import { Options } from "pino-http";
 
 import type { AuthenticatedUser } from "@/auth/infrastructure/types";
+import { LoggingConfig } from "@/interfaces";
 
-import { Enviroment } from "../config/env.validation";
 // Por ruta directa y no desde el barrel `@/infrastructure`: ese índice exporta
 // también este archivo, así que importarlo desde ahí sería una dependencia
 // circular con el módulo a medio construir.
@@ -42,15 +41,6 @@ type LoggedRequest = IncomingMessage & {
     originalUrl?: string;
     ip?: string;
 };
-
-
-/**
- * En desarrollo interesa ver el detalle (`debug`); en producción esas líneas
- * son ruido y coste. No se fija `LOG_LEVEL` en el `.env` por defecto para que
- * el entorno decida solo, pero definirlo gana siempre.
- */
-const defaultLevel = (environment: Enviroment): LevelWithSilent =>
-    environment === Enviroment.Development ? 'debug' : 'info';
 
 
 /**
@@ -115,7 +105,7 @@ const receivedMessage = (req: IncomingMessage): string =>
  * revienta con un 500 quedaba al mismo nivel que una que fue bien: con
  * `LOG_LEVEL=warn` en producción no se veía ninguna de las dos.
  */
-const requestLevel = (_req: IncomingMessage, res: ServerResponse, error?: Error): LevelWithSilent => {
+const requestLevel = (_req: IncomingMessage, res: ServerResponse, error?: Error): 'error' | 'warn' | 'info' => {
     if (error !== undefined || res.statusCode >= 500) {
         return 'error';
     };
@@ -255,22 +245,28 @@ const PRETTY_TRANSPORT = {
 /**
  * Configuración de `nestjs-pino` para toda la aplicación.
  *
+ * Es una función pura de `LoggingConfig` a `Params`: no conoce Nest ni el
+ * entorno, solo lo que ya se decidió en `logging.config.ts`. Así todo el
+ * comportamiento del log se prueba sin levantar la aplicación.
+ *
  * `quietReqLogger` junto con el renombre de `reqId`: cada línea escrita durante
  * una petición —la del propio ciclo HTTP, pero también las de los casos de uso,
  * los handlers de eventos, las consultas a la base y el filtro de excepciones—
  * sale con `traceId` y nada más del request. El detalle de la petición va en
  * sus dos líneas propias, la de entrada y la de cierre.
  */
-export const buildLoggerParams = (configService: ConfigService): Params => {
-    const environment = configService.getOrThrow<Enviroment>('NODE_ENV');
-    const level = configService.get<LevelWithSilent>('LOG_LEVEL') ?? defaultLevel(environment);
-    const isDevelopment = environment === Enviroment.Development;
-
-    /** Lo que acompaña a la línea de cierre, según el entorno. */
+export const buildLoggerParams = ({ level, pretty, logRequestPayload }: LoggingConfig): Params => {
+    /**
+     * Lo que acompaña a la línea de cierre.
+     *
+     * Con la consola legible, `req` y `res` no se escriben —el mensaje ya dice
+     * método, ruta y estado— así que la IP se añade suelta. En JSON van los
+     * serializadores completos y esto sobra.
+     */
     const closingRecord = (req: IncomingMessage, val: object): object => ({
         ...val,
         ...businessContext(req),
-        ...(isDevelopment ? { ip: ipOf(req) } : payloadOf(req, true)),
+        ...(pretty ? { ip: ipOf(req) } : {}),
     });
 
 
@@ -310,7 +306,7 @@ export const buildLoggerParams = (configService: ConfigService): Params => {
          * estado, así que `req` y `res` eran ocho líneas para repetirlo. En
          * producción sí, porque ahí son campos que el agregador filtra.
          */
-        serializers: isDevelopment
+        serializers: pretty
             // Devolviendo `undefined` la clave no se escribe. Quitar el
             // serializador NO es equivalente: sin él, pino vuelca el objeto
             // `ServerResponse` entero, que son doscientas líneas de sockets y
@@ -337,12 +333,24 @@ export const buildLoggerParams = (configService: ConfigService): Params => {
         customSuccessObject: (req, _res, val: object) => closingRecord(req, val),
         customErrorObject: (req, _res, _error, val: object) => closingRecord(req, val),
 
-        ...(isDevelopment
+        /**
+         * La petición se anuncia al entrar, con el cuerpo que trae.
+         *
+         * Va atado a `logRequestPayload` y no al formato: si el cuerpo no se
+         * puede registrar, esta línea no tendría nada que aportar que la de
+         * cierre no diga ya. Y como el cuerpo sale AQUÍ, la línea de cierre no
+         * lo repite: escribirlo dos veces por petición llena la consola con lo
+         * mismo.
+         */
+        ...(logRequestPayload
             ? {
                 customReceivedMessage: receivedMessage,
                 customReceivedObject: (req: IncomingMessage) => payloadOf(req, false),
-                transport: PRETTY_TRANSPORT,
             }
+            : {}),
+
+        ...(pretty
+            ? { transport: PRETTY_TRANSPORT }
             : {
                 // En JSON el nivel sale como texto ("error") y no como número
                 // (50): un log que también lee una persona no debería necesitar

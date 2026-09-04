@@ -190,8 +190,15 @@ describe('AllExceptionsFilter', () => {
             filter.catch(new BadRequestException(['email must be an email']), host);
 
             expect(warn).toHaveBeenCalledWith(
-                expect.objectContaining({ httpStatus: HttpStatus.BAD_REQUEST }),
-                expect.stringContaining('email must be an email'),
+                expect.objectContaining({
+                    httpStatus: HttpStatus.BAD_REQUEST,
+                    // Como CAMPO: incrustado en el mensaje era un JSON de
+                    // trescientos caracteres que ni se leia ni se podia filtrar.
+                    detail: expect.objectContaining({
+                        message: expect.arrayContaining(['email must be an email']),
+                    }),
+                }),
+                'POST /user -> HTTP 400',
             );
         });
 
@@ -340,8 +347,12 @@ describe('AllExceptionsFilter', () => {
             filter.catch(new ItemAlreadyExistsExceptionStub(), host);
 
             expect(warn).toHaveBeenCalledWith(
-                { code: '1302', httpStatus: HttpStatus.CONFLICT },
-                expect.any(String),
+                {
+                    code: '1302',
+                    httpStatus: HttpStatus.CONFLICT,
+                    detail: expect.stringContaining('Harina'),
+                },
+                'POST /user -> HTTP 409',
             );
         });
     });
@@ -367,7 +378,10 @@ describe('AllExceptionsFilter', () => {
             filter.catch(new ItemAlreadyExistsExceptionStub(), host);
 
             expect(JSON.stringify(captured.body)).not.toContain('Harina');
-            expect(warn).toHaveBeenCalledWith(expect.any(Object), expect.stringContaining('Harina'));
+            expect(warn).toHaveBeenCalledWith(
+                expect.objectContaining({ detail: expect.stringContaining('Harina') }),
+                expect.any(String),
+            );
         });
 
         it('el sobre siempre tiene la misma forma', () => {
