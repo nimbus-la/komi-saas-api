@@ -66,6 +66,22 @@ describe('StockMovementHandlers', () => {
 
 
     /**
+     * Los movimientos y el evento se escriben enteros para poder rehacer la
+     * fila, asi que pasan por la misma lista negra que el cuerpo de una
+     * peticion.
+     */
+    it('lo que se registra va saneado', async () => {
+        const { handlers, error } = build(jest.fn().mockRejectedValue(new Error('la base no responde')));
+
+        const event = consumedEvent([{ ...oneBatch[0], password: 'mi-clave' }]);
+
+        await handlers.onStockConsumed(event);
+
+        expect(JSON.stringify(error.mock.calls[0]![0])).not.toContain('mi-clave');
+    });
+
+
+    /**
      * El fallo que motivó la parte: el armado del payload estaba FUERA del
      * try. Un evento sin su lista de lotes reventaba el `.map` antes de
      * cualquier `catch`, el error subía hasta el publicador y de ahí a la
@@ -90,12 +106,15 @@ describe('StockMovementHandlers', () => {
          */
         it('adjunta el evento completo, que es lo único que queda', async () => {
             const { handlers, error } = build(jest.fn());
-            const event = consumedEvent(undefined);
 
-            await handlers.onStockConsumed(event);
+            await handlers.onStockConsumed(consumedEvent(undefined));
 
             expect(error).toHaveBeenCalledWith(
-                expect.objectContaining({ payload: event, failedMovements: [] }),
+                expect.objectContaining({
+                    // Una COPIA saneada del evento: se compara el contenido.
+                    payload: expect.objectContaining({ itemId: 'item-1', tenantId: 'tenant-42' }),
+                    failedMovements: [],
+                }),
                 expect.any(String),
             );
         });

@@ -4,6 +4,10 @@ import { PinoLogger } from "nestjs-pino";
 
 import { DomainEvent, EventPublisher } from "@/shared";
 
+// Por ruta directa y no desde el barrel `@/infrastructure`: ese indice arrastra
+// el modulo de base de datos entero para usar una funcion pura.
+import { sanitize } from "../logging/sanitizer.util";
+
 
 @Injectable()
 export class EventEmitterPublisher implements EventPublisher {
@@ -38,7 +42,17 @@ export class EventEmitterPublisher implements EventPublisher {
 
             } catch (error: unknown) {
                 this.logger.error(
-                    { event: event.eventName, occurredOn: event.occurredOn, payload: event, err: error },
+                    {
+                        event: event.eventName,
+                        occurredOn: event.occurredOn,
+
+                        // Saneado: un evento de dominio arrastra datos del
+                        // negocio, y este payload se escribe entero para poder
+                        // rehacerlo. Sin esto, una contrasena o un token
+                        // metidos en un evento acabarian en claro en el log.
+                        payload: sanitize(event),
+                        err: error,
+                    },
                     `El evento '${event.eventName}' no se pudo procesar. La operación que lo produjo SÍ se guardó: `
                     + `lo que quedó a medias es su efecto. El payload va adjunto para poder rehacerlo a mano.`,
                 );

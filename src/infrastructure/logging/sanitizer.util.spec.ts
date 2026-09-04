@@ -67,6 +67,61 @@ describe('sanitize', () => {
     });
 
 
+    describe('tamano acotado', () => {
+        /** Un cuerpo con una imagen en base64 son varios megabytes. */
+        it('corta los textos larguisimos y dice cuanto falto', () => {
+            const largo = 'x'.repeat(2_500);
+
+            const sanitized = sanitize({ imagen: largo }) as Record<string, string>;
+
+            expect(sanitized['imagen']!.length).toBeLessThan(2_100);
+            expect(sanitized['imagen']).toContain('[+500 caracteres]');
+        });
+
+
+        it('deja en paz un texto normal', () => {
+            expect(sanitize({ nombre: 'ana' })).toEqual({ nombre: 'ana' });
+        });
+
+
+        /** Una consulta de diez mil filas no puede ser diez mil lineas de log. */
+        it('resume los arreglos largos', () => {
+            const filas = Array.from({ length: 50 }, (_, index) => index);
+
+            const sanitized = sanitize(filas) as unknown[];
+
+            expect(sanitized).toHaveLength(21);
+            expect(sanitized[20]).toBe('[+30 elementos]');
+        });
+
+
+        it('deja en paz un arreglo corto', () => {
+            expect(sanitize([1, 2, 3])).toEqual([1, 2, 3]);
+        });
+    });
+
+
+    describe('lo que JSON no sabe escribir', () => {
+        /**
+         * Una fecha no tiene propiedades propias: recorrerla campo a campo la
+         * dejaria en `{}`. Es lo que traen los eventos de dominio en occurredOn.
+         */
+        it('conserva las fechas', () => {
+            const occurredOn = new Date('2026-09-04T10:00:00.000Z');
+
+            expect(sanitize({ occurredOn })).toEqual({ occurredOn: '2026-09-04T10:00:00.000Z' });
+        });
+
+
+        /** Pino tiene su propio serializador de errores y saca mas que este. */
+        it('deja el error para que lo serialice pino', () => {
+            const err = new TypeError('roto');
+
+            expect(sanitize({ err })).toEqual({ err });
+        });
+    });
+
+
     it('los valores sueltos pasan tal cual', () => {
         expect(sanitize('texto')).toBe('texto');
         expect(sanitize(42)).toBe(42);

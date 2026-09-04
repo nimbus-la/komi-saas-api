@@ -3,6 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { PinoLogger } from "nestjs-pino";
 
 import { DomainEvent } from "@/shared/domain/domain-event";
+import { sanitize } from "@/infrastructure/logging/sanitizer.util";
 
 // Por ruta directa y no desde el barrel `../../../../inventory`: ese índice
 // arrastra el controller de inventario, y con él `@nestjs/jwt`, que solo
@@ -207,8 +208,12 @@ export class StockMovementHandlers {
             {
                 event: event.eventName,
                 occurredOn: event.occurredOn,
-                failedMovements,
-                payload: event,
+
+                // Saneados los dos: se escriben enteros para poder rehacer la
+                // fila a mano, asi que pasan por la misma lista negra que el
+                // cuerpo de una peticion.
+                failedMovements: sanitize(failedMovements),
+                payload: sanitize(event),
                 err: error,
             },
             `[AUDITORIA INCOMPLETA] ${operation}: el stock se actualizó pero NO se registraron `

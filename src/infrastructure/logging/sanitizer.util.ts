@@ -42,28 +42,61 @@ const MAX_DEPTH = 8;
 
 
 /**
- * Devuelve una copia del valor con los campos sensibles tapados, mire a la
- * profundidad que mire.
+ * Longitud máxima de un texto. Un cuerpo con una imagen en base64 son varios
+ * megabytes que, sin esto, acaban enteros en el log y en el disco.
+ */
+const MAX_STRING_LENGTH = 2_000;
+
+
+/** Elementos que se conservan de un arreglo antes de resumir el resto. */
+const MAX_ARRAY_ITEMS = 20;
+
+
+/**
+ * Devuelve una copia del valor lista para escribir en el log: sin los campos
+ * sensibles, mire a la profundidad que mire, y con el tamaño acotado.
  *
  * Existe porque `redact` de pino no basta: sus rutas son fijas y su comodín
  * cubre UN nivel, así que `body.password` quedaba tapado pero
  * `body.credentials.password` se escribía en claro. Un secreto solo está a
- * salvo si el saneador no depende de la forma que traiga el cuerpo.
+ * salvo si el saneador no depende de la forma que traiga el objeto.
  *
- * No muta lo que recibe: el objeto saneado es otro, y el cuerpo que sigue su
+ * No muta lo que recibe: lo saneado es otra cosa, y el cuerpo que sigue su
  * camino hacia el controlador queda intacto.
  */
 export const sanitize = (value: unknown, depth = 0): unknown => {
-    if (depth > MAX_DEPTH) {
-        return '[PROFUNDIDAD MAXIMA]';
-    };
-
-    if (Array.isArray(value)) {
-        return value.map((item) => sanitize(item, depth + 1));
+    if (typeof value === 'string') {
+        return truncate(value);
     };
 
     if (value === null || typeof value !== 'object') {
         return value;
+    };
+
+    /**
+     * Una fecha es un objeto sin propiedades propias: recorrerla campo a campo
+     * la dejaría en `{}`. Y es justo lo que traen los eventos de dominio en su
+     * `occurredOn`, así que perderla vaciaría el log de auditoría.
+     */
+    if (value instanceof Date) {
+        return value.toISOString();
+    };
+
+    /**
+     * El error se devuelve tal cual: pino tiene un serializador propio que le
+     * saca el tipo, el mensaje, el stack y los errores anidados —el
+     * `driverError` de TypeORM—. Recorrerlo aquí solo quitaría información.
+     */
+    if (value instanceof Error) {
+        return value;
+    };
+
+    if (depth >= MAX_DEPTH) {
+        return '[PROFUNDIDAD MAXIMA]';
+    };
+
+    if (Array.isArray(value)) {
+        return sanitizeArray(value, depth);
     };
 
     return Object.fromEntries(
@@ -74,3 +107,29 @@ export const sanitize = (value: unknown, depth = 0): unknown => {
         )
     );
 };
+
+
+/**
+ * Los primeros elementos y cuántos quedaron fuera.
+ *
+ * El recorte importa tanto como la redacción: una consulta que devuelve diez
+ * mil filas no puede convertirse en diez mil líneas de log.
+ */
+const sanitizeArray = (value: readonly unknown[], depth: number): unknown[] => {
+    const visible: unknown[] = value
+        .slice(0, MAX_ARRAY_ITEMS)
+        .map((item) => sanitize(item, depth + 1));
+
+    if (value.length > MAX_ARRAY_ITEMS) {
+        visible.push(`[+${value.length - MAX_ARRAY_ITEMS} elementos]`);
+    };
+
+    return visible;
+};
+
+
+/** Deja constancia de cuánto se cortó: un texto truncado sin aviso engaña. */
+const truncate = (value: string): string =>
+    value.length <= MAX_STRING_LENGTH
+        ? value
+        : `${value.slice(0, MAX_STRING_LENGTH)} [+${value.length - MAX_STRING_LENGTH} caracteres]`;
