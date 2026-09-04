@@ -51,6 +51,37 @@ Y va en el cuerpo de **toda** respuesta, no solo en las de error:
 mal" que no produjo ningún error sigue teniendo así por dónde buscarse en el
 log.
 
+### Las consultas a la base
+
+Salen por pino, con el `traceId` de la petición que las disparó:
+
+```
+[10:11:52.019] DEBUG: (d6f7c5ab48c3) [TypeORM] SELECT "TenantEntity"."tenant_id" ...
+    parameters: [ "mi-negocio", false ]
+[10:11:52.161] WARN: (d6f7c5ab48c3) POST /auth/login -> 401 | 148 ms
+```
+
+Antes iban por su cuenta a la consola —sin timestamp, sin nivel y sin
+identificador—, así que quedaban sueltas entre las líneas de la petición y no
+se sabía cuál venía de cuál.
+
+Hay **dos palancas** y cada una hace algo distinto:
+
+| Variable | Qué decide |
+|---|---|
+| `DB_LOGGING` | si TypeORM **emite** las consultas normales |
+| `LOG_LEVEL` | si se **ven** (van en `debug`, así que `info` las esconde) |
+
+Las consultas que **fallan** se registran siempre, aunque `DB_LOGGING` esté en
+`false`: si una revienta dentro de un handler de eventos o de un `catch` que se
+la traga, esa línea es la única constancia de que ocurrió. En una petición HTTP
+se verá dos veces —aquí en el instante exacto, y al final en el filtro con el
+volcado completo—, y las une el `traceId`.
+
+`logging` ya no se le pasa a TypeORM: con un logger propio, TypeORM llama a sus
+métodos siempre y no consulta esa opción, así que dejarla ahí haría creer que
+apaga algo. El valor se le pasa al logger, que es quien decide.
+
 ### Qué queda registrado de cada petición
 
 La línea que cierra la petición lleva, además del `traceId`:

@@ -1,8 +1,14 @@
 import { Logger, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { PinoLogger } from "nestjs-pino";
 
 import { DatabaseConfig } from "@/interfaces";
+
+// Por ruta directa y no desde el barrel `@/infrastructure`: ese indice exporta
+// tambien este modulo, y importarlo desde ahi seria una dependencia circular.
+import { LoggingModule } from "../logging/logging.module";
+import { DatabaseLogger } from "../logging/database.logger";
 
 
 /**
@@ -11,12 +17,16 @@ import { DatabaseConfig } from "@/interfaces";
  * - getOrThrow: si falta la config, falla claro al instante.
  * - retryAttempts/retryDelay: reintenta si la base aún no está lista.
  * - autoLoadEntities: cada context registra sus entidades con forFeature.
+ * - logger: las consultas salen por pino, con el traceId de la petición que
+ *   las disparó. Antes iban por su cuenta a la consola, sin nada que las atara
+ *   a nada.
  */
 @Module({
     imports: [
         TypeOrmModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: (configService: ConfigService) => {
+            imports: [LoggingModule],
+            inject: [ConfigService, PinoLogger],
+            useFactory: (configService: ConfigService, pinoLogger: PinoLogger) => {
                 const db = configService.getOrThrow<DatabaseConfig>('database');
                 const logger = new Logger('database-module');
 
@@ -33,7 +43,15 @@ import { DatabaseConfig } from "@/interfaces";
                     database: db.database,
                     autoLoadEntities: true,
                     synchronize: db.synchronize,
-                    logging: db.logging,
+
+                    /**
+                     * `logging` ya no se pasa: con un logger propio, TypeORM
+                     * llama a sus métodos SIEMPRE y no lo consulta, así que
+                     * dejarlo aquí haría creer que apaga algo. La decisión de
+                     * registrar o no las consultas la toma el logger, y para
+                     * eso recibe el mismo valor.
+                     */
+                    logger: new DatabaseLogger(pinoLogger, db.logging),
                     ssl: db.ssl ? { rejectUnauthorized: false } : false,
                     // Manejo de errores de conexión:
                     retryAttempts: 10,
