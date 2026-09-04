@@ -121,13 +121,13 @@ export class JwtAuthGuard implements CanActivate {
         } catch (error: unknown) {
             /**
              * Al cliente se le responde lo mismo pase lo que pase, y así debe
-             * seguir: distinguir "firma inválida" de "emisor incorrecto" le
-             * regala información a quien esté probando tokens.
+             * seguir, porque distinguir una firma inválida de un emisor
+             * incorrecto le regala información a quien esté probando tokens.
              *
-             * Pero el motivo real se pierde, y no todos son un token malo: un
-             * `JWT_SECRET` cambiado o un emisor mal configurado se ven
-             * exactamente igual desde fuera —todo el mundo deslogueado, sin
-             * una sola pista— hasta que alguien mira esta línea.
+             * El problema es que el motivo real se perdía, y no todos son un
+             * token malo. Un `JWT_SECRET` cambiado o un emisor mal configurado
+             * se ven igual desde fuera, con todo el mundo deslogueado y sin una
+             * sola pista, hasta que alguien mira esta línea.
              */
             this.logger.debug({ err: error }, 'El token de acceso no superó la verificación');
 

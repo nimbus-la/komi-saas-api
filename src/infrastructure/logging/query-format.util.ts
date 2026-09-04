@@ -6,46 +6,44 @@ export type QueryParameters = unknown[] | ObjectLiteral | undefined;
 
 
 /**
- * A partir de cuántos caracteres deja de valer la pena leer la lista de
- * columnas de un SELECT. Por debajo de eso —`SELECT id, name FROM ...`— la
- * lista dice más que un resumen.
+ * A partir de aquí deja de valer la pena leer la lista de columnas de un
+ * SELECT. Por debajo, un `SELECT id, name FROM ...` dice más que un resumen.
  */
 const MAX_COLUMNS_LENGTH = 120;
 
 
-/** Longitud máxima de un valor incrustado. Corta hashes y textos enormes. */
+/** Tope de un valor incrustado. Corta hashes y textos enormes. */
 const MAX_VALUE_LENGTH = 80;
 
 
-/** Tope de la consulta ya legible: un INSERT masivo no puede ocupar la pantalla. */
+/** Tope de la consulta ya formateada, para que un INSERT masivo no ocupe la pantalla. */
 const MAX_QUERY_LENGTH = 600;
 
 
 /**
- * Deja la consulta como se lee: con los valores puestos y sin la parrafada de
+ * Deja la consulta como se lee, con los valores puestos y sin la parrafada de
  * alias del SELECT.
  *
- * TypeORM entrega la consulta con marcadores posicionales (`$1`, `$2`) y los
- * valores en un arreglo aparte, así que para saber qué se buscó había que
- * contar marcadores con el dedo. Y la lista de columnas de un SELECT de
- * TypeORM son seiscientos caracteres de `"X"."campo" AS "X_campo"` repetido
- * para decir "traé el tenant".
+ * TypeORM entrega la consulta con marcadores (`$1`, `$2`) y los valores en un
+ * arreglo aparte, así que para saber qué se buscó había que contarlos con el
+ * dedo. Y la lista de columnas de un SELECT suyo son seiscientos caracteres de
+ * `"X"."campo" AS "X_campo"` para decir "trae el tenant".
  *
- * El resultado es para LEER, no para volver a ejecutar: si hace falta la
+ * El resultado es para leerlo, no para volver a ejecutarlo. Si hace falta la
  * consulta exacta, está en la base de datos.
  */
 export const readableQuery = (query: string, parameters: QueryParameters): string =>
     truncate(collapseColumns(inlineParameters(query, parameters)), MAX_QUERY_LENGTH);
 
 
-/** Sustituye `$1`, `$2`… por su valor. Deja el marcador si no hay valor. */
+/** Cambia `$1`, `$2` por su valor. Si no hay valor, deja el marcador. */
 const inlineParameters = (query: string, parameters: QueryParameters): string => {
     if (!Array.isArray(parameters) || parameters.length === 0) {
         return query;
     };
 
-    // El número se captura del propio marcador, así que `$10` no se confunde
-    // nunca con `$1` seguido de un cero.
+    // El número sale del propio marcador, así que un `$10` nunca se confunde
+    // con un `$1` seguido de un cero.
     return query.replace(/\$(\d+)/g, (marker, position: string) => {
         const value = parameters[Number(position) - 1];
 
@@ -79,9 +77,8 @@ const formatValue = (value: unknown): string => {
 /**
  * Cambia la lista de columnas de un SELECT largo por cuántas son.
  *
- * El recuento parte por comas, así que una función con varios argumentos
- * cuenta de más. No importa: es una pista de tamaño en un log, no un análisis
- * sintáctico.
+ * Cuenta partiendo por comas, así que una función con varios argumentos cuenta
+ * de más. Da igual, es una pista de tamaño en un log y no un analizador de SQL.
  */
 const collapseColumns = (query: string): string => {
     const columns = /^SELECT\s+(?:DISTINCT\s+)?([\s\S]+?)\s+FROM\s/i.exec(query)?.[1];

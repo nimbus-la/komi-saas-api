@@ -2,24 +2,23 @@ import { PinoLogger } from "nestjs-pino";
 
 
 /**
- * Lo que revienta FUERA de toda petición y de todo `catch`.
+ * Recoge lo que revienta fuera de una petición y de todo `catch`.
  *
  * El filtro de excepciones solo ve lo que sube por el ciclo HTTP. Un
  * `setTimeout` que falla, un handler de evento que rechaza una promesa o un
- * driver que se cae en segundo plano no pasan por ahí: sin esto, Node escribe
- * el error por stderr en otro formato —o mata el proceso sin dejar rastro en el
- * log— y en ninguno de los dos casos queda junto al resto.
+ * driver que se cae en segundo plano no pasan por ahí, y sin esto Node los
+ * escribe por stderr en otro formato o mata el proceso sin dejar rastro.
  *
- * Ojo con el efecto de registrar estos listeners: Node deja de aplicar su
- * comportamiento por defecto. Por eso aquí se reproduce a mano —registrar y
- * terminar— en vez de tragarse el error y seguir con un proceso en estado
- * desconocido, que es lo peligroso de verdad.
+ * Cuidado con un efecto de registrar estos listeners, y es que Node deja de
+ * aplicar su comportamiento por defecto. Por eso aquí se reproduce a mano,
+ * registrar y terminar, en vez de tragarse el error y seguir con un proceso en
+ * estado desconocido.
  */
 export interface ProcessErrorHandlersOptions {
-    /** Ya configurado. Se usa fuera de toda petición, así que no lleva traceId. */
+    /** Ya configurado. Se usa fuera de toda petición, así que no lleva `traceId`. */
     logger: PinoLogger;
 
-    /** Cierre ordenado: conexiones, pool de la base, suscripciones. */
+    /** Cierre ordenado de conexiones, pool de la base y suscripciones. */
     shutdown: () => Promise<void>;
 
     /** Margen para ese cierre antes de terminar por las bravas. */
@@ -30,7 +29,7 @@ export interface ProcessErrorHandlersOptions {
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 5_000;
 
 
-/** Código de salida convencional para "el proceso murió por un error". */
+/** Código de salida habitual para "el proceso murió por un error". */
 const FAILURE_EXIT_CODE = 1;
 
 
@@ -47,15 +46,14 @@ export const registerProcessErrorHandlers = ({
     /**
      * Cierra la aplicación y termina.
      *
-     * Se cierra ordenadamente en vez de salir en seco: un `process.exit`
-     * inmediato corta el pool de Postgres a media transacción y deja
-     * conexiones colgando del lado del servidor.
+     * Se cierra ordenadamente en lugar de salir en seco, porque un
+     * `process.exit` inmediato corta el pool de Postgres a media transacción y
+     * deja conexiones colgando del otro lado.
      *
-     * Y se protege de dos formas. Contra la reentrada, porque un fallo grave
-     * suele venir acompañado de otros y no tiene sentido intentar el cierre dos
-     * veces. Y con un temporizador, porque el cierre ordenado puede colgarse
-     * justamente cuando lo que falla es una conexión: pasado el margen, se sale
-     * igual.
+     * Lleva dos protecciones. Una contra la reentrada, ya que un fallo grave
+     * suele venir acompañado de otros y no tiene sentido cerrar dos veces. Y un
+     * temporizador, porque el propio cierre puede colgarse justo cuando lo que
+     * falla es una conexión.
      */
     const terminate = (): void => {
         if (terminating) {
@@ -77,17 +75,15 @@ export const registerProcessErrorHandlers = ({
     };
 
 
-    /**
-     * `fatal` a propósito: es el único nivel que vacía el buffer de pino de
-     * forma síncrona, y sin eso la línea se perdería al salir.
-     */
+    // Se usa `fatal` porque es el único nivel que vacía el buffer de pino de
+    // golpe. Sin eso la línea se perdería al salir.
     process.on('uncaughtException', (error: Error, origin: string) => {
         logger.fatal({ err: error, origin }, 'Excepción no capturada: el proceso va a terminar');
         terminate();
     });
 
 
-    /** Una promesa rechazada sin `catch`. Casi siempre, un `await` que faltó. */
+    // Una promesa rechazada sin `catch`. Casi siempre es un `await` que faltó.
     process.on('unhandledRejection', (reason: unknown) => {
         logger.fatal({ err: reason }, 'Promesa rechazada sin manejar: el proceso va a terminar');
         terminate();

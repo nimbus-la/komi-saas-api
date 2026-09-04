@@ -94,8 +94,8 @@ class EnviromentVariables {
 
 
     /**
-     * Nivel mínimo que se escribe. Opcional: sin definir, decide el entorno
-     * (`debug` en desarrollo, `info` en producción, `silent` en pruebas).
+     * Nivel mínimo que se escribe. Si no se define lo decide el entorno, o sea
+     * `debug` al desarrollar, `info` en producción y `silent` en las pruebas.
      */
     @IsOptional()
     @IsIn([...LOG_LEVELS])
@@ -103,8 +103,8 @@ class EnviromentVariables {
 
 
     /**
-     * Salida coloreada y legible (pino-pretty) en vez de JSON. Solo 'true' o
-     * 'false' literales. En producción se ignora: allí el log es JSON siempre.
+     * Salida coloreada y legible en vez de JSON. Solo 'true' o 'false'
+     * literales. En producción se ignora, que allí el log es JSON siempre.
      */
     @IsOptional()
     @IsIn(['true', 'false'])
@@ -113,7 +113,7 @@ class EnviromentVariables {
 
     /**
      * Registrar el cuerpo, la query y los parámetros de cada petición. Sirve
-     * para APAGARLO en desarrollo; en producción no se activa nunca.
+     * para apagarlo al desarrollar, porque en producción no se activa nunca.
      */
     @IsOptional()
     @IsIn(['true', 'false'])

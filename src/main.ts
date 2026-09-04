@@ -10,15 +10,15 @@ import { CorsConfig } from './interfaces';
 async function bootstrap() {
   const logger = new Logger('Main');
 
-  // `bufferLogs`: Nest retiene lo que se loguea durante el arranque y lo suelta
-  // cuando ya hay logger propio. Sin esto, todo lo anterior a `useLogger`
-  // —incluidos los errores de arranque, que son los que más falta hacen— saldría
-  // con el formato de consola de Nest, fuera de pino.
+  // Con `bufferLogs`, Nest retiene lo que se loguea durante el arranque y lo
+  // suelta cuando ya hay logger propio. Sin esto, todo lo anterior a `useLogger`
+  // saldría con el formato de Nest y fuera de pino, incluidos los errores de
+  // arranque, que son los que más falta hacen.
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  // A partir de aquí, TODO `new Logger(...)` de Nest escribe por pino: los
-  // módulos de arranque, TypeORM, los handlers de eventos y el filtro de
-  // excepciones, sin tocar ninguno de esos archivos.
+  // A partir de aquí cualquier `new Logger(...)` de Nest escribe por pino, sea
+  // el de los módulos de arranque, el de TypeORM o el de los eventos, sin tocar
+  // ninguno de esos archivos.
   app.useLogger(app.get(PinoNestLogger));
 
   const configService = app.get(ConfigService);
@@ -35,15 +35,15 @@ async function bootstrap() {
     })
   );
 
-  // El filtro y el interceptor son globales, pero se registran en AppModule
-  // (APP_FILTER / APP_INTERCEPTOR) y no aquí: por ahí pasan por el inyector, que
-  // es como el filtro recibe su logger. Montados con `useGlobalFilters` habría
-  // que construirlos a mano y resolverles las dependencias uno por uno.
+  // El filtro y el interceptor son globales pero se registran en AppModule con
+  // APP_FILTER y APP_INTERCEPTOR, no aquí, porque así los construye el inyector
+  // y el filtro recibe su logger. Con `useGlobalFilters` habría que armarlos a
+  // mano y resolverles las dependencias una por una.
 
-  // Cierra el último hueco: lo que revienta FUERA de una petición y, por tanto,
-  // nunca llega al filtro de excepciones.
+  // Cierra el último hueco, que es lo que revienta fuera de una petición y por
+  // tanto nunca llega al filtro de excepciones.
   //
-  // `resolve` y no `get`: PinoLogger es de scope TRANSIENT, y el inyector
+  // Se usa `resolve` y no `get` porque `PinoLogger` es transient y el inyector
   // devuelve una instancia nueva por consumidor en vez de un singleton.
   registerProcessErrorHandlers({
     logger: await app.resolve(PinoLogger),
@@ -59,11 +59,10 @@ async function bootstrap() {
 
 
 /**
- * El arranque puede fallar ANTES de que exista un logger: una variable de
- * entorno inválida, la base de datos caída, un módulo que no resuelve. Ahí no
- * hay pino todavía —ni handlers de proceso, que se registran más abajo—, así
- * que solo queda stderr. Lo que no puede pasar es que el error se pierda y el
- * proceso muera en silencio.
+ * El arranque puede fallar antes de que exista un logger, por ejemplo con una
+ * variable de entorno inválida, la base caída o un módulo que no resuelve. Ahí
+ * todavía no hay pino ni handlers de proceso, así que solo queda stderr. Lo que
+ * no puede pasar es que el error se pierda y el proceso muera en silencio.
  */
 bootstrap().catch((error: unknown) => {
   console.error('El arranque falló y la aplicación no llegó a levantar:', error);

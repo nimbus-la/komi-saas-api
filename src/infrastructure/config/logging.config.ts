@@ -6,11 +6,11 @@ import { Enviroment } from "./env.validation";
 
 
 /**
- * Configuración tipada bajo el namespace 'logging'.
- * Se lee SIEMPRE desde aquí, nunca con process.env disperso por el código.
+ * Configuración del log bajo el namespace 'logging'. Se lee desde aquí y nunca
+ * con `process.env` disperso por el código.
  *
- * Cada valor tiene un default sensato por entorno, así que la aplicación
- * loguea bien sin declarar una sola variable; las variables solo sirven para
+ * Cada valor tiene un default razonable por entorno, así que la aplicación
+ * loguea bien sin declarar ninguna variable. Las variables solo sirven para
  * apartarse de ese default.
  */
 
@@ -20,10 +20,9 @@ const isLogLevel = (value: string): value is LogLevel =>
 
 
 /**
- * Nivel por entorno:
- * - producción: `info`, todo lo relevante sin el ruido de la depuración.
- * - pruebas: `silent`, para que la salida de Jest siga siendo legible.
- * - desarrollo: `debug`, que es donde interesa ver el detalle.
+ * En producción va en `info`, que deja lo relevante sin el ruido de la
+ * depuración. En las pruebas va en `silent` para que la salida de Jest siga
+ * siendo legible, y al desarrollar en `debug`, que es donde interesa el detalle.
  */
 const defaultLevel = (environment: string | undefined): LogLevel => {
     if (environment === Enviroment.Production) {
@@ -47,19 +46,15 @@ export default registerAs(
                 ? requested
                 : defaultLevel(environment),
 
-            /**
-             * `pino-pretty` corre en un worker aparte y es dependencia de
-             * desarrollo: en producción no está instalado y activarlo tumbaría
-             * el arranque. Por eso, igual que con CORS, en producción es que NO
-             * sin importar lo que diga la variable.
-             */
+            // pino-pretty es dependencia de desarrollo y en producción no
+            // está instalado, así que activarlo allí tumbaría el arranque. Por
+            // eso en producción la respuesta es que no, diga lo que diga la
+            // variable.
             pretty: !isProduction && process.env['LOG_PRETTY'] !== 'false',
 
-            /**
-             * El cuerpo de una petición puede traer datos personales del
-             * cliente. En producción NUNCA se registra; en desarrollo puede
-             * apagarse explícitamente cuando se trabaja con datos reales.
-             */
+            // El cuerpo de una petición puede traer datos personales del
+            // cliente, así que en producción no se registra. Al desarrollar se
+            // puede apagar cuando se trabaja con datos reales.
             logRequestPayload: !isProduction && process.env['LOG_REQUEST_PAYLOAD'] !== 'false',
         };
     }

@@ -5,8 +5,8 @@ import { PinoLogger } from "nestjs-pino";
 
 import { DatabaseConfig } from "@/interfaces";
 
-// Por ruta directa y no desde el barrel `@/infrastructure`: ese indice exporta
-// tambien este modulo, y importarlo desde ahi seria una dependencia circular.
+// Por ruta directa y no desde el barrel `@/infrastructure`, que exporta
+// también este módulo y haría una dependencia circular.
 import { LoggingModule } from "../logging/logging.module";
 import { DatabaseLogger } from "../logging/database.logger";
 
@@ -18,8 +18,8 @@ import { DatabaseLogger } from "../logging/database.logger";
  * - retryAttempts/retryDelay: reintenta si la base aún no está lista.
  * - autoLoadEntities: cada context registra sus entidades con forFeature.
  * - logger: las consultas salen por pino, con el traceId de la petición que
- *   las disparó. Antes iban por su cuenta a la consola, sin nada que las atara
- *   a nada.
+ *   las disparó. Antes iban a la consola por su cuenta, sin nada que las atara
+ *   a ninguna.
  */
 @Module({
     imports: [
@@ -44,13 +44,11 @@ import { DatabaseLogger } from "../logging/database.logger";
                     autoLoadEntities: true,
                     synchronize: db.synchronize,
 
-                    /**
-                     * `logging` ya no se pasa: con un logger propio, TypeORM
-                     * llama a sus métodos SIEMPRE y no lo consulta, así que
-                     * dejarlo aquí haría creer que apaga algo. La decisión de
-                     * registrar o no las consultas la toma el logger, y para
-                     * eso recibe el mismo valor.
-                     */
+                    // `logging` ya no se pasa. Con un logger propio, TypeORM
+                    // llama a sus métodos siempre y no consulta esa opción, así
+                    // que dejarla aquí haría creer que apaga algo. Quien decide
+                    // si se registran las consultas es el logger, y por eso
+                    // recibe el mismo valor.
                     logger: new DatabaseLogger(pinoLogger, db.logging),
                     ssl: db.ssl ? { rejectUnauthorized: false } : false,
                     // Manejo de errores de conexión:

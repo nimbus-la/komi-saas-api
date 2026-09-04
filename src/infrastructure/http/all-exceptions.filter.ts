@@ -18,12 +18,12 @@ import { createTraceId } from "../logging/trace-id.util";
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
     /**
-     * `PinoLogger` es de scope TRANSIENT: esta instancia es solo de este
-     * filtro, así que fijarle el contexto no se lo cambia a nadie mas.
+     * `PinoLogger` es transient, así que esta instancia es solo de este filtro y
+     * fijarle el contexto no se lo cambia a nadie más.
      *
-     * Cada línea que escriba sale ya con el `traceId` de la petición, porque
-     * el middleware de `nestjs-pino` abrió ese contexto antes. Por eso los
-     * mensajes de aquí ya NO lo llevan escrito a mano: se imprimía dos veces.
+     * Cada línea que escriba sale con el `traceId` de la petición, porque el
+     * middleware de pino abrió ese contexto antes. Por eso los mensajes de aquí
+     * ya no lo llevan escrito a mano, que se imprimía dos veces.
      */
     constructor(private readonly logger: PinoLogger) {
         this.logger.setContext(AllExceptionsFilter.name);
@@ -50,7 +50,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     private static readonly HTTP_TO_CODE: Partial<Record<number, string>> = {
         [HttpStatus.UNAUTHORIZED]: '1001',
         // Al ser global, el filtro también atiende las rutas que no existen.
-        // Sin esta entrada, un 404 respondía "los datos enviados no son
+        // Sin esta entrada un 404 respondía "los datos enviados no son
         // válidos", que no es lo que pasó.
         [HttpStatus.NOT_FOUND]: RESPONSE_CODE.NOT_FOUND,
     };
@@ -65,10 +65,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         const response = http.getResponse<Response>();
         const request = http.getRequest<Request | undefined>();
 
-        // El identificador lo puso `pino-http` al entrar la petición, así que es
-        // el mismo que ya viajó en el header `X-Request-Id` y el que llevan las
-        // demás líneas de log de esta petición. El respaldo cubre el caso de que
-        // el filtro se use fuera de ese ciclo: una prueba, otro transporte.
+        // El identificador lo puso pino al entrar la petición, así que es el
+        // mismo que viajó en el header y el que llevan las demás líneas de esta
+        // petición. El respaldo cubre que el filtro se use fuera de ese ciclo,
+        // por ejemplo en una prueba.
         const traceId = AllExceptionsFilter.traceIdOf(request);
         const origin = AllExceptionsFilter.describeRequest(request);
 
@@ -79,19 +79,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
 
     /**
-     * La cabecera de la línea: qué petición y con qué estado terminó.
+     * Encabeza la línea diciendo qué petición fue y con qué estado terminó.
      *
-     * El detalle —el mensaje del dominio, el payload de validación de Nest— va
-     * como CAMPO y ya no incrustado aquí. Metido en el texto, un payload de
-     * validación era un JSON de trescientos caracteres dentro del mensaje: no
-     * se leía y tampoco se podía filtrar por él.
+     * El detalle, sea el mensaje del dominio o el payload de validación de
+     * Nest, va como campo aparte. Metido en el texto era un JSON de trescientos
+     * caracteres dentro del mensaje, que ni se leía ni se podía filtrar.
      */
     private static header(origin: string, httpStatus: number): string {
         return `${origin} -> HTTP ${httpStatus}`;
     };
 
 
-    /** `pino-http` deja el identificador en `req.id` al abrir la petición. */
+    /** Pino deja el identificador en `req.id` al abrir la petición. */
     private static traceIdOf(request: Request | undefined): string {
         const incoming: unknown = request?.id;
 

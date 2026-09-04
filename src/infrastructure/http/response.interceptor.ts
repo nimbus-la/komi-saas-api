@@ -20,13 +20,13 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>
         const message = this.reflector.get<string>(RESPONSE_MESSAGE_KEY, context.getHandler()) ?? 'Operación exitosa.';
 
         /**
-         * El mismo identificador que ya viaja en el header `X-Request-Id` y que
-         * el filtro pone en las respuestas de error.
+         * El mismo identificador que viaja en el header y que el filtro pone en
+         * las respuestas de error.
          *
-         * También en las exitosas: si el front guarda el `traceId` de TODA
-         * respuesta, cuando el usuario reporte "esto se guardó mal" hay por
-         * dónde empezar a buscar en el log. Limitarlo a los errores solo sirve
-         * cuando el fallo se manifiesta como error, que es justo el caso fácil.
+         * Va también en las exitosas. Si el front guarda el `traceId` de todas,
+         * cuando alguien reporte "esto se guardó mal" hay por dónde empezar a
+         * buscar. Limitarlo a los errores solo cubre el caso fácil, que es
+         * cuando el fallo se nota.
          */
         const traceId: unknown = context.switchToHttp().getRequest<Request>().id;
 

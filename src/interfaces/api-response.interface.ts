@@ -10,9 +10,9 @@ export interface ApiResponse<T = unknown> {
      * Identificador de la petición, el mismo que viaja en el header
      * `X-Request-Id` y que acompaña a cada línea del log.
      *
-     * Va en TODA respuesta, exitosa o no: es la referencia con la que se busca
-     * qué pasó de verdad. El cliente lo reporta, soporte lo busca. Solo falta
-     * si la respuesta se armó fuera del ciclo HTTP que abre el logger.
+     * Va en toda respuesta, salga bien o mal, y es la referencia con la que se
+     * busca qué pasó de verdad. El cliente lo reporta y soporte lo busca. Solo
+     * falta si la respuesta se armó fuera del ciclo HTTP que abre el logger.
      */
     traceId?: string;
 };

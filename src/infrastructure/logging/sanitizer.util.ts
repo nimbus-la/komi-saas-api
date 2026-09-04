@@ -1,10 +1,10 @@
-/** Marca que sustituye al valor de un campo sensible. */
+/** Lo que se escribe en lugar del valor de un campo sensible. */
 export const REDACTED = '[REDACTADO]';
 
 
 /**
- * Nombres de campo cuyo VALOR nunca se escribe, comparados en minúsculas y por
- * coincidencia exacta, a cualquier profundidad.
+ * Campos cuyo valor no se escribe nunca. Se comparan en minúsculas y por
+ * nombre exacto, da igual a qué profundidad aparezcan.
  */
 export const SENSITIVE_FIELDS: readonly string[] = [
     'password',
@@ -32,18 +32,17 @@ const BLACKLIST: ReadonlySet<string> = new Set(SENSITIVE_FIELDS);
 
 
 /**
- * Hasta dónde baja el saneador dentro de un objeto anidado.
- *
- * No es una restricción de seguridad sino de coste: un log no debería costar
- * más que la operación que describe, y un payload de treinta niveles casi
- * siempre es un error de quien lo manda.
+ * Hasta dónde baja dentro de un objeto anidado. No es una medida de seguridad
+ * sino de coste, porque un log no debería costar más que la operación que
+ * describe y un objeto de treinta niveles casi siempre es un error de quien lo
+ * manda.
  */
 const MAX_DEPTH = 8;
 
 
 /**
  * Longitud máxima de un texto. Un cuerpo con una imagen en base64 son varios
- * megabytes que, sin esto, acaban enteros en el log y en el disco.
+ * megabytes que, sin este tope, acaban enteros en el disco.
  */
 const MAX_STRING_LENGTH = 2_000;
 
@@ -53,16 +52,16 @@ const MAX_ARRAY_ITEMS = 20;
 
 
 /**
- * Devuelve una copia del valor lista para escribir en el log: sin los campos
- * sensibles, mire a la profundidad que mire, y con el tamaño acotado.
+ * Devuelve una copia del valor lista para escribir, sin los campos sensibles y
+ * con el tamaño acotado.
  *
- * Existe porque `redact` de pino no basta: sus rutas son fijas y su comodín
- * cubre UN nivel, así que `body.password` quedaba tapado pero
- * `body.credentials.password` se escribía en claro. Un secreto solo está a
- * salvo si el saneador no depende de la forma que traiga el objeto.
+ * Hace falta porque el `redact` de pino trabaja con rutas fijas y su comodín
+ * solo baja un nivel, así que tapaba `body.password` pero escribía en claro un
+ * `body.credentials.password`. Un secreto solo está a salvo si no depende de la
+ * forma que traiga el objeto.
  *
- * No muta lo que recibe: lo saneado es otra cosa, y el cuerpo que sigue su
- * camino hacia el controlador queda intacto.
+ * No modifica lo que recibe, de modo que el cuerpo sigue su camino hacia el
+ * controlador intacto.
  */
 export const sanitize = (value: unknown, depth = 0): unknown => {
     if (typeof value === 'string') {
@@ -73,30 +72,22 @@ export const sanitize = (value: unknown, depth = 0): unknown => {
         return value;
     };
 
-    /**
-     * Una fecha es un objeto sin propiedades propias: recorrerla campo a campo
-     * la dejaría en `{}`. Y es justo lo que traen los eventos de dominio en su
-     * `occurredOn`, así que perderla vaciaría el log de auditoría.
-     */
+    // Una fecha no tiene propiedades propias, así que recorrerla campo a campo
+    // la dejaría en {}. Es justo lo que traen los eventos en su `occurredOn`.
     if (value instanceof Date) {
         return value.toISOString();
     };
 
-    /**
-     * El error se devuelve tal cual: pino tiene un serializador propio que le
-     * saca el tipo, el mensaje, el stack y los errores anidados —el
-     * `driverError` de TypeORM—. Recorrerlo aquí solo quitaría información.
-     */
+    // El error se devuelve tal cual, que pino tiene su propio serializador y le
+    // saca el stack y los errores anidados. Tocarlo aquí solo quitaría cosas.
     if (value instanceof Error) {
         return value;
     };
 
-    /**
-     * Un búfer no se recorre campo a campo: `Object.entries` lo convertiría en
-     * un objeto con una clave numérica por byte, así que un adjunto de un mega
-     * serían un millón de claves. Del contenido no hay nada que leer; lo único
-     * que dice algo es que estaba y cuánto ocupaba.
-     */
+    // Un búfer no se recorre. `Object.entries` lo convertiría en un objeto con
+    // una clave por byte, o sea un millón de claves para un adjunto de un mega.
+    // De su contenido no hay nada que leer, solo interesa que estaba y cuánto
+    // ocupaba.
     if (Buffer.isBuffer(value)) {
         return `[Buffer ${value.byteLength} bytes]`;
     };
@@ -120,10 +111,9 @@ export const sanitize = (value: unknown, depth = 0): unknown => {
 
 
 /**
- * Los primeros elementos y cuántos quedaron fuera.
- *
- * El recorte importa tanto como la redacción: una consulta que devuelve diez
- * mil filas no puede convertirse en diez mil líneas de log.
+ * Los primeros elementos y cuántos quedaron fuera. Recortar importa tanto como
+ * tapar, porque una consulta de diez mil filas no puede volverse diez mil
+ * líneas de log.
  */
 const sanitizeArray = (value: readonly unknown[], depth: number): unknown[] => {
     const visible: unknown[] = value
@@ -138,7 +128,7 @@ const sanitizeArray = (value: readonly unknown[], depth: number): unknown[] => {
 };
 
 
-/** Deja constancia de cuánto se cortó: un texto truncado sin aviso engaña. */
+/** Avisa de cuánto se cortó, porque un texto truncado sin más engaña al leerlo. */
 const truncate = (value: string): string =>
     value.length <= MAX_STRING_LENGTH
         ? value
