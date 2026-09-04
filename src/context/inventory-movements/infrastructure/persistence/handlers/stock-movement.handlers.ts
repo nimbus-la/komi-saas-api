@@ -1,7 +1,16 @@
 import { OnEvent } from "@nestjs/event-emitter";
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 
-import { StockConsumedEvent, StockReceivedEvent, StockWastedEvent, StockAdjustedEvent } from "../../../../inventory";
+import { DomainEvent } from "@/shared/domain/domain-event";
+
+// Por ruta directa y no desde el barrel `../../../../inventory`: ese índice
+// arrastra el controller de inventario, y con él `@nestjs/jwt`, que solo
+// publica ESM y deja este archivo fuera del alcance de una prueba unitaria.
+import { StockReceivedEvent } from "@/context/inventory/domain/events/stock-received.event";
+import { StockConsumedEvent } from "@/context/inventory/domain/events/stock-consumed.event";
+import { StockWastedEvent } from "@/context/inventory/domain/events/stock-wasted.event";
+import { StockAdjustedEvent } from "@/context/inventory/domain/events/stock-adjusted.event";
 
 import { RecordMovementParams, RecordMovementUseCase } from "../../../application";
 import { MovementType } from "../../../domain";
@@ -15,36 +24,38 @@ import { MovementType } from "../../../domain";
  */
 @Injectable()
 export class StockMovementHandlers {
-    private readonly logger = new Logger(StockMovementHandlers.name);
-
-
     constructor(
-        private readonly recordMovement: RecordMovementUseCase
-    ) { };
+        private readonly recordMovement: RecordMovementUseCase,
+        private readonly logger: PinoLogger
+    ) {
+        this.logger.setContext(StockMovementHandlers.name);
+    };
 
 
     @OnEvent('inventory.stock.received')
     public async onStockReceived(event: StockReceivedEvent): Promise<void> {
-        const movement: RecordMovementParams = {
-            tenantId: event.tenantId,
-            inventoryItemId: event.itemId,
-            branchId: event.branchId,
-            batchId: event.batchId,
-            movementType: MovementType.Entry,
-            quantity: event.quantity,
-            unitCostAmount: event.unitCostAmount,
-            unitCostCurrency: event.unitCostCurrency,
-            occurredAt: event.occurredOn,
-        };
+        let movement: RecordMovementParams | null = null;
 
         try {
+            movement = {
+                tenantId: event.tenantId,
+                inventoryItemId: event.itemId,
+                branchId: event.branchId,
+                batchId: event.batchId,
+                movementType: MovementType.Entry,
+                quantity: event.quantity,
+                unitCostAmount: event.unitCostAmount,
+                unitCostCurrency: event.unitCostCurrency,
+                occurredAt: event.occurredOn,
+            };
+
             await this.recordMovement.execute(movement);
 
         } catch (error: unknown) {
             this.logAuditFailure(
                 MovementType.Entry,
-                event.eventName,
-                [movement],
+                event,
+                movement === null ? [] : [movement],
                 error
             );
         };
@@ -53,7 +64,7 @@ export class StockMovementHandlers {
 
     @OnEvent('inventory.stock.consumed')
     public async onStockConsumed(event: StockConsumedEvent): Promise<void> {
-        const movements = event.consumedBatches.map(
+        await this.record(MovementType.Consumption, event, () => event.consumedBatches.map(
             (detail) => ({
                 tenantId: event.tenantId,
                 inventoryItemId: event.itemId,
@@ -65,20 +76,14 @@ export class StockMovementHandlers {
                 unitCostCurrency: detail.unitCostCurrency,
                 occurredAt: event.occurredOn,
             })
-        );
-
-        await this.recordAll(
-            MovementType.Consumption,
-            event.eventName,
-            movements
-        );
+        ));
     };
 
 
 
     @OnEvent('inventory.stock.wasted')
     public async onStockWasted(event: StockWastedEvent): Promise<void> {
-        const movements = event.wastedBatches.map((detail) => ({
+        await this.record(MovementType.Waste, event, () => event.wastedBatches.map((detail) => ({
             tenantId: event.tenantId,
             inventoryItemId: event.itemId,
             branchId: event.branchId,
@@ -89,20 +94,14 @@ export class StockMovementHandlers {
             unitCostCurrency: detail.unitCostCurrency,
             reason: event.reason,
             occurredAt: event.occurredOn,
-        }));
-
-        await this.recordAll(
-            MovementType.Waste,
-            event.eventName,
-            movements
-        );
+        })));
     };
 
 
 
     @OnEvent('inventory.stock.adjusted')
     public async onStockAdjusted(event: StockAdjustedEvent): Promise<void> {
-        const movements = event.adjustedBatches.map((detail) => ({
+        await this.record('AJUSTE', event, () => event.adjustedBatches.map((detail) => ({
             tenantId: event.tenantId,
             inventoryItemId: event.itemId,
             branchId: event.branchId,
@@ -115,11 +114,37 @@ export class StockMovementHandlers {
             unitCostCurrency: detail.unitCostCurrency,
             reason: event.reason,
             occurredAt: event.occurredOn,
-        }));
-
-        await this.recordAll('AJUSTE', event.eventName, movements);
+        })));
     };
 
+
+
+    /**
+     * Arma la tanda de movimientos y la registra.
+     *
+     * El armado va DENTRO del try, y esa es toda la razón de que este método
+     * exista. Antes se hacía fuera: un evento que llegara con la lista de lotes
+     * vacía o sin ella reventaba el `.map` ANTES de cualquier `catch`, el error
+     * subía hasta el publicador y de ahí a la petición, que respondía 500 con el
+     * stock ya movido. Y si el fallo ocurría fuera del ciclo HTTP, no quedaba
+     * ni esa señal: se perdía entero.
+     */
+    private async record(
+        operation: string,
+        event: DomainEvent,
+        build: () => Array<Parameters<RecordMovementUseCase['execute']>[0]>
+    ): Promise<void> {
+        let movements: Array<Parameters<RecordMovementUseCase['execute']>[0]> = [];
+
+        try {
+            movements = build();
+
+            await this.recordAll(operation, event, movements);
+
+        } catch (error: unknown) {
+            this.logAuditFailure(operation, event, movements, error);
+        };
+    };
 
 
     /**
@@ -131,7 +156,7 @@ export class StockMovementHandlers {
      */
     private async recordAll(
         operation: string,
-        eventName: string,
+        event: DomainEvent,
         movements: Array<Parameters<RecordMovementUseCase['execute']>[0]>
     ): Promise<void> {
         const failed: Array<Parameters<RecordMovementUseCase['execute']>[0]> = [];
@@ -148,7 +173,7 @@ export class StockMovementHandlers {
         };
 
         if (failed.length > 0) {
-            this.logAuditFailure(operation, eventName, failed, lastError, movements.length);
+            this.logAuditFailure(operation, event, failed, lastError, movements.length);
         };
     };
 
@@ -156,15 +181,20 @@ export class StockMovementHandlers {
 
     /**
      * Deja constancia CRÍTICA de que el stock cambió pero su movimiento no quedó
-     * registrado. Incluye el payload completo en JSON para poder reconstruir la
-     * fila a mano (o con un script) sin adivinar nada.
+     * registrado.
+     *
+     * Los movimientos que faltaron van como campo estructurado y no dentro del
+     * texto: así se recuperan con un `jq` sobre el log y se rehacen con un
+     * script, en vez de recortándolos a mano de una línea. El evento entero
+     * viaja también, porque cuando lo que falla es el armado no hay ningún
+     * movimiento que adjuntar.
      *
      * Este log debe estar conectado a alertas: un fallo aquí significa que la
      * bitácora dejó de reflejar la realidad del inventario.
      */
     private logAuditFailure(
         operation: string,
-        eventName: string,
+        event: DomainEvent,
         failedMovements: unknown[],
         error: unknown,
         totalMovements?: number
@@ -174,10 +204,15 @@ export class StockMovementHandlers {
             : `${failedMovements.length} movimiento(s)`;
 
         this.logger.error(
-            `[AUDITORIA INCOMPLETA] ${operation}: el stock se actualizó pero NO se registraron ${scope}. ` +
-            `Evento: ${eventName}. Reconstruir manualmente con el payload adjunto.\n` +
-            `PAYLOAD: ${JSON.stringify(failedMovements)}`,
-            error instanceof Error ? error.stack : String(error),
+            {
+                event: event.eventName,
+                occurredOn: event.occurredOn,
+                failedMovements,
+                payload: event,
+                err: error,
+            },
+            `[AUDITORIA INCOMPLETA] ${operation}: el stock se actualizó pero NO se registraron `
+            + `${scope}. Reconstruir con los movimientos adjuntos.`,
         );
     };
 };

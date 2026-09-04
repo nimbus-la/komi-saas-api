@@ -1,6 +1,7 @@
 import { TenantAggregate, TenantId, TenantRepository, TenantSlug } from "@/context/tenants/domain";
 import { ResolvedTenant, TenantResolver } from "../../../application";
 import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 
 
 /**
@@ -13,8 +14,11 @@ import { Injectable } from "@nestjs/common";
 @Injectable()
 export class TenantResolverAdapter implements TenantResolver {
     constructor(
-        private readonly tenants: TenantRepository
-    ) { }
+        private readonly tenants: TenantRepository,
+        private readonly logger: PinoLogger
+    ) {
+        this.logger.setContext(TenantResolverAdapter.name);
+    }
 
 
     public async findBySlug(slug: string): Promise<ResolvedTenant | null> {
@@ -22,8 +26,10 @@ export class TenantResolverAdapter implements TenantResolver {
 
         try {
             tenantSlug = TenantSlug.create(slug);
-        } catch {
+        } catch (error: unknown) {
             // Un slug con formato invalido es un tenant inexistente.
+            this.logger.debug({ slug, err: error }, 'El slug del negocio no es válido: se responde como inexistente');
+
             return null;
         }
 
@@ -40,8 +46,10 @@ export class TenantResolverAdapter implements TenantResolver {
 
         try {
             id = TenantId.create(tenantId);
-        } catch {
+        } catch (error: unknown) {
             // Un id con formato invalido es un tenant inexistente.
+            this.logger.debug({ tenantId, err: error }, 'El identificador del negocio no es válido: se responde como inexistente');
+
             return null;
         }
 

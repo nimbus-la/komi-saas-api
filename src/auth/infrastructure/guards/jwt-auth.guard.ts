@@ -1,6 +1,7 @@
 import { Reflector } from "@nestjs/core";
 import { JwtService, TokenExpiredError } from "@nestjs/jwt";
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 
 import { JWT_ALGORITHM, JWT_AUDIENCE, JWT_ISSUER } from "@/utils";
 
@@ -14,8 +15,11 @@ export class JwtAuthGuard implements CanActivate {
     constructor(
         private readonly jwtService: JwtService,
         private readonly reflector: Reflector,
-        private readonly sessions: SessionRepository
-    ) { }
+        private readonly sessions: SessionRepository,
+        private readonly logger: PinoLogger
+    ) {
+        this.logger.setContext(JwtAuthGuard.name);
+    }
 
 
     public async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -115,6 +119,18 @@ export class JwtAuthGuard implements CanActivate {
                 audience: JWT_AUDIENCE,
             });
         } catch (error: unknown) {
+            /**
+             * Al cliente se le responde lo mismo pase lo que pase, y así debe
+             * seguir: distinguir "firma inválida" de "emisor incorrecto" le
+             * regala información a quien esté probando tokens.
+             *
+             * Pero el motivo real se pierde, y no todos son un token malo: un
+             * `JWT_SECRET` cambiado o un emisor mal configurado se ven
+             * exactamente igual desde fuera —todo el mundo deslogueado, sin
+             * una sola pista— hasta que alguien mira esta línea.
+             */
+            this.logger.debug({ err: error }, 'El token de acceso no superó la verificación');
+
             throw error instanceof TokenExpiredError
                 ? new UnauthorizedException('El token de acceso expiró')
                 : new UnauthorizedException('Token de acceso inválido');

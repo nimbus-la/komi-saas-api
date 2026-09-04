@@ -51,6 +51,36 @@ Y va en el cuerpo de **toda** respuesta, no solo en las de error:
 mal" que no produjo ningún error sigue teniendo así por dónde buscarse en el
 log.
 
+### Lo que falla fuera de una petición
+
+Un error solo llega a `AllExceptionsFilter` si sube por el ciclo HTTP. Lo que
+ocurre en un handler de eventos, dentro de un `catch` que devuelve `null`, o
+después de responder, no pasa por ahí. Esos sitios registran su propia línea:
+
+| Dónde | Nivel | Qué deja escrito |
+|---|---|---|
+| `EventEmitterPublisher` | `error` | el evento que no se pudo procesar, con su payload |
+| `StockMovementHandlers` | `error` | `[AUDITORIA INCOMPLETA]` con los movimientos que faltaron |
+| `JwtAuthGuard` | `debug` | por qué se rechazó de verdad el token |
+| Adaptadores de auth | `debug` | por qué se respondió "no existe" |
+| `Argon2PasswordVerifier` | `debug` | que el hash guardado es ilegible |
+| `main.ts` | `fatal` | excepciones y promesas sin manejar, antes de salir |
+
+Las líneas en `debug` son pistas, no incidencias: al cliente se le sigue
+respondiendo lo mismo de siempre —"credenciales inválidas", "no existe"— porque
+distinguir los casos hacia fuera le regala información a quien esté probando.
+Para verlas hace falta `LOG_LEVEL=debug`, que es el valor por defecto en
+desarrollo.
+
+**Un evento que falla ya no tumba la petición.** Cuando el publicador corre, la
+operación de negocio ya se guardó: el stock movido, el usuario creado. Antes el
+error subía y la petición respondía 500 por algo que sí había ocurrido, así que
+quien reintentaba lo hacía dos veces. Ahora cada evento se emite por separado
+—uno roto no cancela a los siguientes—, el fallo queda registrado con su payload
+y la respuesta sigue siendo la que corresponde al hecho ya persistido. La
+constancia en el log es lo que permite rehacer a mano lo que quedó a medias, y
+por eso esas líneas deberían estar conectadas a alertas.
+
 ### Las consultas a la base
 
 Salen por pino, con el `traceId` de la petición que las disparó:

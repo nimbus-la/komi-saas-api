@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
 import * as argon2 from 'argon2';
 
 import { Argon2PasswordVerifier } from './argon2-password-verifier';
@@ -31,6 +32,15 @@ const DUMMY = '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$dummy';
 const flush = (): Promise<void> => new Promise((resolve) => { setImmediate(resolve); });
 
 
+/**
+ * Doble del logger. Es una dependencia mas del verificador desde que registra
+ * el hash ilegible: un hash corrupto no es una contrasena equivocada.
+ */
+const createVerifier = (): Argon2PasswordVerifier => new Argon2PasswordVerifier(
+    { setContext: jest.fn(), debug: jest.fn(), error: jest.fn() } as unknown as PinoLogger
+);
+
+
 describe('Argon2PasswordVerifier', () => {
     beforeAll(() => {
         // El fallo del hash dummy se loguea con Logger.error y ensucia la salida de jest.
@@ -49,7 +59,7 @@ describe('Argon2PasswordVerifier', () => {
      */
     describe('cálculo del hash dummy', () => {
         it('no lo calcula en el constructor', () => {
-            const verifier = new Argon2PasswordVerifier();
+            const verifier = createVerifier();
 
             expect(verifier).toBeInstanceOf(Argon2PasswordVerifier);
             expect(hashMock).not.toHaveBeenCalled();
@@ -70,7 +80,7 @@ describe('Argon2PasswordVerifier', () => {
             process.on('unhandledRejection', onRejection);
             hashMock.mockRejectedValue(new Error('argon2 no disponible'));
 
-            const verifier = new Argon2PasswordVerifier();
+            const verifier = createVerifier();
             await flush();
 
             process.off('unhandledRejection', onRejection);
@@ -86,7 +96,7 @@ describe('Argon2PasswordVerifier', () => {
             hashMock.mockResolvedValue(DUMMY);
             verifyMock.mockResolvedValue(false);
 
-            const verifier = new Argon2PasswordVerifier();
+            const verifier = createVerifier();
 
             await verifier.verifyAgainstDummy('primera');
             await verifier.verifyAgainstDummy('segunda');
@@ -102,8 +112,8 @@ describe('Argon2PasswordVerifier', () => {
             hashMock.mockResolvedValue(DUMMY);
             verifyMock.mockResolvedValue(false);
 
-            await new Argon2PasswordVerifier().verifyAgainstDummy('x');
-            await new Argon2PasswordVerifier().verifyAgainstDummy('x');
+            await createVerifier().verifyAgainstDummy('x');
+            await createVerifier().verifyAgainstDummy('x');
 
             expect(hashMock).toHaveBeenNthCalledWith(1, expect.any(String), { type: argon2.argon2id });
 
@@ -123,7 +133,7 @@ describe('Argon2PasswordVerifier', () => {
         it('nunca lanza cuando el hash dummy falla', async () => {
             hashMock.mockRejectedValue(new Error('argon2 no disponible'));
 
-            const verifier = new Argon2PasswordVerifier();
+            const verifier = createVerifier();
 
             await expect(verifier.verifyAgainstDummy('cualquiera')).resolves.toBeUndefined();
         });
@@ -133,7 +143,7 @@ describe('Argon2PasswordVerifier', () => {
             hashMock.mockResolvedValue(DUMMY);
             verifyMock.mockRejectedValue(new Error('hash corrupto'));
 
-            const verifier = new Argon2PasswordVerifier();
+            const verifier = createVerifier();
 
             await expect(verifier.verifyAgainstDummy('cualquiera')).resolves.toBeUndefined();
         });
@@ -147,7 +157,7 @@ describe('Argon2PasswordVerifier', () => {
         it('no cachea el fallo: reintenta el hash en la siguiente llamada', async () => {
             hashMock.mockRejectedValue(new Error('sin memoria'));
 
-            const verifier = new Argon2PasswordVerifier();
+            const verifier = createVerifier();
 
             await verifier.verifyAgainstDummy('primera');
             await verifier.verifyAgainstDummy('segunda');
@@ -165,7 +175,7 @@ describe('Argon2PasswordVerifier', () => {
                 .mockResolvedValue(DUMMY);
             verifyMock.mockResolvedValue(false);
 
-            const verifier = new Argon2PasswordVerifier();
+            const verifier = createVerifier();
 
             await verifier.verifyAgainstDummy('primera');
             expect(verifyMock).not.toHaveBeenCalled();
@@ -183,7 +193,7 @@ describe('Argon2PasswordVerifier', () => {
         it('devuelve true cuando la contraseña coincide', async () => {
             verifyMock.mockResolvedValue(true);
 
-            await expect(new Argon2PasswordVerifier().verify('plana', DUMMY)).resolves.toBe(true);
+            await expect(createVerifier().verify('plana', DUMMY)).resolves.toBe(true);
             expect(verifyMock).toHaveBeenCalledWith(DUMMY, 'plana');
         });
 
@@ -191,7 +201,7 @@ describe('Argon2PasswordVerifier', () => {
         it('devuelve false cuando no coincide', async () => {
             verifyMock.mockResolvedValue(false);
 
-            await expect(new Argon2PasswordVerifier().verify('plana', DUMMY)).resolves.toBe(false);
+            await expect(createVerifier().verify('plana', DUMMY)).resolves.toBe(false);
         });
 
 
@@ -200,7 +210,7 @@ describe('Argon2PasswordVerifier', () => {
         it('devuelve false cuando el hash almacenado es ilegible', async () => {
             verifyMock.mockRejectedValue(new Error('hash corrupto'));
 
-            await expect(new Argon2PasswordVerifier().verify('plana', 'basura')).resolves.toBe(false);
+            await expect(createVerifier().verify('plana', 'basura')).resolves.toBe(false);
         });
 
 
@@ -209,7 +219,7 @@ describe('Argon2PasswordVerifier', () => {
         it('no toca el hash dummy', async () => {
             verifyMock.mockResolvedValue(true);
 
-            await new Argon2PasswordVerifier().verify('plana', DUMMY);
+            await createVerifier().verify('plana', DUMMY);
 
             expect(hashMock).not.toHaveBeenCalled();
         });

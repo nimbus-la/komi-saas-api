@@ -1,6 +1,7 @@
 import * as argon2 from "argon2";
 import { randomBytes } from "crypto";
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
+import { PinoLogger } from "nestjs-pino";
 
 import { PasswordVerifier } from "../../application";
 
@@ -14,7 +15,10 @@ import { PasswordVerifier } from "../../application";
  */
 @Injectable()
 export class Argon2PasswordVerifier implements PasswordVerifier {
-    private readonly logger = new Logger(Argon2PasswordVerifier.name);
+    constructor(private readonly logger: PinoLogger) {
+        this.logger.setContext(Argon2PasswordVerifier.name);
+    }
+
 
     /**
      * Se calcula en el primer login, no en el constructor. Creándolo al arrancar
@@ -27,8 +31,16 @@ export class Argon2PasswordVerifier implements PasswordVerifier {
     public async verify(plain: string, hash: string): Promise<boolean> {
         try {
             return await argon2.verify(hash, plain);
-        } catch {
-            // Un hash corrupto o con formato desconocido es un fallo de credenciales.
+        } catch (error: unknown) {
+            /**
+             * Hacia afuera esto es un fallo de credenciales, y tiene que
+             * serlo. Pero un hash ilegible NO es una contraseña equivocada:
+             * es una fila mal escrita en la base, y ese usuario no va a poder
+             * entrar nunca por más que acierte su contraseña. Sin esta línea,
+             * el caso se ve idéntico a alguien que no se acuerda de la suya.
+             */
+            this.logger.debug({ err: error }, 'El hash almacenado no se pudo verificar: se responde como credenciales inválidas');
+
             return false;
         }
     }
@@ -62,7 +74,7 @@ export class Argon2PasswordVerifier implements PasswordVerifier {
                 .hash(randomBytes(32).toString("hex"), { type: argon2.argon2id })
                 .catch((error: unknown) => {
                     this.dummyHash = null;
-                    this.logger.error("No se pudo calcular el hash dummy de argon2", error);
+                    this.logger.error({ err: error }, "No se pudo calcular el hash dummy de argon2");
 
                     throw error;
                 });

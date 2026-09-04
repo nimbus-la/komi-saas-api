@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { LoggerModule } from "nestjs-pino";
 
@@ -15,6 +15,14 @@ import { buildLoggerParams } from "./logger.config";
  * registra directamente sobre Express al arrancar; por eso pino encuentra el
  * identificador ya puesto y no tiene que fabricar otro.
  */
+/**
+ * Global como el de configuración: escribir en el log es algo que hace
+ * cualquier capa —un publicador de eventos, un adaptador de persistencia, un
+ * guard—, y sin esto habría que acordarse de importar este módulo en cada uno
+ * de los que inyecte `PinoLogger`. Un import olvidado se descubre en tiempo de
+ * arranque, y siempre en el módulo que menos se toca.
+ */
+@Global()
 @Module({
     imports: [
         LoggerModule.forRootAsync({
