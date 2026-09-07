@@ -20,7 +20,7 @@ export class RefreshTokenCookie {
         this.writeOptions = {
             httpOnly: true,
             secure: cookie.secure,
-            sameSite: 'lax',
+            sameSite: cookie.sameSite,
             path: REFRESH_COOKIE_PATH,
             domain: cookie.domain,
             maxAge: jwt.refreshTtlDays * MILLISECONDS_PER_DAY,
