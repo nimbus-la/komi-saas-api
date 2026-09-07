@@ -25,7 +25,7 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  app.use(cookieParser)
+  app.use(cookieParser());
 
   // CORS primero: el preflight (OPTIONS) debe resolverse antes de
   // cualquier pipe, guard o interceptor que pudiera rechazarlo.

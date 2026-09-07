@@ -429,10 +429,14 @@ describe('LoginUseCase', () => {
             const result = await useCase.execute(validParams, context);
 
             expect(result).toEqual({
-                sessionToken: ISSUED_ACCESS.accessToken,
-                expiredAt: ISSUED_ACCESS.expiresAt.toISOString(),
-                refreshToken: GENERATED_REFRESH.plain,
-                refreshExpiresAt: expect.any(String),
+                // Los tokens salen en crudo, sin mapear: el controller es quien
+                // decide qué va al JSON y qué se queda en la cookie httpOnly.
+                tokens: {
+                    accessToken: ISSUED_ACCESS.accessToken,
+                    accessExpiresAt: ISSUED_ACCESS.expiresAt,
+                    refreshToken: GENERATED_REFRESH.plain,
+                    refreshExpiresAt: expect.any(Date),
+                },
                 lastLogin: '',
                 user: {
                     userId: activeUser.userId,
@@ -458,7 +462,7 @@ describe('LoginUseCase', () => {
 
             const result = await useCase.execute(validParams, context);
 
-            expect(result.refreshToken).toBe(GENERATED_REFRESH.plain);
+            expect(result.tokens.refreshToken).toBe(GENERATED_REFRESH.plain);
             expect(save.mock.calls[0]?.[0].toPrimitives().refreshTokenHash)
                 .toBe(GENERATED_REFRESH.hash);
         });
@@ -472,7 +476,7 @@ describe('LoginUseCase', () => {
             const antes = Date.now();
             const result = await useCase.execute(validParams, context);
 
-            const vividos = new Date(result.refreshExpiresAt).getTime() - antes;
+            const vividos = result.tokens.refreshExpiresAt.getTime() - antes;
             const sieteDias = REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000;
 
             // El caso de uso mira el reloj DESPUÉS que el test, así que la vigencia
