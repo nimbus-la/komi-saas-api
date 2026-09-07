@@ -118,6 +118,12 @@ class EnviromentVariables {
     @IsOptional()
     @IsIn(['true', 'false'])
     LOG_REQUEST_PAYLOAD?: string;
+
+
+    @IsOptional()
+    @IsString()
+    @MinLength(1)
+    COOKIE_DOMAIN?: string;
 }
 
 

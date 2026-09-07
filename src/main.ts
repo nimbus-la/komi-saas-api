@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { Logger, ValidationPipe } from '@nestjs/common';
-import { Logger as PinoNestLogger, PinoLogger } from 'nestjs-pino';
 
+import { Logger as PinoNestLogger, PinoLogger } from 'nestjs-pino';
+import cookieParser from 'cookie-parser';
+
+import { AppModule } from './app.module';
 import { buildCorsOptions, registerProcessErrorHandlers } from './infrastructure';
 import { CorsConfig } from './interfaces';
 
@@ -22,6 +24,8 @@ async function bootstrap() {
   app.useLogger(app.get(PinoNestLogger));
 
   const configService = app.get(ConfigService);
+
+  app.use(cookieParser)
 
   // CORS primero: el preflight (OPTIONS) debe resolverse antes de
   // cualquier pipe, guard o interceptor que pudiera rechazarlo.

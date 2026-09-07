@@ -6,6 +6,7 @@ import databaseConfig from "./database.config";
 import { validateEnv } from "./env.validation";
 import jwtConfig from "./jwt.config";
 import loggingConfig from "./logging.config";
+import cookieConfig from "./cookie.config";
 
 
 /**
@@ -18,7 +19,7 @@ import loggingConfig from "./logging.config";
             isGlobal: true,
             cache: true,
             envFilePath: ['.env'],
-            load: [databaseConfig, corsConfig, jwtConfig, loggingConfig],
+            load: [databaseConfig, corsConfig, jwtConfig, loggingConfig, cookieConfig],
             validate: validateEnv,
         }),
     ],
