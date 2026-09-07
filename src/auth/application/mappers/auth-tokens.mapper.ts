@@ -14,6 +14,5 @@ import { AuthTokens, AuthTokensResponse } from "../dtos";
 export const toAuthTokensResponse = (tokens: AuthTokens): AuthTokensResponse => ({
     sessionToken: tokens.accessToken,
     expiredAt: tokens.accessExpiresAt.toISOString(),
-    refreshToken: tokens.refreshToken,
     refreshExpiresAt: tokens.refreshExpiresAt.toISOString(),
 });

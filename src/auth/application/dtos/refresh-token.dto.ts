@@ -1,3 +1,5 @@
+import { ResponseLoginDto } from "./response-login.dto";
+
 export interface GeneratedRefreshToken {
     plain: string;
     hash: string;
@@ -25,6 +27,14 @@ export interface AuthTokens {
 export interface AuthTokensResponse {
     sessionToken: string;
     expiredAt: string;
-    refreshToken: string;
     refreshExpiresAt: string;
+}
+
+
+
+/** Lo que devuelve el caso de uso de login: los tokens en crudo, más el usuario. */
+export interface LoginResult {
+    tokens: AuthTokens;
+    lastLogin: string;
+    user: ResponseLoginDto;
 }

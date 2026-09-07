@@ -1,4 +1,4 @@
-import { SessionRepository, SessionRevocationReason } from "../../../domain";
+import { InvalidRefreshTokenException, SessionRepository, SessionRevocationReason } from "../../../domain";
 import { RefreshTokenGenerator } from "../../ports";
 
 export class LogoutUseCase {
@@ -8,7 +8,9 @@ export class LogoutUseCase {
     ) { }
 
 
-    public async execute(refreshToken: string): Promise<void> {
+    public async execute(refreshToken: string | null): Promise<void> {
+        if (refreshToken === null) throw new InvalidRefreshTokenException();
+
         const hash = this.refreshGenerator.hash(refreshToken);
 
         const session = await this.sessions.findByRefreshTokenHash(hash);

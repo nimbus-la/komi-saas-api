@@ -11,7 +11,6 @@ export * from './http/cors.factory';
 export * from './http/refresh-token.cookie';
 export * from './http/response-message.decorator';
 export * from './http/response.interceptor';
-export * from './decorators/refresh-token.decorator';
 export * from './events/event-emitter.publisher';
 export * from './logging/database.logger';
 export * from './logging/logger.config';

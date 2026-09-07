@@ -4,5 +4,5 @@ export class RefreshTokenPayloadDto {
     @IsString()
     @IsNotEmpty()
     @MaxLength(200)
-    refreshToken!: string;
+    refreshToken?: string;
 }

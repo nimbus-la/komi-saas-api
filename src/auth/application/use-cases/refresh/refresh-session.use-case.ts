@@ -33,7 +33,11 @@ export class RefreshSessionUseCase {
     }
 
 
-    public async execute(refreshToken: string, context: SessionContext): Promise<AuthTokens> {
+    public async execute(refreshToken: string | null, context: SessionContext): Promise<AuthTokens> {
+        if (refreshToken === null) {
+            throw new InvalidRefreshTokenException();
+        }
+
         const hash = this.refreshGenerator.hash(refreshToken);
 
         const session = await this.sessions.findByRefreshTokenHash(hash);

@@ -1,7 +1,7 @@
 import { InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
 
 import { LoginParams, SessionContext } from "../../dtos";
-import { toAuthTokensResponse, toUserResponse } from "../../mappers";
+import { toUserResponse } from "../../mappers";
 import { AuthUserFinder, PasswordVerifier, TenantResolver } from "../../ports";
 import { SessionIssuer } from "../../services/session-issuer";
 
@@ -96,7 +96,7 @@ export class LoginUseCase {
         return {
             // Y la forma de la respuesta sale del mapper que también comparten: los
             // dos endpoints devuelven exactamente los mismos campos.
-            ...toAuthTokensResponse(tokens),
+            tokens,
             lastLogin: "",
             user: toUserResponse(dataUser)
         }

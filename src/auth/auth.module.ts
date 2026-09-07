@@ -5,6 +5,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { Module } from "@nestjs/common";
 
 import { JwtConfig } from "@/interfaces";
+import { RefreshTokenCookie } from "@/infrastructure";
 import { UserModule } from "@/context/user/user.module";
 import { TenantModule } from "@/context/tenants/tenant.module";
 
@@ -35,6 +36,8 @@ import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshS
     ],
     controllers: [AuthController],
     providers: [
+        RefreshTokenCookie,
+
         // El orden importa: los guards globales corren en el orden en que se
         // registran, y el de tenant necesita el request.user que deja el de JWT.
         {

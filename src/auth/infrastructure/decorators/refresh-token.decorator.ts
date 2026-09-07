@@ -1,7 +1,7 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
-
 import { Request } from "express";
-import { RefreshTokenCookie } from "../http/refresh-token.cookie";
+
+import { RefreshTokenCookie } from "@/infrastructure";
 
 
 export const RefreshToken = createParamDecorator(
