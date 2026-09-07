@@ -126,6 +126,34 @@ describe('LogoutUseCase', () => {
 
 
     /**
+     * Con la cookie httpOnly el token puede sencillamente no venir: expiró, el
+     * usuario ya cerró sesión, o el navegador nunca la tuvo. No es un caso de
+     * error, es el segundo cierre de sesión de alguien que ya estaba fuera.
+     */
+    describe('sin token', () => {
+        it('no lanza cuando no llega ningún token', async () => {
+            const { useCase } = buildHarness();
+
+            await expect(useCase.execute(null)).resolves.toBeUndefined();
+        });
+
+
+        // Ni siquiera se hashea: sin token no hay nada que buscar, y llamar al
+        // repositorio con un hash de la nada solo gasta una consulta.
+        it('no toca el repositorio cuando no llega ningún token', async () => {
+            const { useCase, hash, findByRefreshTokenHash, update, revokeAllByUser } = buildHarness();
+
+            await useCase.execute(null);
+
+            expect(hash).not.toHaveBeenCalled();
+            expect(findByRefreshTokenHash).not.toHaveBeenCalled();
+            expect(update).not.toHaveBeenCalled();
+            expect(revokeAllByUser).not.toHaveBeenCalled();
+        });
+    });
+
+
+    /**
      * Cerrar sesión tiene que salir bien siempre. El cliente ya borró el token de
      * su lado antes de que llegue la respuesta, así que un error aquí solo le deja
      * una pantalla de fallo sin nada que pueda hacer al respecto.
