@@ -28,7 +28,7 @@ import { AuthController } from './auth.controller';
  * en el controlador sino en ese cableado, y un test que lo omita no lo ve.
  */
 
-const COOKIE = 'komi_rt';
+const COOKIE = 'vorea_session';
 
 const REFRESH_VIGENTE = 'refresh-que-trae-el-navegador';
 const REFRESH_ROTADO = 'refresh-nuevo-tras-la-rotacion';
