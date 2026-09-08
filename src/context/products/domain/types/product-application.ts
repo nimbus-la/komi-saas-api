@@ -25,7 +25,7 @@ export interface UpdateProductApplicationParams {
     productDescription?: string | undefined;
     productImgUrl?: string | undefined;
     productBasePrice: string;
-    profitMargin: ProfitMargin;
+    profitMargin?: ProfitMargin;
     productStatus: boolean;
     recipe?: RecipeParams[];
 }

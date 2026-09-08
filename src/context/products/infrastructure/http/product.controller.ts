@@ -1,18 +1,13 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from "@nestjs/common";
+import { Body, Controller, Get, Patch, Post, Query } from "@nestjs/common";
+
+import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
-import { SearchProductsApplicationParams } from "../../domain/types/product-application";
+import { SearchProductsDto } from "./dto/search-products.dto";
 import { CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "../../application";
 import { ProfitMargin } from "../../domain/value-object/profit-margin.value-object";
+import { ResponseMessage } from "@/infrastructure";
 
 
 @Controller("products")
@@ -23,81 +18,72 @@ export class ProductController {
     private readonly searchProductsUseCase: SearchProductsUseCase,
   ) { }
 
-  @Post()
-  async create(@Body() dto: CreateProductDto) {
 
+  @Post()
+  @ResponseMessage("Producto creado exitosamente")
+  public async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateProductDto,
+  ) {
     const product = await this.createProductUseCase.execute({
       ...dto,
+      tenantId: user.tenantId,
       profitMargin: ProfitMargin.create(dto.profitMargin.toString())
     });
 
-    const response =
-      await this.searchProductsUseCase.execute({
-        tenantId: dto.tenantId,
-        productId: product.id.value,
-        page: 1,
-        limit: 1,
-      });
-
-    return response[0];
+    return this.findOne(user.tenantId, product.id.value);
   }
 
-  @Patch(":id")
-  async update(
-    @Param("id") id: string,
+
+  @Patch("update")
+  @ResponseMessage("Producto actualizado exitosamente")
+  public async update(
+    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateProductDto,
   ) {
+    const { productId, profitMargin, ...changes } = dto;
 
     const product =
       await this.updateProductUseCase.execute({
-        id,
-        ...dto,
-        profitMargin: ProfitMargin.create(
-          dto.profitMargin.toString()
-        )
+        ...changes,
+        id: productId,
+        tenantId: user.tenantId,
+        // El margen es opcional en una actualización parcial: sin dato no se
+        // envía la clave, y el caso de uso conserva el que ya tiene el producto.
+        ...(profitMargin !== undefined
+          ? { profitMargin: ProfitMargin.create(profitMargin.toString()) }
+          : {}),
       });
 
-    const response =
-      await this.searchProductsUseCase.execute({
-        tenantId: dto.tenantId,
-        productId: product.id.value,
-        page: 1,
-        limit: 1,
-      });
-
-    return response[0];
+    return this.findOne(user.tenantId, product.id.value);
   }
+
 
   @Get()
-  async search(
-    @Query("tenantId") tenantId: string,
-    @Query("text") text?: string,
-    @Query("productCategoryId") productCategoryId?: string,
-    @Query("productStatus") productStatus?: string,
-    @Query("page") page = "1",
-    @Query("limit") limit = "10",
+  public async search(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: SearchProductsDto,
   ) {
-    const params: SearchProductsApplicationParams = {
+    const { pageNumber, pageSize, ...filters } = query;
+
+    return this.searchProductsUseCase.execute({
+      ...filters,
+      tenantId: user.tenantId,
+      page: pageNumber,
+      limit: pageSize,
+    });
+  }
+
+  
+  /** Devuelve el producto ya compuesto (categoría, receta y costos) tras escribirlo. */
+  private async findOne(tenantId: string, productId: string) {
+    const [product] = await this.searchProductsUseCase.execute({
       tenantId,
-      page: Number(page),
-      limit: Number(limit),
-    };
+      productId,
+      page: 1,
+      limit: 1,
+    });
 
-    if (text) {
-      params.text = text;
-    }
-
-    if (productCategoryId) {
-      params.productCategoryId = productCategoryId;
-    }
-
-    if (productStatus !== undefined) {
-      params.productStatus = productStatus === "true";
-    }
-    const products =
-      await this.searchProductsUseCase.execute(params);
-
-    return products;
+    return product;
   }
 }
-

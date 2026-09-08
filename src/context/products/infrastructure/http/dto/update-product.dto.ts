@@ -11,13 +11,12 @@ import { UpdateRecipeIngredientDto } from "./update-recipe-ingredient.dto";
 
 
 export class UpdateProductDto {
-  @IsOptional()
   @IsUUID()
-  productCategoryId!: string;
+  productId!: string;
 
   @IsOptional()
   @IsUUID()
-  tenantId!: string;
+  productCategoryId!: string;
 
   @IsOptional()
   @IsString()
@@ -41,7 +40,7 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsNumber()
-  profitMargin!: number;
+  profitMargin?: number;
 
   @IsOptional()
   @ValidateNested({ each: true })
