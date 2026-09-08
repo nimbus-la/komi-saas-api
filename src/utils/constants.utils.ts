@@ -35,3 +35,19 @@ export const JWT_AUDIENCE = 'komi-saas-client';
  * depender de la lista que traiga por defecto la librería de turno.
  */
 export const JWT_ALGORITHM = 'HS256';
+
+
+
+/** Nombre con el que viaja el refresh token. Cambiarlo desloguea a todo el mundo. */
+export const REFRESH_COOKIE_NAME = 'komi_rt';
+
+/**
+ * A qué rutas la manda el navegador.
+ *
+ * '/auth' y no '/auth/refresh': el logout también tiene que recibirla para
+ * poder borrarla, y una cookie acotada a /auth/refresh sencillamente no llega
+ * a /auth/logout. Con '/auth' quedan cubiertos los tres endpoints y el token
+ * sigue sin viajar en cada petición al resto de la API, que es de lo que se
+ * trata acotar el path.
+ */
+export const REFRESH_COOKIE_PATH = '/auth';

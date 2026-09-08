@@ -1,5 +1,6 @@
 export * from './decorators/current-user.decorator';
 export * from './decorators/public.decorator';
+export * from './decorators/refresh-token.decorator';
 export * from './guards/jwt-auth.guard';
 export * from './guards/tenant-scope.guard';
 export * from './http/auth.controller';
@@ -13,5 +14,5 @@ export * from './http/dto/user-payload.dto';
 export * from './persistence/adapters/auth-user-finder.adapter';
 export * from './persistence/adapters/tenant-resolver.adapter';
 export * from './persistence/mappers/session.persistence-mapper';
-export * from './persistence/repositories/session.repository';
 export * from './persistence/models/session.model';
+export * from './persistence/repositories/session.repository';

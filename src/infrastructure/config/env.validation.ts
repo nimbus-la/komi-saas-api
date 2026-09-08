@@ -118,6 +118,23 @@ class EnviromentVariables {
     @IsOptional()
     @IsIn(['true', 'false'])
     LOG_REQUEST_PAYLOAD?: string;
+
+
+    @IsOptional()
+    @IsString()
+    @MinLength(1)
+    COOKIE_DOMAIN?: string;
+
+
+    /**
+     * Ausente => 'lax'. Se valida exacto y en minúsculas a propósito: un 'Lax'
+     * o un 'None' no se corrigen en silencio, porque una cookie con el modo
+     * equivocado no falla, simplemente deja de viajar y el refresh empieza a
+     * responder 401 sin ninguna pista de por qué.
+     */
+    @IsOptional()
+    @IsIn(['lax', 'strict', 'none'])
+    COOKIE_SAME_SITE?: string;
 }
 
 
