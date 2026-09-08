@@ -38,8 +38,24 @@ export const JWT_ALGORITHM = 'HS256';
 
 
 
-/** Nombre con el que viaja el refresh token. Cambiarlo desloguea a todo el mundo. */
-export const REFRESH_COOKIE_NAME = 'komi_rt';
+/**
+ * Nombre con el que viaja el refresh token. Cambiarlo desloguea a todo el mundo:
+ * el navegador conserva la cookie vieja, pero con otro nombre nadie la lee.
+ *
+ * Va sin los prefijos `__Host-` ni `__Secure-`, y no por descuido:
+ *
+ * - `__Host-` exige `Path=/`, o sea renunciar al acotado de más abajo y mandar
+ *   el refresh token en CADA petición a la API. Lo que da a cambio —que un
+ *   subdominio hermano no pueda sobrescribir la cookie— vale menos que eso
+ *   mientras la API viva en un host propio.
+ * - `__Secure-` exige el flag `Secure`, que en desarrollo va apagado porque se
+ *   sirve por http plano. El navegador rechazaría la cookie entera y no se
+ *   podría probar nada en local.
+ *
+ * `__Secure-` sí es compatible con `Path=/auth`, así que vale revisarlo el día
+ * que todos los entornos vayan por HTTPS.
+ */
+export const REFRESH_COOKIE_NAME = 'vorea_session';
 
 /**
  * A qué rutas la manda el navegador.
