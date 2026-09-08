@@ -2,6 +2,7 @@ import { Money, Quantity } from "@/shared";
 import { UpdateProductApplicationParams } from "@/context/products/domain/types/product-application";
 import { ProductId } from "@/context/products/domain/value-object/product-id.value-object";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
+import { ProfitMargin } from "@/context/products/domain/value-object/profit-margin.value-object";
 import { InventoryItemChecker } from "../../ports/inventory-item-checker";
 import { ProductCategoryChecker } from "../../ports/product-category-checker";
 
@@ -129,7 +130,7 @@ export class UpdateProductUseCase {
                     : Money.of(current.productBasePrice),
 
             profitMargin:
-                params.profitMargin ?? current.profitMargin,
+                params.profitMargin ?? ProfitMargin.create(current.profitMargin),
         });
 
 

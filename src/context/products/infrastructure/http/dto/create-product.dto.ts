@@ -15,9 +15,6 @@ import { CreateRecipeIngredientDto } from "./create-recipe-ingredient.dto";
 export class CreateProductDto {
 
   @IsUUID()
-  tenantId!: string;
-
-  @IsUUID()
   productCategoryId!: string;
 
   @IsString()
