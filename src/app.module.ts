@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ConditionalModule } from '@nestjs/config';
 
 import { AllExceptionsFilter, AppConfigModule, DatabaseModule, LoggingModule, ResponseInterceptor } from './infrastructure';
 import { TenantModule } from './context/tenants/tenant.module';
@@ -12,6 +13,8 @@ import { MenusModule } from './context/menus/menus.module';
 import { RolModule } from './context/rol/rol.module';
 import { UserModule } from './context/user/user.module';
 import { AuthModule } from './auth';
+import { SeedModule } from './context/seed/seed.module';
+import { Enviroment } from './infrastructure/config/env.validation';
 
 @Module({
   imports: [
@@ -28,6 +31,10 @@ import { AuthModule } from './auth';
     RolModule,
     MenusModule,
     UserModule,
+
+    // El seed borra y recrea datos, así que solo se carga en desarrollo. En
+    // producción y en pruebas el módulo no existe y POST /seed responde 404.
+    ConditionalModule.registerWhen(SeedModule, (env) => env['NODE_ENV'] === Enviroment.Development),
   ],
 
   /**

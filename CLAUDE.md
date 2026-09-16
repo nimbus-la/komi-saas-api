@@ -25,6 +25,8 @@ npx tsc --noEmit -p tsconfig.json         # revisar tipos
 
 No hay migraciones. El esquema vive en `public/db/01-init.sql`, `02-roles.sql`, etc., y Postgres solo los ejecuta cuando el volumen está vacío (`DB_SYNCHRONIZE=false`). Un cambio de esquema se escribe en esos archivos y en una base existente se aplica a mano. Las entidades se registran en cada módulo con `TypeOrmModule.forFeature` (`autoLoadEntities: true`).
 
+Datos de prueba: `POST /seed` (solo con `NODE_ENV=development`) borra y recrea cuatro negocios completos. Los datos están en `src/context/seed/application/data/seed.data.ts`, y el detalle en `docs/seed.md`.
+
 ## Arquitectura
 
 La guía detallada, con ejemplos y pasos para agregar módulos, casos de uso y eventos, está en `docs/arquitectura.md`. Resumen:

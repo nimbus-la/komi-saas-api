@@ -69,7 +69,7 @@ Si falta alguna variable de entorno obligatoria o tiene un valor inválido, la a
 
 ### Primer negocio y primer usuario
 
-Todas las rutas piden sesión, menos las de autenticación, y para iniciar sesión hace falta un negocio y un usuario que ya existan. Todavía no hay un script que los cree, así que el primer negocio y su primer usuario se insertan directamente en la base, en las tablas `tenants` y `users`. La contraseña se guarda cifrada con Argon2, no en texto plano.
+Todas las rutas piden sesión, menos las de autenticación, y para iniciar sesión hace falta un negocio y un usuario que ya existan. En desarrollo, `POST /seed` crea cuatro negocios de prueba con sucursales, usuarios de todos los roles, inventario y productos. Cómo se usa y qué crea está en [docs/seed.md](docs/seed.md).
 
 ## Comandos
 

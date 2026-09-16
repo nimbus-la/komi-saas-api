@@ -136,6 +136,6 @@ import { EventEmitterPublisher } from "@/infrastructure";
     },
   ],
 
-  exports: [UserRepository],
+  exports: [UserRepository, PasswordHasher],
 })
 export class UserModule {}
