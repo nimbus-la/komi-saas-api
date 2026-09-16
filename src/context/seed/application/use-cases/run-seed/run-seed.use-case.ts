@@ -126,7 +126,7 @@ export class RunSeedUseCase {
         const userNames: string[] = [];
 
         for (const user of data.administrators) {
-            await this.seedUser(tenantId, data.slug, null, user, roles, passwordHash);
+            await this.seedUser(tenantId, null, user, roles, passwordHash);
             userNames.push(user.userName);
         }
 
@@ -134,7 +134,7 @@ export class RunSeedUseCase {
             const branchId = this.requireId(branchIds, branch.name, `la sucursal "${branch.name}"`);
 
             for (const user of branch.staff) {
-                await this.seedUser(tenantId, data.slug, branchId, user, roles, passwordHash);
+                await this.seedUser(tenantId, branchId, user, roles, passwordHash);
                 userNames.push(user.userName);
             }
         }
@@ -185,7 +185,6 @@ export class RunSeedUseCase {
 
     private async seedUser(
         tenantId: string,
-        tenantSlug: string,
         branchId: string | null,
         data: SeedUser,
         roles: Map<string, SeedRol>,
@@ -206,10 +205,12 @@ export class RunSeedUseCase {
             rolName: rol.name,
             rolScope: rol.scope,
             userName: UserName.create(data.userName),
-            email: UserEmail.create(`${data.userName}@${tenantSlug}.com`),
+            email: UserEmail.create(data.email),
             password: passwordHash,
             firstName: data.firstName,
+            secondName: data.secondName ?? null,
             firstLastName: data.firstLastName,
+            secondLastName: data.secondLastName ?? null,
             age: UserBirthDate.create(data.birthDate),
             sex: UserSex.create(data.sex),
             phone: UserPhone.create(data.phone),
