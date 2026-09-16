@@ -162,5 +162,9 @@ import { ProductCategoryProviderAdapter } from "./infrastructure/persistence/ada
       ],
     },
   ],
+
+  exports: [
+    ProductRepository,
+  ],
 })
 export class ProductsModule { }
