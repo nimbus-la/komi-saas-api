@@ -32,7 +32,7 @@ Tarda unos pocos segundos. La respuesta trae, por cada negocio, su slug, sus suc
       "name": "Sabor Criollo",
       "slug": "sabor-criollo",
       "branches": ["Centro", "Laureles", "Envigado"],
-      "users": ["dueno", "admin", "supervisor", "cajero.centro", "..."],
+      "users": ["carlos.restrepo", "diana.cardona", "jorge.mejia", "laura.gomez", "..."],
       "inventoryItems": 9,
       "products": 5
     }
@@ -55,27 +55,74 @@ Arepas Doña Rosa tiene una sola sucursal a propósito, para probar cómo se com
 
 ### Usuarios
 
-Todos los negocios tienen los mismos nombres de usuario. El nombre de usuario es único dentro de cada negocio, no en toda la base, así que no chocan.
+Cada negocio tiene un dueño, un administrador y un supervisor, que son roles administrativos y no pertenecen a ninguna sucursal. Además, cada sucursal tiene un cajero, un mesero y una persona de cocina.
 
-| Rol | Alcance | Nombre de usuario |
-|---|---|---|
-| Dueño | Administrativo, sin sucursal | `dueno` |
-| Administrador | Administrativo, sin sucursal | `admin` |
-| Supervisor | Administrativo, sin sucursal | `supervisor` |
-| Cajero | Operativo, uno por sucursal | `cajero.<sucursal>` |
-| Mesero | Operativo, uno por sucursal | `mesero.<sucursal>` |
-| Cocina | Operativo, uno por sucursal | `cocina.<sucursal>` |
+Las personas son inventadas, pero con datos creíbles: nombres y apellidos completos, correo, celular y fecha de nacimiento. El nombre de usuario es el primer nombre y el primer apellido, en minúsculas, sin tildes y separados por un punto. El correo sigue la misma forma con un dominio común, por ejemplo `carlos.restrepo@gmail.com`.
 
-La sucursal va escrita en minúsculas y sin espacios ni tildes: `cajero.centro`, `mesero.altoprado`, `cocina.malecon`.
+Todos los usuarios tienen la contraseña `Komi12345678`.
 
-Todos los usuarios tienen la contraseña `Komi12345678`. El correo de cada uno es su nombre de usuario seguido del slug del negocio, por ejemplo `dueno@sabor-criollo.com`.
+**Sabor Criollo** (`sabor-criollo`)
 
-Para iniciar sesión:
+| Rol | Sucursal | Usuario | Nombre |
+|---|---|---|---|
+| Dueño | | `carlos.restrepo` | Carlos Andrés Restrepo Uribe |
+| Administrador | | `diana.cardona` | Diana Marcela Cardona Villa |
+| Supervisor | | `jorge.mejia` | Jorge Iván Mejía Ochoa |
+| Cajero | Centro | `laura.gomez` | Laura Cristina Gómez Álvarez |
+| Mesero | Centro | `andres.ruiz` | Andrés Felipe Ruiz Montoya |
+| Cocina | Centro | `marta.diaz` | Marta Lucía Díaz Posada |
+| Cajero | Laureles | `sofia.arango` | Sofía Arango Betancur |
+| Mesero | Laureles | `juan.osorio` | Juan Felipe Osorio Londoño |
+| Cocina | Laureles | `luis.zapata` | Luis Alberto Zapata Correa |
+| Cajero | Envigado | `paula.velez` | Paula Andrea Vélez Rendón |
+| Mesero | Envigado | `camilo.henao` | Camilo Henao Gil |
+| Cocina | Envigado | `rosa.castano` | Rosa Elena Castaño Muñoz |
+
+**La Parrilla del Puerto** (`la-parrilla-del-puerto`)
+
+| Rol | Sucursal | Usuario | Nombre |
+|---|---|---|---|
+| Dueño | | `ricardo.barrios` | Ricardo José Barrios Consuegra |
+| Administrador | | `natalia.pertuz` | Natalia Pertuz Charris |
+| Supervisor | | `hernan.charris` | Hernán Darío Charris Molina |
+| Cajero | Alto Prado | `yuliana.mendoza` | Yuliana Mendoza Ariza |
+| Mesero | Alto Prado | `kevin.orozco` | Kevin Andrés Orozco Rada |
+| Cocina | Alto Prado | `wilson.polo` | Wilson Enrique Polo Barraza |
+| Cajero | Malecón | `karen.ospino` | Karen Julieth Ospino Gutiérrez |
+| Mesero | Malecón | `jesus.maestre` | Jesús David Maestre Pinto |
+| Cocina | Malecón | `ana.fontalvo` | Ana Milena Fontalvo Rojano |
+
+**Café Montaña** (`cafe-montana`)
+
+| Rol | Sucursal | Usuario | Nombre |
+|---|---|---|---|
+| Dueño | | `valentina.giraldo` | Valentina Giraldo Arias |
+| Administrador | | `mateo.salazar` | Mateo Alejandro Salazar Duque |
+| Supervisor | | `lorena.ocampo` | Lorena Patricia Ocampo Franco |
+| Cajero | Cable | `daniela.marin` | Daniela Marín Quintero |
+| Mesero | Cable | `santiago.toro` | Santiago Toro Valencia |
+| Cocina | Cable | `oscar.ramirez` | Óscar Mauricio Ramírez Hoyos |
+| Cajero | Chipre | `juliana.loaiza` | Juliana Loaiza Cardona |
+| Mesero | Chipre | `tomas.echeverri` | Tomás Echeverri Ríos |
+| Cocina | Chipre | `gloria.aristizabal` | Gloria Inés Aristizábal Gallego |
+
+**Arepas Doña Rosa** (`arepas-dona-rosa`)
+
+| Rol | Sucursal | Usuario | Nombre |
+|---|---|---|---|
+| Dueño | | `rosa.pardo` | Rosa María Pardo Cely |
+| Administrador | | `miguel.pardo` | Miguel Ángel Pardo Cely |
+| Supervisor | | `clara.rincon` | Clara Inés Rincón Forero |
+| Cajero | Chapinero | `liliana.suarez` | Liliana Suárez Bernal |
+| Mesero | Chapinero | `brayan.castro` | Brayan Stiven Castro Moreno |
+| Cocina | Chapinero | `edgar.rojas` | Edgar Rojas Peña |
+
+Para iniciar sesión se envía el slug del negocio junto con el usuario:
 
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"tenantSlug": "sabor-criollo", "username": "dueno", "password": "Komi12345678"}'
+  -d '{"tenantSlug": "sabor-criollo", "username": "carlos.restrepo", "password": "Komi12345678"}'
 ```
 
 ### Inventario
@@ -109,6 +156,8 @@ Los datos están en `src/context/seed/application/data/seed.data.ts`, separados 
 
 - Las recetas nombran sus insumos por el nombre del insumo, y los mínimos por sucursal nombran la sucursal por su nombre. Si escribes un nombre que no existe en el mismo negocio, el seed falla con un mensaje que dice cuál referencia no encontró.
 - Los valores pasan por los mismos objetos de valor que usa la API. Un teléfono muy corto o una contraseña sin mayúsculas se rechazan igual que en un endpoint normal.
+- El nombre de usuario no acepta tildes ni eñes, solo letras sin acento, números, punto, guion y guion bajo. Por eso `Castaño` queda como `rosa.castano`. El usuario y el correo no se pueden repetir dentro del mismo negocio.
+- Si agregas o cambias un usuario, actualiza también la tabla de usuarios de este documento.
 - Si cambias el slug de un negocio, el negocio con el slug anterior deja de borrarse en las siguientes llamadas. Tendrás que borrarlo a mano o recrear el volumen de Docker.
 - El NIT de cada negocio tiene que ser distinto al de cualquier otro negocio de la base, incluidos los que no son de prueba.
 

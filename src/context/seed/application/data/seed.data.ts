@@ -15,11 +15,18 @@ export const SEED_PASSWORD = 'Komi12345678';
 export type SeedRolCode = 'OWNER' | 'ADMIN' | 'SUPERVISOR' | 'CASHIER' | 'WAITER' | 'KITCHEN';
 
 
+/**
+ * Personas inventadas con datos creíbles. El nombre de usuario sale del primer
+ * nombre y el primer apellido, sin tildes, porque `UserName` no las acepta.
+ */
 export interface SeedUser {
     rol: SeedRolCode;
     userName: string;
+    email: string;
     firstName: string;
+    secondName?: string;
     firstLastName: string;
+    secondLastName?: string;
     sex: 'MALE' | 'FEMALE';
     birthDate: string;
     phone: string;
@@ -97,23 +104,6 @@ export interface SeedTenant {
 }
 
 
-/**
- * Arma el personal operativo de una sede. El nombre de usuario lleva el sufijo
- * de la sede para que no se repita entre sucursales del mismo negocio.
- */
-const staffFor = (
-    suffix: string,
-    phonePrefix: string,
-    cashier: [string, string, 'MALE' | 'FEMALE'],
-    waiter: [string, string, 'MALE' | 'FEMALE'],
-    kitchen: [string, string, 'MALE' | 'FEMALE'],
-): SeedUser[] => [
-    { rol: 'CASHIER', userName: `cajero.${suffix}`, firstName: cashier[0], firstLastName: cashier[1], sex: cashier[2], birthDate: '1995-03-14', phone: `${phonePrefix}01` },
-    { rol: 'WAITER', userName: `mesero.${suffix}`, firstName: waiter[0], firstLastName: waiter[1], sex: waiter[2], birthDate: '1998-07-22', phone: `${phonePrefix}02` },
-    { rol: 'KITCHEN', userName: `cocina.${suffix}`, firstName: kitchen[0], firstLastName: kitchen[1], sex: kitchen[2], birthDate: '1990-11-05', phone: `${phonePrefix}03` },
-];
-
-
 export const SEED_TENANTS: SeedTenant[] = [
     {
         name: 'Sabor Criollo',
@@ -121,22 +111,34 @@ export const SEED_TENANTS: SeedTenant[] = [
         slug: 'sabor-criollo',
         nit: '900555101-1',
         administrators: [
-            { rol: 'OWNER', userName: 'dueno', firstName: 'Carlos', firstLastName: 'Restrepo', sex: 'MALE', birthDate: '1975-02-10', phone: '3001000001' },
-            { rol: 'ADMIN', userName: 'admin', firstName: 'Diana', firstLastName: 'Cardona', sex: 'FEMALE', birthDate: '1985-06-18', phone: '3001000002' },
-            { rol: 'SUPERVISOR', userName: 'supervisor', firstName: 'Jorge', firstLastName: 'Mejía', sex: 'MALE', birthDate: '1988-09-30', phone: '3001000003' },
+            { rol: 'OWNER', userName: 'carlos.restrepo', email: 'carlos.restrepo@gmail.com', firstName: 'Carlos', secondName: 'Andrés', firstLastName: 'Restrepo', secondLastName: 'Uribe', sex: 'MALE', birthDate: '1975-02-10', phone: '3104587321' },
+            { rol: 'ADMIN', userName: 'diana.cardona', email: 'diana.cardona@hotmail.com', firstName: 'Diana', secondName: 'Marcela', firstLastName: 'Cardona', secondLastName: 'Villa', sex: 'FEMALE', birthDate: '1985-06-18', phone: '3157742906' },
+            { rol: 'SUPERVISOR', userName: 'jorge.mejia', email: 'jorge.mejia@outlook.com', firstName: 'Jorge', secondName: 'Iván', firstLastName: 'Mejía', secondLastName: 'Ochoa', sex: 'MALE', birthDate: '1988-09-30', phone: '3006198453' },
         ],
         branches: [
             {
                 name: 'Centro', address: 'Carrera 50 # 52-20', phone: '6045110001', city: 'Medellín', department: 'Antioquia',
-                staff: staffFor('centro', '30011001', ['Laura', 'Gómez', 'FEMALE'], ['Andrés', 'Ruiz', 'MALE'], ['Marta', 'Díaz', 'FEMALE']),
+                staff: [
+                    { rol: 'CASHIER', userName: 'laura.gomez', email: 'laura.gomez@gmail.com', firstName: 'Laura', secondName: 'Cristina', firstLastName: 'Gómez', secondLastName: 'Álvarez', sex: 'FEMALE', birthDate: '1996-03-14', phone: '3012456789' },
+                    { rol: 'WAITER', userName: 'andres.ruiz', email: 'andres.ruiz@gmail.com', firstName: 'Andrés', secondName: 'Felipe', firstLastName: 'Ruiz', secondLastName: 'Montoya', sex: 'MALE', birthDate: '1999-07-22', phone: '3208871234' },
+                    { rol: 'KITCHEN', userName: 'marta.diaz', email: 'marta.diaz@hotmail.com', firstName: 'Marta', secondName: 'Lucía', firstLastName: 'Díaz', secondLastName: 'Posada', sex: 'FEMALE', birthDate: '1983-11-05', phone: '3116034572' },
+                ],
             },
             {
                 name: 'Laureles', address: 'Circular 1 # 70-15', phone: '6045110002', city: 'Medellín', department: 'Antioquia',
-                staff: staffFor('laureles', '30011002', ['Sofía', 'Arango', 'FEMALE'], ['Felipe', 'Osorio', 'MALE'], ['Luis', 'Zapata', 'MALE']),
+                staff: [
+                    { rol: 'CASHIER', userName: 'sofia.arango', email: 'sofia.arango@gmail.com', firstName: 'Sofía', firstLastName: 'Arango', secondLastName: 'Betancur', sex: 'FEMALE', birthDate: '1997-01-29', phone: '3045319087' },
+                    { rol: 'WAITER', userName: 'juan.osorio', email: 'juan.osorio@gmail.com', firstName: 'Juan', secondName: 'Felipe', firstLastName: 'Osorio', secondLastName: 'Londoño', sex: 'MALE', birthDate: '2000-05-17', phone: '3182260945' },
+                    { rol: 'KITCHEN', userName: 'luis.zapata', email: 'luis.zapata@outlook.com', firstName: 'Luis', secondName: 'Alberto', firstLastName: 'Zapata', secondLastName: 'Correa', sex: 'MALE', birthDate: '1979-08-12', phone: '3137785016' },
+                ],
             },
             {
                 name: 'Envigado', address: 'Calle 38 Sur # 43-10', phone: '6045110003', city: 'Envigado', department: 'Antioquia',
-                staff: staffFor('envigado', '30011003', ['Paula', 'Vélez', 'FEMALE'], ['Camilo', 'Henao', 'MALE'], ['Rosa', 'Castaño', 'FEMALE']),
+                staff: [
+                    { rol: 'CASHIER', userName: 'paula.velez', email: 'paula.velez@gmail.com', firstName: 'Paula', secondName: 'Andrea', firstLastName: 'Vélez', secondLastName: 'Rendón', sex: 'FEMALE', birthDate: '1995-10-03', phone: '3219054378' },
+                    { rol: 'WAITER', userName: 'camilo.henao', email: 'camilo.henao@hotmail.com', firstName: 'Camilo', firstLastName: 'Henao', secondLastName: 'Gil', sex: 'MALE', birthDate: '2001-02-26', phone: '3053367812' },
+                    { rol: 'KITCHEN', userName: 'rosa.castano', email: 'rosa.castano@gmail.com', firstName: 'Rosa', secondName: 'Elena', firstLastName: 'Castaño', secondLastName: 'Muñoz', sex: 'FEMALE', birthDate: '1976-12-08', phone: '3148806231' },
+                ],
             },
         ],
         inventory: [
@@ -201,18 +203,26 @@ export const SEED_TENANTS: SeedTenant[] = [
         slug: 'la-parrilla-del-puerto',
         nit: '900555102-2',
         administrators: [
-            { rol: 'OWNER', userName: 'dueno', firstName: 'Ricardo', firstLastName: 'Barrios', sex: 'MALE', birthDate: '1970-04-03', phone: '3002000001' },
-            { rol: 'ADMIN', userName: 'admin', firstName: 'Natalia', firstLastName: 'Pertuz', sex: 'FEMALE', birthDate: '1987-12-01', phone: '3002000002' },
-            { rol: 'SUPERVISOR', userName: 'supervisor', firstName: 'Hernán', firstLastName: 'Charris', sex: 'MALE', birthDate: '1983-08-25', phone: '3002000003' },
+            { rol: 'OWNER', userName: 'ricardo.barrios', email: 'ricardo.barrios@gmail.com', firstName: 'Ricardo', secondName: 'José', firstLastName: 'Barrios', secondLastName: 'Consuegra', sex: 'MALE', birthDate: '1970-04-03', phone: '3006671290' },
+            { rol: 'ADMIN', userName: 'natalia.pertuz', email: 'natalia.pertuz@hotmail.com', firstName: 'Natalia', firstLastName: 'Pertuz', secondLastName: 'Charris', sex: 'FEMALE', birthDate: '1987-12-01', phone: '3014490318' },
+            { rol: 'SUPERVISOR', userName: 'hernan.charris', email: 'hernan.charris@gmail.com', firstName: 'Hernán', secondName: 'Darío', firstLastName: 'Charris', secondLastName: 'Molina', sex: 'MALE', birthDate: '1983-08-25', phone: '3157012684' },
         ],
         branches: [
             {
                 name: 'Alto Prado', address: 'Carrera 53 # 79-45', phone: '6053600001', city: 'Barranquilla', department: 'Atlántico',
-                staff: staffFor('altoprado', '30021001', ['Yuli', 'Mendoza', 'FEMALE'], ['Kevin', 'Orozco', 'MALE'], ['Wilson', 'Polo', 'MALE']),
+                staff: [
+                    { rol: 'CASHIER', userName: 'yuliana.mendoza', email: 'yuliana.mendoza@gmail.com', firstName: 'Yuliana', firstLastName: 'Mendoza', secondLastName: 'Ariza', sex: 'FEMALE', birthDate: '1998-06-11', phone: '3205578142' },
+                    { rol: 'WAITER', userName: 'kevin.orozco', email: 'kevin.orozco@gmail.com', firstName: 'Kevin', secondName: 'Andrés', firstLastName: 'Orozco', secondLastName: 'Rada', sex: 'MALE', birthDate: '2002-09-19', phone: '3043318870' },
+                    { rol: 'KITCHEN', userName: 'wilson.polo', email: 'wilson.polo@hotmail.com', firstName: 'Wilson', secondName: 'Enrique', firstLastName: 'Polo', secondLastName: 'Barraza', sex: 'MALE', birthDate: '1981-04-27', phone: '3116620459' },
+                ],
             },
             {
                 name: 'Malecón', address: 'Vía 40 # 36-120', phone: '6053600002', city: 'Barranquilla', department: 'Atlántico',
-                staff: staffFor('malecon', '30021002', ['Karen', 'Ospino', 'FEMALE'], ['Jesús', 'Maestre', 'MALE'], ['Ana', 'Fontalvo', 'FEMALE']),
+                staff: [
+                    { rol: 'CASHIER', userName: 'karen.ospino', email: 'karen.ospino@gmail.com', firstName: 'Karen', secondName: 'Julieth', firstLastName: 'Ospino', secondLastName: 'Gutiérrez', sex: 'FEMALE', birthDate: '1997-11-02', phone: '3017745031' },
+                    { rol: 'WAITER', userName: 'jesus.maestre', email: 'jesus.maestre@outlook.com', firstName: 'Jesús', secondName: 'David', firstLastName: 'Maestre', secondLastName: 'Pinto', sex: 'MALE', birthDate: '1999-03-08', phone: '3002215867' },
+                    { rol: 'KITCHEN', userName: 'ana.fontalvo', email: 'ana.fontalvo@gmail.com', firstName: 'Ana', secondName: 'Milena', firstLastName: 'Fontalvo', secondLastName: 'Rojano', sex: 'FEMALE', birthDate: '1985-07-15', phone: '3128853406' },
+                ],
             },
         ],
         inventory: [
@@ -258,18 +268,26 @@ export const SEED_TENANTS: SeedTenant[] = [
         slug: 'cafe-montana',
         nit: '900555103-3',
         administrators: [
-            { rol: 'OWNER', userName: 'dueno', firstName: 'Valentina', firstLastName: 'Giraldo', sex: 'FEMALE', birthDate: '1982-01-27', phone: '3003000001' },
-            { rol: 'ADMIN', userName: 'admin', firstName: 'Mateo', firstLastName: 'Salazar', sex: 'MALE', birthDate: '1990-05-09', phone: '3003000002' },
-            { rol: 'SUPERVISOR', userName: 'supervisor', firstName: 'Lorena', firstLastName: 'Ocampo', sex: 'FEMALE', birthDate: '1992-10-14', phone: '3003000003' },
+            { rol: 'OWNER', userName: 'valentina.giraldo', email: 'valentina.giraldo@gmail.com', firstName: 'Valentina', firstLastName: 'Giraldo', secondLastName: 'Arias', sex: 'FEMALE', birthDate: '1982-01-27', phone: '3136652047' },
+            { rol: 'ADMIN', userName: 'mateo.salazar', email: 'mateo.salazar@outlook.com', firstName: 'Mateo', secondName: 'Alejandro', firstLastName: 'Salazar', secondLastName: 'Duque', sex: 'MALE', birthDate: '1990-05-09', phone: '3174410863' },
+            { rol: 'SUPERVISOR', userName: 'lorena.ocampo', email: 'lorena.ocampo@gmail.com', firstName: 'Lorena', secondName: 'Patricia', firstLastName: 'Ocampo', secondLastName: 'Franco', sex: 'FEMALE', birthDate: '1992-10-14', phone: '3108897325' },
         ],
         branches: [
             {
                 name: 'Cable', address: 'Carrera 23 # 65-10', phone: '6068800001', city: 'Manizales', department: 'Caldas',
-                staff: staffFor('cable', '30031001', ['Daniela', 'Marín', 'FEMALE'], ['Santiago', 'Toro', 'MALE'], ['Óscar', 'Ramírez', 'MALE']),
+                staff: [
+                    { rol: 'CASHIER', userName: 'daniela.marin', email: 'daniela.marin@gmail.com', firstName: 'Daniela', firstLastName: 'Marín', secondLastName: 'Quintero', sex: 'FEMALE', birthDate: '2000-04-21', phone: '3226031948' },
+                    { rol: 'WAITER', userName: 'santiago.toro', email: 'santiago.toro@hotmail.com', firstName: 'Santiago', firstLastName: 'Toro', secondLastName: 'Valencia', sex: 'MALE', birthDate: '2001-08-30', phone: '3015582470' },
+                    { rol: 'KITCHEN', userName: 'oscar.ramirez', email: 'oscar.ramirez@gmail.com', firstName: 'Óscar', secondName: 'Mauricio', firstLastName: 'Ramírez', secondLastName: 'Hoyos', sex: 'MALE', birthDate: '1986-02-17', phone: '3145509813' },
+                ],
             },
             {
                 name: 'Chipre', address: 'Avenida 12 de Octubre # 3-40', phone: '6068800002', city: 'Manizales', department: 'Caldas',
-                staff: staffFor('chipre', '30031002', ['Juliana', 'Loaiza', 'FEMALE'], ['Tomás', 'Echeverri', 'MALE'], ['Gloria', 'Aristizábal', 'FEMALE']),
+                staff: [
+                    { rol: 'CASHIER', userName: 'juliana.loaiza', email: 'juliana.loaiza@gmail.com', firstName: 'Juliana', firstLastName: 'Loaiza', secondLastName: 'Cardona', sex: 'FEMALE', birthDate: '1996-12-05', phone: '3187263051' },
+                    { rol: 'WAITER', userName: 'tomas.echeverri', email: 'tomas.echeverri@gmail.com', firstName: 'Tomás', firstLastName: 'Echeverri', secondLastName: 'Ríos', sex: 'MALE', birthDate: '2002-01-13', phone: '3051147698' },
+                    { rol: 'KITCHEN', userName: 'gloria.aristizabal', email: 'gloria.aristizabal@hotmail.com', firstName: 'Gloria', secondName: 'Inés', firstLastName: 'Aristizábal', secondLastName: 'Gallego', sex: 'FEMALE', birthDate: '1974-09-24', phone: '3119928304' },
+                ],
             },
         ],
         inventory: [
@@ -316,14 +334,18 @@ export const SEED_TENANTS: SeedTenant[] = [
         slug: 'arepas-dona-rosa',
         nit: '900555104-4',
         administrators: [
-            { rol: 'OWNER', userName: 'dueno', firstName: 'Rosa', firstLastName: 'Pardo', sex: 'FEMALE', birthDate: '1968-03-08', phone: '3004000001' },
-            { rol: 'ADMIN', userName: 'admin', firstName: 'Miguel', firstLastName: 'Pardo', sex: 'MALE', birthDate: '1994-07-19', phone: '3004000002' },
-            { rol: 'SUPERVISOR', userName: 'supervisor', firstName: 'Clara', firstLastName: 'Rincón', sex: 'FEMALE', birthDate: '1989-02-11', phone: '3004000003' },
+            { rol: 'OWNER', userName: 'rosa.pardo', email: 'rosa.pardo@gmail.com', firstName: 'Rosa', secondName: 'María', firstLastName: 'Pardo', secondLastName: 'Cely', sex: 'FEMALE', birthDate: '1968-03-08', phone: '3002873514' },
+            { rol: 'ADMIN', userName: 'miguel.pardo', email: 'miguel.pardo@gmail.com', firstName: 'Miguel', secondName: 'Ángel', firstLastName: 'Pardo', secondLastName: 'Cely', sex: 'MALE', birthDate: '1994-07-19', phone: '3167345092' },
+            { rol: 'SUPERVISOR', userName: 'clara.rincon', email: 'clara.rincon@outlook.com', firstName: 'Clara', secondName: 'Inés', firstLastName: 'Rincón', secondLastName: 'Forero', sex: 'FEMALE', birthDate: '1989-02-11', phone: '3124486715' },
         ],
         branches: [
             {
                 name: 'Chapinero', address: 'Calle 57 # 13-25', phone: '6017400001', city: 'Bogotá', department: 'Cundinamarca',
-                staff: staffFor('chapinero', '30041001', ['Liliana', 'Suárez', 'FEMALE'], ['Brayan', 'Castro', 'MALE'], ['Edgar', 'Rojas', 'MALE']),
+                staff: [
+                    { rol: 'CASHIER', userName: 'liliana.suarez', email: 'liliana.suarez@gmail.com', firstName: 'Liliana', firstLastName: 'Suárez', secondLastName: 'Bernal', sex: 'FEMALE', birthDate: '1993-05-28', phone: '3209916473' },
+                    { rol: 'WAITER', userName: 'brayan.castro', email: 'brayan.castro@hotmail.com', firstName: 'Brayan', secondName: 'Stiven', firstLastName: 'Castro', secondLastName: 'Moreno', sex: 'MALE', birthDate: '2003-10-06', phone: '3046678129' },
+                    { rol: 'KITCHEN', userName: 'edgar.rojas', email: 'edgar.rojas@gmail.com', firstName: 'Edgar', firstLastName: 'Rojas', secondLastName: 'Peña', sex: 'MALE', birthDate: '1980-06-02', phone: '3113305867' },
+                ],
             },
         ],
         inventory: [
