@@ -19,7 +19,7 @@ export class ProductController {
   ) { }
 
 
-  @Post()
+  @Post("create")
   @ResponseMessage("Producto creado exitosamente")
   public async create(
     @CurrentUser() user: AuthenticatedUser,
