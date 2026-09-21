@@ -66,24 +66,20 @@ export class ProductController {
   ) {
     const { pageNumber, pageSize, ...filters } = query;
 
-    return this.searchProductsUseCase.execute({
-      ...filters,
-      tenantId: user.tenantId,
-      page: pageNumber,
-      limit: pageSize,
-    });
+    return this.searchProductsUseCase.execute(
+      { ...filters, tenantId: user.tenantId },
+      { pageNumber, pageSize },
+    );
   }
 
-  
+
   /** Devuelve el producto ya compuesto (categoría, receta y costos) tras escribirlo. */
   private async findOne(tenantId: string, productId: string) {
-    const [product] = await this.searchProductsUseCase.execute({
-      tenantId,
-      productId,
-      page: 1,
-      limit: 1,
-    });
+    const { rows } = await this.searchProductsUseCase.execute(
+      { tenantId, productId },
+      { pageNumber: 1, pageSize: 1 },
+    );
 
-    return product;
+    return rows[0];
   }
 }

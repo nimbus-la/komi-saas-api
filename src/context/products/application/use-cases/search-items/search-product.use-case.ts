@@ -1,10 +1,12 @@
-import { SearchProductsApplicationParams } from "@/context/products/domain/types/product-application";
+import { Paginated, Pagination } from "@/interfaces";
+
+import { SearchProductsFilters } from "@/context/products/domain/types/product-application";
 import {
     ProductRepository,
     TenantIdRequiredForSearchException,
+    TenantNotFoundException,
 } from "../../../domain";
 import { ProductResponse } from "@/context/products/domain/types/product.response";
-import { TenantNotFoundException } from "@/context/product-categories";
 import { TenantChecker } from "../../ports/tenant-checker";
 import { InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
 import { ProductCategoryProvider } from "../../ports/ProductCategoryProvider";
@@ -19,28 +21,30 @@ export class SearchProductsUseCase {
     ) { }
 
     public async execute(
-        params: SearchProductsApplicationParams,
-    ): Promise<ProductResponse[]> {
+        filters: SearchProductsFilters,
+        pagination: Pagination,
+    ): Promise<Paginated<ProductResponse>> {
 
-        if (!params.tenantId) {
+        if (!filters.tenantId) {
             throw new TenantIdRequiredForSearchException();
         }
 
         const tenantExists = await this.tenantChecker.exists(
-            params.tenantId,
+            filters.tenantId,
         );
 
         if (!tenantExists) {
-            throw new TenantNotFoundException(params.tenantId);
+            throw new TenantNotFoundException(filters.tenantId);
         }
 
-        const products = await this.repository.search(params);
+        const { rows, pageNumber, pageSize, total } =
+            await this.repository.search(filters, pagination);
 
-        return Promise.all(
-            products.map(async (product) => {
+        const products = await Promise.all(
+            rows.map(async (product) => {
 
                 const category = await this.productCategoryProvider.get(
-                    params.tenantId,
+                    filters.tenantId,
                     product.productCategoryId,
                 );
 
@@ -65,7 +69,7 @@ export class SearchProductsUseCase {
                         product.ingredients.map(async (ingredient) => {
 
                             const info = await this.recipeInfoProvider.get(
-                                params.tenantId,
+                                filters.tenantId,
                                 ingredient.inventoryItemId,
                             );
 
@@ -92,5 +96,11 @@ export class SearchProductsUseCase {
             }),
         );
 
+        return {
+            rows: products,
+            pageNumber,
+            pageSize,
+            total,
+        };
     }
 }

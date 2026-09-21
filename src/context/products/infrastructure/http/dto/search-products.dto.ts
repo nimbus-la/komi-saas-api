@@ -24,11 +24,21 @@ export class SearchProductsDto {
     @IsUUID()
     productCategoryId?: string;
 
-    // Llega como string en el query: sin este Transform, "false" sería truthy.
+    /**
+     * Llega como string en el query: sin este Transform, "false" sería truthy.
+     *
+     * Solo traduce "true" y "false"; cualquier otra cosa pasa tal cual para que
+     * `@IsBoolean()` la rechace con un 400. Si se tradujera todo lo demás a
+     * `false`, un `?productStatus=activo` filtraría por inactivos en silencio.
+     */
     @IsOptional()
-    @Transform(({ value }) =>
-        value === undefined ? undefined : value === "true" || value === true,
-    )
+    @Transform(({ value }) => {
+        if (value === "true" || value === "false") {
+            return value === "true";
+        }
+
+        return value as unknown;
+    })
     @IsBoolean()
     productStatus?: boolean;
 
