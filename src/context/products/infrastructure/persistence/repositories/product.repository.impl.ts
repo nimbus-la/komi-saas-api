@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 import { DataSource, In, Repository } from "typeorm";
+import { Paginated, Pagination } from "@/interfaces";
 import { ProductEntity } from "../models/product.entity";
-import { SearchProductsApplicationParams } from "../../../domain/types/product-application";
+import { SearchProductsFilters } from "../../../domain/types/product-application";
 import { ProductResponse } from "../../../domain/types/product.response";
 import { ProductName } from "../../../domain/value-object/product-name.value-object";
 import { ProductId } from "../../../domain/value-object/product-id.value-object";
@@ -99,62 +100,70 @@ export class ProductRepositoryImpl extends ProductRepository {
   }
 
   public async search(
-    params: SearchProductsApplicationParams,
-  ): Promise<ProductResponse[]> {
+    filters: SearchProductsFilters,
+    pagination: Pagination,
+  ): Promise<Paginated<ProductResponse>> {
     const query = this.productRepository
       .createQueryBuilder("product")
       .where(
         "product.tenantId = :tenantId",
         {
-          tenantId: params.tenantId,
+          tenantId: filters.tenantId,
         },
       );
 
     // Buscar un producto específico por id
-    if (params.productId) {
+    if (filters.productId) {
       query.andWhere(
         "product.id = :productId",
         {
-          productId: params.productId,
+          productId: filters.productId,
         },
       );
     }
 
-    if (params.text) {
+    const text = filters.text?.trim();
+
+    // Nombre o SKU
+    if (text) {
       query.andWhere(
         `(LOWER(product.name) LIKE LOWER(:text)
           OR LOWER(product.sku) LIKE LOWER(:text))`,
         {
-          text: `%${params.text}%`,
+          text: `%${ProductRepositoryImpl.escapeLike(text)}%`,
         },
       );
     }
 
-    if (params.productCategoryId) {
+    if (filters.productCategoryId) {
       query.andWhere(
         "product.productCategoryId = :categoryId",
         {
-          categoryId: params.productCategoryId,
+          categoryId: filters.productCategoryId,
         },
       );
     }
 
-    if (params.productStatus !== undefined) {
+    if (filters.productStatus !== undefined) {
       query.andWhere(
         "product.isActive = :status",
         {
-          status: params.productStatus,
+          status: filters.productStatus,
         },
       );
     }
 
-    const page = params.page ?? 1;
-    const limit = params.limit ?? 10;
+    // El orden explícito es lo que hace que paginar sea estable: sin ORDER BY,
+    // Postgres puede devolver las filas en otro orden en cada página y un mismo
+    // producto sale repetido en una y se pierde en la otra. El id desempata
+    // porque varios productos comparten createdAt (el seed los crea de golpe).
+    query
+      .orderBy("product.createdAt", "DESC")
+      .addOrderBy("product.id", "DESC")
+      .skip((pagination.pageNumber - 1) * pagination.pageSize)
+      .take(pagination.pageSize);
 
-    query.skip((page - 1) * limit);
-    query.take(limit);
-
-    const rows = await query.getMany();
+    const [rows, total] = await query.getManyAndCount();
 
     const recipeIngredientRepository =
       this.dataSource.getRepository(RecipeIngredientEntity);
@@ -183,14 +192,32 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    return rows.map((row) =>
-      ProductMapper.toResponse(
-        row,
-        ProductMapper.toIngredientsResponse(
-          ingredientsByProduct.get(row.id) ?? [],
+    return {
+      rows: rows.map((row) =>
+        ProductMapper.toResponse(
+          row,
+          ProductMapper.toIngredientsResponse(
+            ingredientsByProduct.get(row.id) ?? [],
+          ),
         ),
       ),
-    );
+      pageNumber: pagination.pageNumber,
+      pageSize: pagination.pageSize,
+      total,
+    };
+  }
+
+
+  /**
+   * Neutraliza los comodines del LIKE dentro del texto que escribe el usuario.
+   *
+   * Sin esto, buscar "50%" trae todo lo que empiece por "50" y un "_" cualquiera
+   * hace de comodín de un carácter: el filtro devuelve de más y el usuario no
+   * entiende por qué. La barra invertida es el escape por defecto del LIKE en
+   * Postgres, así que no hace falta cláusula ESCAPE.
+   */
+  private static escapeLike(text: string): string {
+    return text.replace(/[\\%_]/g, (character) => `\\${character}`);
   }
 
   public async existsByName(

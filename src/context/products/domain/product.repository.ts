@@ -1,5 +1,7 @@
+import { Paginated, Pagination } from "@/interfaces";
+
 import { Product } from "./product.aggregate";
-import { SearchProductsApplicationParams } from "./types/product-application";
+import { SearchProductsFilters } from "./types/product-application";
 import { ProductResponse } from "./types/product.response";
 import { ProductId } from "./value-object/product-id.value-object";
 import { ProductName } from "./value-object/product-name.value-object";
@@ -10,8 +12,9 @@ export abstract class ProductRepository {
     abstract update(product: Product): Promise<void>;
 
     abstract search(
-        params: SearchProductsApplicationParams,
-    ): Promise<ProductResponse[]>;
+        filters: SearchProductsFilters,
+        pagination: Pagination,
+    ): Promise<Paginated<ProductResponse>>;
 
     public abstract findById(
         id: ProductId,

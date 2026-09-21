@@ -35,13 +35,11 @@ export interface RecipeParams {
     isOptional: boolean;
 }
 
-export interface SearchProductsApplicationParams {
-    productId?: string;
+export interface SearchProductsFilters {
     tenantId: string;
-    text?: string;
-    productCategoryId?: string;
-    productStatus?: boolean;
-    productionAreaId?: string;
-    page: number;
-    limit: number;
+    productId?: string | undefined;
+    /** Coincidencia parcial contra el nombre o el SKU del producto. */
+    text?: string | undefined;
+    productCategoryId?: string | undefined;
+    productStatus?: boolean | undefined;
 }
