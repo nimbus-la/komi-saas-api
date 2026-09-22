@@ -16,10 +16,12 @@ import { UserCreatedEvent } from "./events/user-created.event";
 import { UserPrimitives } from "./types/user-primitives";
 import {
   AdministrativeUserCannotBelongToBranchException,
+  EmptyUpdateException,
   OperationalUserRequiresBranchException,
   UserAlreadyActiveException,
   UserAlreadyInactiveException,
 } from "./exceptions/user-exceptions";
+import { UserUpdateParams } from "./types";
 
 export class UserAggregate extends AggregateRoot<UserId> {
   private tenantId: UserTenantId;
@@ -292,6 +294,56 @@ export class UserAggregate extends AggregateRoot<UserId> {
     }
 
     this.isActive = true;
+    this.touch();
+  }
+
+  public update(params: UserUpdateParams): void {
+    this.ensureActive();
+
+    const hasChanges = Object.values(params).some(
+      (value) => value !== undefined,
+    );
+
+    if (!hasChanges) {
+      throw new EmptyUpdateException();
+    }
+
+    if (params.userName !== undefined) {
+      this.userName = params.userName;
+    }
+
+    if (params.email !== undefined) {
+      this.email = params.email;
+    }
+
+    if (params.firstName !== undefined) {
+      this.firstName = params.firstName;
+    }
+
+    if (params.secondName !== undefined) {
+      this.secondName = params.secondName;
+    }
+
+    if (params.firstLastName !== undefined) {
+      this.firstLastName = params.firstLastName;
+    }
+
+    if (params.secondLastName !== undefined) {
+      this.secondLastName = params.secondLastName;
+    }
+
+    if (params.age !== undefined) {
+      this.age = params.age;
+    }
+
+    if (params.sex !== undefined) {
+      this.sex = params.sex;
+    }
+
+    if (params.phone !== undefined) {
+      this.phone = params.phone;
+    }
+
     this.touch();
   }
 }

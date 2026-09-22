@@ -2,6 +2,7 @@ import { Paginated, Pagination } from "@/interfaces";
 import { UserResponse } from "./types/user-response";
 import { UserAggregate } from "./user.aggregate";
 import { UserEmail, UserId, UserName, UserTenantId } from "./value-object";
+import { UserSearchParams } from "./types";
 
 export abstract class UserRepository {
   abstract save(user: UserAggregate): Promise<void>;
@@ -12,7 +13,7 @@ export abstract class UserRepository {
     tenantId: UserTenantId,
     userName: UserName,
   ): Promise<UserAggregate | null>;
-  abstract searchAll( tenantId: UserTenantId, pagination: Pagination): Promise<Paginated<UserResponse>>;
+  abstract searchAll( tenantId: UserTenantId, pagination: Pagination, params: UserSearchParams): Promise<Paginated<UserResponse>>;
 
   abstract existsByUserName(
     tenantId: UserTenantId,
