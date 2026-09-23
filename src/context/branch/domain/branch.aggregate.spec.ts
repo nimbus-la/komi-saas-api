@@ -1,5 +1,4 @@
 import { BranchAggregate } from './branch.aggregate';
-import { BranchCreatedEvent } from './events/branch-created.event';
 import { BranchAddress } from './value-object/branch-address.value-object';
 import { BranchCity } from './value-object/branch-city.value-object';
 import { BranchDepartment } from './value-object/branch-department.value-object';
@@ -41,12 +40,6 @@ describe('BranchAggregate', () => {
             expect(primitives.tenantId).toBe(TENANT_ID);
         });
 
-        it('registra el evento de sucursal creada', () => {
-            const events = buildBranch().getDomainEvents();
-
-            expect(events).toHaveLength(1);
-            expect(events[0]).toBeInstanceOf(BranchCreatedEvent);
-        });
     });
 
     describe('update', () => {

@@ -6,7 +6,8 @@ import { BranchRepository } from "./domain";
 import { TypeOrmBranchRepository } from "./infrastructure/persistence/repositories/branch.repository";
 import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesUseCase, UpdateBranchUseCase } from "./application";
 import { TenantModule } from "../tenants/tenant.module";
-import { TenantRepository } from "../tenants/domain";
+import { TenantChecker } from "./application/ports/tenant-checker";
+import { TenantCheckerAdapter } from "./infrastructure/persistence/adapters/tenant-checker.adapter";
 
 
 
@@ -27,18 +28,23 @@ import { TenantRepository } from "../tenants/domain";
         },
 
         {
+            provide: TenantChecker,
+            useClass: TenantCheckerAdapter,
+        },
+
+        {
             provide: CreateBranchUseCase,
             useFactory: (
                 repository: BranchRepository,
-                tenantRepository: TenantRepository,
+                tenantChecker: TenantChecker,
             ) =>
                 new CreateBranchUseCase(
                     repository,
-                    tenantRepository,
+                    tenantChecker,
                 ),
             inject: [
                 BranchRepository,
-                TenantRepository,
+                TenantChecker,
             ],
         },
 

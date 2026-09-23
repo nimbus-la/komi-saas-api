@@ -1,6 +1,5 @@
 import { AggregateRoot } from "@/shared";
 import { BranchAddress, BranchCity, BranchDepartment, BranchId, BranchName, BranchPhone} from "./value-object";
-import { BranchCreatedEvent } from "./index";
 import { BranchPrimitives } from "./types";
 import { BranchAlreadyActiveException, BranchAlreadyInactiveException, BranchEmptyUpdateException, BranchFieldUnchangedException } from "./exceptions/branch-exceptions";
 
@@ -61,7 +60,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
     }): BranchAggregate {
         const now = new Date();
 
-        const branch = new BranchAggregate(
+        return new BranchAggregate(
             BranchId.generate(),
             params.tenantId,
             params.name,
@@ -74,21 +73,6 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             now,
             now
         );
-
-        branch.registerEvent(
-            new BranchCreatedEvent({
-                branchId: branch.id.value,
-                tenantId: branch.tenantId,
-                name: branch.name.value,
-                address: branch.address.value,
-                phone: branch.phone.value,
-                city: branch.city.value,
-                department: branch.department.value,
-                isActive: branch.isActive,
-            })
-        );
-
-        return branch;
     }
 
     public toPrimitives(): BranchPrimitives {

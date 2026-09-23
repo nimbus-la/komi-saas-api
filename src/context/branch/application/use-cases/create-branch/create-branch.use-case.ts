@@ -1,20 +1,15 @@
-import { TenantId, TenantRepository} from "@/context/tenants/domain";
-import { BranchAddress, BranchAggregate, BranchCity, BranchDepartment, BranchName, BranchNameAlreadyExistsException, BranchPhone, BranchRepository, CreateBranchApplicationParams } from "../../../domain";
-import { TenantNotFoundException } from "@/context/tenants/domain/exceptions/tenant-exceptions";
+import { BranchAddress, BranchAggregate, BranchCity, BranchDepartment, BranchName, BranchNameAlreadyExistsException, BranchPhone, BranchRepository, BranchTenantNotFoundException, CreateBranchApplicationParams } from "../../../domain";
+import { TenantChecker } from "../../ports/tenant-checker";
 
 export class CreateBranchUseCase {
     constructor(
         private readonly repository: BranchRepository,
-        private readonly tenantRepository: TenantRepository
+        private readonly tenantChecker: TenantChecker,
     ) {}
 
     public async execute(params: CreateBranchApplicationParams): Promise<void> {
-         const tenant = await this.tenantRepository.searchById(
-            TenantId.create(params.tenantId),
-        );
-
-         if (!tenant) {
-            throw new TenantNotFoundException(params.tenantId);
+        if (!(await this.tenantChecker.exists(params.tenantId))) {
+            throw new BranchTenantNotFoundException(params.tenantId);
         }
 
         const name = BranchName.create(params.name);

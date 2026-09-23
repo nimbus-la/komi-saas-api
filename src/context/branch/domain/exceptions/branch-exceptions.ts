@@ -13,6 +13,16 @@ export class BranchNotFoundException extends DomainException {
     }
 }
 
+/** El negocio donde se quiere crear la sucursal no existe. Código 1205. */
+export class BranchTenantNotFoundException extends DomainException {
+    constructor(tenantId: string) {
+        super({
+            code: '1205',
+            detail: `El negocio ${tenantId} no existe.`
+        });
+    }
+}
+
 /** Se lanza cuando el nombre de la sucursal ya está registrado. Código 1206. */
 export class BranchNameAlreadyExistsException extends DomainException {
     constructor(name: string) {

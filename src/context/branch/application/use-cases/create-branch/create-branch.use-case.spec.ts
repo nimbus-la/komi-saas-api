@@ -24,16 +24,14 @@ const PARAMS = {
 const buildHarness = (options: { tenantExists?: boolean; nameTaken?: boolean } = {}) => {
     const save = jest.fn().mockResolvedValue(undefined);
     const existsByName = jest.fn().mockResolvedValue(options.nameTaken ?? false);
-    const searchById = jest.fn().mockResolvedValue(
-        options.tenantExists === false ? null : { id: TENANT_ID },
-    );
+    const exists = jest.fn().mockResolvedValue(options.tenantExists ?? true);
 
     const useCase = new CreateBranchUseCase(
         { save, existsByName } as never,
-        { searchById } as never,
+        { exists },
     );
 
-    return { useCase, save, existsByName };
+    return { useCase, save, existsByName, exists };
 };
 
 
@@ -54,9 +52,10 @@ describe('CreateBranchUseCase', () => {
     });
 
     it('responde 1205 si el negocio no existe', async () => {
-        const { useCase, save } = buildHarness({ tenantExists: false });
+        const { useCase, save, exists } = buildHarness({ tenantExists: false });
 
         await expect(useCase.execute(PARAMS)).rejects.toMatchObject({ code: '1205' });
+        expect(exists).toHaveBeenCalledWith(TENANT_ID);
         expect(save).not.toHaveBeenCalled();
     });
 
