@@ -1,5 +1,7 @@
+import { Paginated, Pagination } from "@/interfaces";
+
 import { BranchAggregate } from "./branch.aggregate";
-import { BranchResponse } from "./types";
+import { BranchResponse, SearchBranchesFilters } from "./types";
 import { BranchId, BranchName } from "./value-object";
 
 
@@ -15,7 +17,6 @@ export abstract class BranchRepository {
      * fila ajena, y basta que alguien olvide el if para que salga por la API.
      * Acotando aquí, una sucursal de otro negocio sencillamente no existe.
      */
-    abstract searchById(id: BranchId, tenantId: string): Promise<BranchResponse | null>;
     abstract searchAggregateById(id: BranchId, tenantId: string): Promise<BranchAggregate | null>;
 
     /** El nombre solo tiene que ser único dentro del negocio, no en toda la base. */
@@ -29,5 +30,6 @@ export abstract class BranchRepository {
      */
     abstract existsInTenant(id: BranchId, tenantId: string): Promise<boolean>;
 
-    public abstract searchByTenantId(tenantId: string,): Promise<BranchResponse[]>;
+    /** Siempre acotado al negocio; el resto de filtros son opcionales. */
+    abstract search(filters: SearchBranchesFilters, pagination: Pagination): Promise<Paginated<BranchResponse>>;
 }

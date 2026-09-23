@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Get, Patch, Post, Query } from "@nestjs/common";
 
 import { ResponseMessage } from "@/infrastructure";
 import { CurrentUser } from "@/auth/infrastructure/decorators";
@@ -6,7 +6,8 @@ import type { AuthenticatedUser } from "@/auth/infrastructure/types";
 
 import { UpdateBranchDto } from "./dto/update-branch.dto";
 import { CreateBranchDto } from "./dto/create-branch.dto";
-import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesByTenantUseCase, SearchBranchUseCase, UpdateBranchUseCase } from "../../application";
+import { SearchBranchesDto } from "./dto/search-branches.dto";
+import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesUseCase, UpdateBranchUseCase } from "../../application";
 
 
 /**
@@ -21,10 +22,9 @@ import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesByTenantUseCase
 export class BranchController {
     constructor(
         private readonly createBranch: CreateBranchUseCase,
-        private readonly searchBranchById: SearchBranchUseCase,
         private readonly updateBranch: UpdateBranchUseCase,
         private readonly deleteBranch: DeleteBranchUseCase,
-        private readonly searchBranchesByTenant: SearchBranchesByTenantUseCase,
+        private readonly searchBranches: SearchBranchesUseCase,
     ) { }
 
 
@@ -40,19 +40,16 @@ export class BranchController {
 
     @Get()
     public async findAll(
-        @CurrentUser() user: AuthenticatedUser
-    ) {
-        return await this.searchBranchesByTenant.execute(user.tenantId);
-    }
-
-
-    @Get(':id')
-    public async findOne(
         @CurrentUser() user: AuthenticatedUser,
-        @Param('id') id: string
+        @Query() query: SearchBranchesDto,
     ) {
-        return await this.searchBranchById.execute(id, user.tenantId);
-    };
+        const { pageNumber, pageSize, ...filters } = query;
+
+        return await this.searchBranches.execute(
+            { ...filters, tenantId: user.tenantId },
+            { pageNumber, pageSize },
+        );
+    }
 
 
     @Patch("/update")

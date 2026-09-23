@@ -2,7 +2,9 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { BranchAggregate, BranchId, BranchName, BranchRepository, BranchResponse, } from "../../../domain";
+import { Paginated, Pagination } from "@/interfaces";
+
+import { BranchAggregate, BranchId, BranchName, BranchRepository, BranchResponse, SearchBranchesFilters } from "../../../domain";
 
 import { BranchEntity } from "../models/branch.entity";
 import { BranchMapper } from "../mappers/branch.mapper";
@@ -32,32 +34,6 @@ export class BranchService implements BranchRepository {
         });
 
         await this.branchRepository.save(row);
-    }
-
-    public async searchById(id: BranchId, tenantId: string): Promise<BranchResponse | null> {
-        const row = await this.branchRepository.findOne({
-            where: {
-                id: id.value,
-                tenantId,
-            },
-        });
-
-        if (!row) {
-            return null;
-        }
-
-        return {
-            id: row.id,
-            tenantId: row.tenantId,
-            name: row.name,
-            address: row.address,
-            phone: row.phone,
-            city: row.city,
-            department: row.department,
-            created_at: row.createdAt,
-            updated_at: row.updatedAt,
-            isActive: row.isActive,
-        };
     }
 
     public async searchAggregateById(
@@ -129,14 +105,53 @@ export class BranchService implements BranchRepository {
         );
     }
 
-    public async searchByTenantId(tenantId: string,): Promise<BranchResponse[]> {
+    public async search(
+        filters: SearchBranchesFilters,
+        pagination: Pagination,
+    ): Promise<Paginated<BranchResponse>> {
+        const query = this.branchRepository
+            .createQueryBuilder("branch")
+            .where("branch.tenantId = :tenantId", { tenantId: filters.tenantId });
 
-        const rows = await this.branchRepository.find({
-            where: {
-                tenantId,
-            },
-        });
+        if (filters.branchId) {
+            query.andWhere("branch.id = :branchId", { branchId: filters.branchId });
+        }
 
-        return rows.map((row) => BranchMapper.toResponse(row))
+        const text = filters.text?.trim();
+
+        if (text) {
+            query.andWhere(
+                `(branch.name ILIKE :text
+                  OR branch.address ILIKE :text
+                  OR branch.phone ILIKE :text
+                  OR branch.city ILIKE :text
+                  OR branch.department ILIKE :text)`,
+                { text: `%${BranchService.escapeLike(text)}%` },
+            );
+        }
+
+        if (filters.branchStatus !== undefined) {
+            query.andWhere("branch.isActive = :status", { status: filters.branchStatus });
+        }
+
+        // El id desempata para que el orden sea estable entre páginas.
+        const [rows, total] = await query
+            .orderBy("branch.name", "ASC")
+            .addOrderBy("branch.id", "ASC")
+            .skip((pagination.pageNumber - 1) * pagination.pageSize)
+            .take(pagination.pageSize)
+            .getManyAndCount();
+
+        return {
+            rows: rows.map((row) => BranchMapper.toResponse(row)),
+            pageNumber: pagination.pageNumber,
+            pageSize: pagination.pageSize,
+            total,
+        };
+    }
+
+    /** Escapa los comodines de LIKE para que "%" o "_" se busquen como texto. */
+    private static escapeLike(text: string): string {
+        return text.replace(/[\\%_]/g, (character) => `\\${character}`);
     }
 }
