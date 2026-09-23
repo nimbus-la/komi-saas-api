@@ -2,23 +2,23 @@ import { BranchId, BranchNotFoundException, BranchRepository } from "../../../do
 
 export class DeleteBranchUseCase {
     constructor(
-        private readonly repository: BranchRepository
+        private readonly repository: BranchRepository,
     ) {}
 
     public async execute(id: string, tenantId: string): Promise<void> {
-        // Acotada por negocio: si la sucursal es de otro, no aparece y sale el
-        // mismo "no existe" que si nunca hubiera existido.
+        // Acotada por negocio y sin las eliminadas: una sucursal de otro negocio
+        // o ya eliminada responde el mismo "no existe".
         const branch = await this.repository.searchAggregateById(
             BranchId.create(id),
-            tenantId
+            tenantId,
         );
 
         if (!branch) {
-            throw new BranchNotFoundException(id)
-        };
+            throw new BranchNotFoundException(id);
+        }
 
-        branch.deactivate();
+        branch.delete();
 
         await this.repository.update(branch);
-    };
-};
+    }
+}

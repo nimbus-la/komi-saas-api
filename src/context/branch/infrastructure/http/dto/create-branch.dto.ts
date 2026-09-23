@@ -6,11 +6,8 @@ import {
 } from "class-validator";
 
 /**
- * El tenantId ya no viaja aquí: la sucursal se crea siempre en el negocio del
- * token. Dejarlo en el body significaba que el cliente elegía en qué negocio
- * escribir, que es justo lo que no puede decidir.
- *
- * Con whitelist + forbidNonWhitelisted, mandarlo ahora devuelve 400.
+ * Sin tenantId: la sucursal se crea siempre en el negocio del token. Si el
+ * cliente lo manda, forbidNonWhitelisted responde 400.
  */
 export class CreateBranchDto {
 

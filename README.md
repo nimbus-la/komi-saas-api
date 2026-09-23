@@ -206,7 +206,7 @@ La base es PostgreSQL. El proyecto no usa migraciones de TypeORM. El esquema est
 
 | Archivo | Contenido |
 |---|---|
-| `01-init.sql` | Las tablas principales: negocios, sucursales, roles, usuarios, inventario con sus lotes y configuración por sucursal, movimientos, categorías, productos e ingredientes de receta. También la secuencia que genera el SKU de los productos. |
+| `01-init.sql` | Las tablas principales: negocios, sucursales, roles, usuarios, inventario con sus lotes y configuración por sucursal, movimientos, categorías, productos e ingredientes de receta. También la secuencia que genera el SKU de los productos. La tabla de sucursales está en `tables/branches.sql` y se incluye desde aquí con `\ir`, por eso este script se ejecuta con `psql` y no desde Adminer. |
 | `02-roles.sql` | Los roles fijos del sistema: dueño, administrador, supervisor, cajero, mesero y cocina. |
 | `03-sessions.sql` | La tabla de sesiones. |
 | `04-menus.sql` | La tabla del menú lateral y sus opciones. |
@@ -225,5 +225,7 @@ Algunas cosas a tener en cuenta:
 ## Pruebas
 
 - Las pruebas unitarias están junto al código que prueban, en archivos que terminan en `.spec.ts`. Cubren sobre todo los casos de uso, los guards, la configuración y el manejo de errores.
-- Las pruebas de punta a punta están en la carpeta `test` y terminan en `.e2e-spec.ts`.
+- Las pruebas de punta a punta están en la carpeta `test` y terminan en `.e2e-spec.ts`. Algunas necesitan Postgres arriba (`docker compose up -d`) y usan las credenciales del `.env`:
+  - `app.e2e-spec.ts` levanta la aplicación completa y se conecta a la base de desarrollo, pero no escribe nada.
+  - `branch.e2e-spec.ts` crea una base temporal con el esquema de `public/db`, corre contra ella y la borra al terminar. Para otra prueba que necesite base, usa el helper `test/support/temporary-database.ts`.
 - Los casos de uso no dependen de NestJS, así que se prueban pasándoles implementaciones falsas de sus puertos, sin levantar la aplicación ni la base de datos.

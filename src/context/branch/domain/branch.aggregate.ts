@@ -1,12 +1,13 @@
 import { AggregateRoot } from "@/shared";
-import { BranchAddress, BranchCity, BranchDepartment, BranchId, BranchName, BranchPhone} from "./value-object";
-import { BranchCreatedEvent } from "./index";
-import { BranchPrimitives } from "./types";
+
+import { BranchPrimitives } from "./interfaces";
+import { BranchAddress, BranchCity, BranchDepartment, BranchId, BranchName, BranchPhone } from "./value-object";
+import { BranchAlreadyActiveException, BranchAlreadyInactiveException, BranchEmptyUpdateException, BranchFieldUnchangedException } from "./exceptions/branch-exceptions";
 
 
 
-export class BranchAggregate  extends AggregateRoot<BranchId>{
-
+/** Sucursal de un negocio. Nace activa y nunca se borra de la base, solo se marca como eliminada. */
+export class BranchAggregate extends AggregateRoot<BranchId> {
     private readonly tenantId: string;
     private name: BranchName;
     private address: BranchAddress;
@@ -14,8 +15,10 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
     private city: BranchCity;
     private department: BranchDepartment;
     private isActive: boolean;
+    private isDeleted: boolean;
     private createdAt: Date;
     private updatedAt: Date;
+
 
     private constructor(
         id: BranchId,
@@ -26,6 +29,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         city: BranchCity,
         department: BranchDepartment,
         isActive: boolean,
+        isDeleted: boolean,
         createdAt: Date,
         updatedAt: Date,
     ) {
@@ -38,13 +42,16 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         this.city = city;
         this.department = department;
         this.isActive = isActive;
+        this.isDeleted = isDeleted;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-    };
+    }
+
 
     private touch(): void {
         this.updatedAt = new Date();
     }
+
 
     public static create(params: {
         tenantId: string;
@@ -57,7 +64,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
     }): BranchAggregate {
         const now = new Date();
 
-        const branch = new BranchAggregate(
+        return new BranchAggregate(
             BranchId.generate(),
             params.tenantId,
             params.name,
@@ -66,25 +73,12 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             params.city,
             params.department,
             true,
+            false,
             now,
             now
         );
+    }
 
-        branch.registerEvent(
-            new BranchCreatedEvent({
-                branchId: branch.id.value,
-                tenantId: branch.tenantId,
-                name: branch.name.value,
-                address: branch.address.value,
-                phone: branch.phone.value,
-                city: branch.city.value,
-                department: branch.department.value,
-                isActive: branch.isActive,
-            })
-        );
-
-        return branch;
-    };
 
     public toPrimitives(): BranchPrimitives {
         return {
@@ -96,10 +90,12 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             city: this.city.value,
             department: this.department.value,
             isActive: this.isActive,
+            isDeleted: this.isDeleted,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
         };
     }
+
 
     public static fromPrimitives(primitives: BranchPrimitives): BranchAggregate {
         return new BranchAggregate(
@@ -111,10 +107,12 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             BranchCity.create(primitives.city),
             BranchDepartment.create(primitives.department),
             primitives.isActive,
+            primitives.isDeleted,
             primitives.createdAt,
             primitives.updatedAt,
         );
-    };
+    }
+
 
     public update(params: {
         name?: BranchName;
@@ -122,7 +120,34 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         phone?: BranchPhone;
         city?: BranchCity;
         department?: BranchDepartment;
+        isActive?: boolean;
     }): void {
+
+        if (Object.keys(params).length === 0) {
+            throw new BranchEmptyUpdateException(this.id.value);
+        }
+
+        // Se compara el texto exacto porque equals ignora las mayúsculas,
+        // y corregir centro por Centro sí cuenta como un cambio.
+        const unchanged = [
+            { field: 'nombre', sent: params.name, current: this.name },
+            { field: 'dirección', sent: params.address, current: this.address },
+            { field: 'teléfono', sent: params.phone, current: this.phone },
+            { field: 'ciudad', sent: params.city, current: this.city },
+            { field: 'departamento', sent: params.department, current: this.department },
+        ].find(({ sent, current }) => sent?.value === current.value);
+
+        if (unchanged) {
+            throw new BranchFieldUnchangedException(unchanged.field);
+        }
+
+        // El estado se cambia antes que los demás campos para que, si ya era el pedido,
+        // la excepción salga sin dejar la sucursal a medio actualizar.
+        if (params.isActive === true) {
+            this.activate();
+        } else if (params.isActive === false) {
+            this.deactivate();
+        }
 
         if (params.name) {
             this.name = params.name;
@@ -143,27 +168,48 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         if (params.department) {
             this.department = params.department;
         }
-    
+
         this.touch();
     }
 
+
     public deactivate(): void {
         if (!this.isActive) {
-            throw new Error("La sucursal ya se encuentra desactivada.");
+            throw new BranchAlreadyInactiveException(this.id.value);
         }
 
         this.isActive = false;
     }
 
+
     public activate(): void {
         if (this.isActive) {
-            throw new Error("La sucursal ya se encuentra activa.");
+            throw new BranchAlreadyActiveException(this.id.value);
         }
 
         this.isActive = true;
     }
 
+
+    /**
+     * Marca la sucursal como eliminada sin borrar la fila, porque los usuarios y el
+     * inventario la siguen referenciando. No se revisa si ya estaba eliminada porque
+     * el repositorio nunca devuelve sucursales eliminadas, así que un segundo borrado
+     * responde que la sucursal no existe.
+     */
+    public delete(): void {
+        this.isDeleted = true;
+        this.touch();
+    }
+
+
+    /** Compara el nombre sin distinguir mayúsculas de minúsculas. */
+    public hasName(name: BranchName): boolean {
+        return this.name.equals(name);
+    }
+
+    
     public get active(): boolean {
         return this.isActive;
     }
-};
+}

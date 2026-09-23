@@ -28,27 +28,14 @@ WHERE tenant_is_deleted = FALSE;
 CREATE UNIQUE INDEX tenants_tenant_nit_unique_active
 ON tenants (tenant_nit)
 WHERE tenant_is_deleted = FALSE;
+
 -- ============================================
 -- TABLA DE BRANCHES
 -- ============================================
-CREATE TABLE IF NOT EXISTS branches (
-    branch_id UUID PRIMARY KEY,
-    tenant_id UUID NOT NULL,
-    branch_name VARCHAR(120) NOT NULL,
-    branch_address VARCHAR(225) NOT NULL,
-    branch_phone VARCHAR(20) NOT NULL,
-    branch_city VARCHAR(120) NOT NULL,
-    branch_department VARCHAR(120) NOT NULL,
-    branch_is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    branch_created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    branch_updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT fk_branch_tenant
-        FOREIGN KEY (tenant_id)
-        REFERENCES tenants (tenant_id)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT
-);
+-- Va en su propio archivo. Tiene que cargarse aquí: después de tenants y antes
+-- de users e inventario, que la referencian. \ir es un comando de psql, así que
+-- este script no corre desde Adminer; se ejecuta con psql.
+\ir tables/branches.sql
 
 
 

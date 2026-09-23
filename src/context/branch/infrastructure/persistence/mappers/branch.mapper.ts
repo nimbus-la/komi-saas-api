@@ -12,8 +12,8 @@ export class BranchMapper {
             phone: entity.phone,
             city: entity.city,
             department: entity.department,
-            created_at: entity.createdAt,
-            updated_at: entity.updatedAt,
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt,
             isActive: entity.isActive,
         };
     }
@@ -28,6 +28,7 @@ export class BranchMapper {
             city: entity.city,
             department: entity.department,
             isActive: entity.isActive,
+            isDeleted: entity.isDeleted,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
         });

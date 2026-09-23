@@ -1,33 +1,33 @@
+import { Paginated, Pagination } from "@/interfaces";
+
 import { BranchAggregate } from "./branch.aggregate";
-import { BranchResponse } from "./types";
+import { BranchResponse, SearchBranchesFilters } from "./interfaces";
 import { BranchId, BranchName } from "./value-object";
 
 
+/** Acceso a las sucursales guardadas. Toda búsqueda queda limitada al negocio que la pide. */
 export abstract class BranchRepository {
 
     abstract save(branch: BranchAggregate): Promise<void>;
     abstract update(branch: BranchAggregate): Promise<void>;
-    // abstract delete(id: BranchId): Promise<void>;
 
     /**
-     * El negocio va en la consulta, no se comprueba después: pedir la sucursal por
-     * id y comparar el tenantId al recibirla significa que la base ya devolvió una
-     * fila ajena, y basta que alguien olvide el if para que salga por la API.
-     * Acotando aquí, una sucursal de otro negocio sencillamente no existe.
+     * Busca la sucursal por su id dentro del negocio. El negocio se filtra en la propia
+     * consulta y no después, para que una sucursal de otro negocio nunca llegue a
+     * salir de la base y simplemente se trate como inexistente.
      */
-    abstract searchById(id: BranchId, tenantId: string): Promise<BranchResponse | null>;
     abstract searchAggregateById(id: BranchId, tenantId: string): Promise<BranchAggregate | null>;
 
-    /** El nombre solo tiene que ser único dentro del negocio, no en toda la base. */
+    /** Indica si el nombre ya está en uso dentro del negocio. En otros negocios se puede repetir. */
     abstract existsByName(name: BranchName, tenantId: string): Promise<boolean>;
 
     /**
-     * Comprueba que la sucursal exista Y pertenezca a ese negocio, en una sola
-     * consulta. Es lo que necesitan los contextos de afuera: traer la sucursal
-     * con searchById y comparar el tenantId después deja que la consulta
-     * devuelva filas de otro negocio.
+     * Comprueba en una sola consulta que la sucursal pertenezca al negocio, esté activa
+     * y no esté eliminada. Los módulos de usuarios e inventario lo usan antes de asignarle
+     * personal o existencias, así que una sucursal inactiva no recibe nada.
      */
     abstract existsInTenant(id: BranchId, tenantId: string): Promise<boolean>;
 
-    public abstract searchByTenantId(tenantId: string,): Promise<BranchResponse[]>;
+    /** Lista las sucursales del negocio con paginación. Los demás filtros son opcionales. */
+    abstract search(filters: SearchBranchesFilters, pagination: Pagination): Promise<Paginated<BranchResponse>>;
 }
