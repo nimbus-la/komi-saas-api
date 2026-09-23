@@ -164,8 +164,15 @@ describe('Sucursales contra Postgres (e2e)', () => {
             const { body } = await list().expect(200);
 
             expect(body.content).toMatchObject({ pageNumber: 1, pageSize: 20, total: 1 });
-            expect(body.content.rows[0]).toMatchObject({ ...BRANCH_BODY, tenantId: TENANT_A, isActive: true });
+            expect(body.content.rows[0]).toMatchObject({
+                ...BRANCH_BODY,
+                tenantId: TENANT_A,
+                isActive: true,
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+            });
             expect(body.content.rows[0]).not.toHaveProperty('isDeleted');
+            expect(body.content.rows[0]).not.toHaveProperty('created_at');
         });
 
         it('ordena por nombre y pagina', async () => {
@@ -383,8 +390,10 @@ describe('Sucursales contra Postgres (e2e)', () => {
                 'SELECT EXTRACT(EPOCH FROM now() - branch_created_at)::float AS seconds_ago FROM branches',
             );
 
-            expect(row!.seconds_ago).toBeGreaterThanOrEqual(0);
-            expect(row!.seconds_ago).toBeLessThan(60);
+            // La fecha la genera Node y now() el reloj del contenedor, que no van
+            // sincronizados al milisegundo: la diferencia puede salir negativa
+            // por unos milisegundos. El error que se busca es de horas.
+            expect(Math.abs(row!.seconds_ago)).toBeLessThan(60);
         });
     });
 });

@@ -6,7 +6,7 @@ export interface BranchResponse {
     phone: string;
     city: string;
     department: string;
-    created_at: Date;
-    updated_at: Date;
+    createdAt: Date;
+    updatedAt: Date;
     isActive: boolean;
 }
