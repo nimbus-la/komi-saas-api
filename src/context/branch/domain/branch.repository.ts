@@ -23,10 +23,9 @@ export abstract class BranchRepository {
     abstract existsByName(name: BranchName, tenantId: string): Promise<boolean>;
 
     /**
-     * Comprueba que la sucursal exista Y pertenezca a ese negocio, en una sola
-     * consulta. Es lo que necesitan los contextos de afuera: traer la sucursal
-     * con searchById y comparar el tenantId después deja que la consulta
-     * devuelva filas de otro negocio.
+     * Comprueba en una sola consulta que la sucursal pertenezca a ese negocio y
+     * pueda operar: activa y no eliminada. Es lo que usan user e inventory antes
+     * de asignarle personal o stock, así que una sucursal inactiva no recibe nada.
      */
     abstract existsInTenant(id: BranchId, tenantId: string): Promise<boolean>;
 

@@ -71,6 +71,7 @@ export class BranchService implements BranchRepository {
             where: {
                 id: id.value,
                 tenantId,
+                isActive: true,
                 isDeleted: false,
             },
         });
