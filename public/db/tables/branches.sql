@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS branches (
     branch_department VARCHAR(120) NOT NULL,
     branch_is_active BOOLEAN NOT NULL DEFAULT TRUE,
     branch_is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    branch_created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    branch_updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    branch_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    branch_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_branch_tenant
         FOREIGN KEY (tenant_id)
@@ -26,3 +26,12 @@ CREATE TABLE IF NOT EXISTS branches (
         ON UPDATE CASCADE
         ON DELETE RESTRICT
 );
+
+-- El nombre es único dentro de cada negocio, sin distinguir mayúsculas.
+-- Las sucursales eliminadas no cuentan: su nombre queda libre.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_branches_name_tenant_lower
+ON branches (
+    tenant_id,
+    LOWER(branch_name)
+)
+WHERE branch_is_deleted = FALSE;

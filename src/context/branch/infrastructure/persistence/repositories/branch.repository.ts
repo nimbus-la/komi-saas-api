@@ -1,13 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { QueryFailedError, Repository } from "typeorm";
 
 import { Paginated, Pagination } from "@/interfaces";
 
-import { BranchAggregate, BranchId, BranchName, BranchRepository, BranchResponse, SearchBranchesFilters } from "../../../domain";
+import { BranchAggregate, BranchId, BranchName, BranchNameAlreadyExistsException, BranchRepository, BranchResponse, SearchBranchesFilters } from "../../../domain";
 
 import { BranchEntity } from "../models/branch.entity";
 import { BranchMapper } from "../mappers/branch.mapper";
+
+/** Violación de restricción única en PostgreSQL. */
+const UNIQUE_VIOLATION = "23505";
 
 @Injectable()
 export class BranchService implements BranchRepository {
@@ -34,7 +37,17 @@ export class BranchService implements BranchRepository {
             updatedAt: primitives.updatedAt,
         });
 
-        await this.branchRepository.save(row);
+        try {
+            await this.branchRepository.save(row);
+        } catch (error) {
+            // existsByName ya lo revisa antes, pero dos creaciones simultáneas
+            // lo pasan y el índice único es quien resuelve.
+            if (BranchService.isUniqueViolation(error)) {
+                throw new BranchNameAlreadyExistsException(primitives.name);
+            }
+
+            throw error;
+        }
     }
 
     public async searchAggregateById(
@@ -82,19 +95,28 @@ export class BranchService implements BranchRepository {
     public async update(branch: BranchAggregate): Promise<void> {
         const primitives = branch.toPrimitives();
 
-        await this.branchRepository.update(
-            { id: primitives.id, tenantId: primitives.tenantId, isDeleted: false },
-            {
-                name: primitives.name,
-                address: primitives.address,
-                phone: primitives.phone,
-                city: primitives.city,
-                department: primitives.department,
-                isActive: primitives.isActive,
-                isDeleted: primitives.isDeleted,
-                updatedAt: new Date(),
+        try {
+            await this.branchRepository.update(
+                { id: primitives.id, tenantId: primitives.tenantId, isDeleted: false },
+                {
+                    name: primitives.name,
+                    address: primitives.address,
+                    phone: primitives.phone,
+                    city: primitives.city,
+                    department: primitives.department,
+                    isActive: primitives.isActive,
+                    isDeleted: primitives.isDeleted,
+                    updatedAt: primitives.updatedAt,
+                }
+            );
+        } catch (error) {
+            // Mismo caso que en save: dos renombrados simultáneos.
+            if (BranchService.isUniqueViolation(error)) {
+                throw new BranchNameAlreadyExistsException(primitives.name);
             }
-        );
+
+            throw error;
+        }
     }
 
     public async search(
@@ -141,6 +163,12 @@ export class BranchService implements BranchRepository {
             pageSize: pagination.pageSize,
             total,
         };
+    }
+
+    /** Postgres responde 23505 cuando se viola un índice único. */
+    private static isUniqueViolation(error: unknown): boolean {
+        return error instanceof QueryFailedError
+            && (error.driverError as { code?: string }).code === UNIQUE_VIOLATION;
     }
 
     /** Escapa los comodines de LIKE para que "%" o "_" se busquen como texto. */
