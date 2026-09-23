@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
 
 import { ResponseMessage } from "@/infrastructure";
 import { CurrentUser } from "@/auth/infrastructure/decorators";
@@ -74,9 +74,6 @@ export class BranchController {
         await this.deleteBranch.execute(body.branchId, user.tenantId);
     }
 
-
-    @Delete('/delete')
-    public async removeBranch() {
-        // TODO: Implementar la función de eliminar sucursal. agregando un nuevo estado al dominio (is_deleted) y un nuevo endpoint en el controller. Eliminar la sucursal de la base de datos no es una buena práctica, ya que puede haber registros relacionados con esa sucursal en otras tablas.
-    }
+    // TODO: Eliminar sucursal. Hace falta un estado nuevo en el dominio (is_deleted)
+    // en lugar de borrar la fila, porque otras tablas la referencian.
 };

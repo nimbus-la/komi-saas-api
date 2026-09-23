@@ -2,6 +2,7 @@ import { AggregateRoot } from "@/shared";
 import { BranchAddress, BranchCity, BranchDepartment, BranchId, BranchName, BranchPhone} from "./value-object";
 import { BranchCreatedEvent } from "./index";
 import { BranchPrimitives } from "./types";
+import { BranchAlreadyActiveException, BranchAlreadyInactiveException, BranchEmptyUpdateException, BranchFieldUnchangedException } from "./exceptions/branch-exceptions";
 
 
 
@@ -124,6 +125,24 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         department?: BranchDepartment;
     }): void {
 
+        if (Object.keys(params).length === 0) {
+            throw new BranchEmptyUpdateException(this.id.value);
+        }
+
+        // Se compara el texto exacto y no con equals(), que ignora mayúsculas:
+        // corregir "centro" por "Centro" es un cambio válido.
+        const unchanged = [
+            { field: 'nombre', sent: params.name, current: this.name },
+            { field: 'dirección', sent: params.address, current: this.address },
+            { field: 'teléfono', sent: params.phone, current: this.phone },
+            { field: 'ciudad', sent: params.city, current: this.city },
+            { field: 'departamento', sent: params.department, current: this.department },
+        ].find(({ sent, current }) => sent?.value === current.value);
+
+        if (unchanged) {
+            throw new BranchFieldUnchangedException(unchanged.field);
+        }
+
         if (params.name) {
             this.name = params.name;
         }
@@ -149,7 +168,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
 
     public deactivate(): void {
         if (!this.isActive) {
-            throw new Error("La sucursal ya se encuentra desactivada.");
+            throw new BranchAlreadyInactiveException(this.id.value);
         }
 
         this.isActive = false;
@@ -157,10 +176,15 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
 
     public activate(): void {
         if (this.isActive) {
-            throw new Error("La sucursal ya se encuentra activa.");
+            throw new BranchAlreadyActiveException(this.id.value);
         }
 
         this.isActive = true;
+    }
+
+    /** Mismo nombre sin importar mayúsculas: "centro" y "Centro" son el mismo. */
+    public hasName(name: BranchName): boolean {
+        return this.name.equals(name);
     }
 
     public get active(): boolean {

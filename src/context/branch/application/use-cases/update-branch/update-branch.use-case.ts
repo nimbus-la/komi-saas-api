@@ -35,7 +35,9 @@ export class UpdateBranchUseCase {
         if (params.name !== undefined) {
             name = BranchName.create(params.name);
 
-            if (await this.repository.existsByName(name, tenantId)) {
+            // Si solo cambian mayúsculas, la consulta encontraría a esta misma
+            // sucursal; no hay otra con ese nombre, así que no se consulta.
+            if (!branch.hasName(name) && await this.repository.existsByName(name, tenantId)) {
                 throw new BranchNameAlreadyExistsException(params.name);
             }
         }
