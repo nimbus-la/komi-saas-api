@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Patch, Post, Query } from "@nestjs/common";
 
 import { ResponseMessage } from "@/infrastructure";
 import { CurrentUser } from "@/auth/infrastructure/decorators";
@@ -7,7 +7,7 @@ import type { AuthenticatedUser } from "@/auth/infrastructure/types";
 import { UpdateBranchDto } from "./dto/update-branch.dto";
 import { CreateBranchDto } from "./dto/create-branch.dto";
 import { SearchBranchesDto } from "./dto/search-branches.dto";
-import { CreateBranchUseCase, SearchBranchesUseCase, UpdateBranchUseCase } from "../../application";
+import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesUseCase, UpdateBranchUseCase } from "../../application";
 
 
 /**
@@ -24,6 +24,7 @@ export class BranchController {
         private readonly createBranch: CreateBranchUseCase,
         private readonly updateBranch: UpdateBranchUseCase,
         private readonly searchBranches: SearchBranchesUseCase,
+        private readonly deleteBranch: DeleteBranchUseCase,
     ) { }
 
 
@@ -61,6 +62,12 @@ export class BranchController {
     }
 
 
-    // TODO: Eliminar sucursal. Hace falta un estado nuevo en el dominio (is_deleted)
-    // en lugar de borrar la fila, porque otras tablas la referencian.
+    @Delete("delete")
+    @ResponseMessage('Sucursal eliminada exitosamente.')
+    public async delete(
+        @CurrentUser() user: AuthenticatedUser,
+        @Query("branchId") branchId: string,
+    ): Promise<void> {
+        await this.deleteBranch.execute(branchId, user.tenantId);
+    }
 };

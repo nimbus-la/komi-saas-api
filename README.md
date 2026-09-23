@@ -206,7 +206,7 @@ La base es PostgreSQL. El proyecto no usa migraciones de TypeORM. El esquema est
 
 | Archivo | Contenido |
 |---|---|
-| `01-init.sql` | Las tablas principales: negocios, sucursales, roles, usuarios, inventario con sus lotes y configuración por sucursal, movimientos, categorías, productos e ingredientes de receta. También la secuencia que genera el SKU de los productos. |
+| `01-init.sql` | Las tablas principales: negocios, sucursales, roles, usuarios, inventario con sus lotes y configuración por sucursal, movimientos, categorías, productos e ingredientes de receta. También la secuencia que genera el SKU de los productos. La tabla de sucursales está en `tables/branches.sql` y se incluye desde aquí con `\ir`, por eso este script se ejecuta con `psql` y no desde Adminer. |
 | `02-roles.sql` | Los roles fijos del sistema: dueño, administrador, supervisor, cajero, mesero y cocina. |
 | `03-sessions.sql` | La tabla de sesiones. |
 | `04-menus.sql` | La tabla del menú lateral y sus opciones. |

@@ -29,6 +29,7 @@ export class BranchService implements BranchRepository {
             city: primitives.city,
             department: primitives.department,
             isActive: primitives.isActive,
+            isDeleted: primitives.isDeleted,
             createdAt: primitives.createdAt,
             updatedAt: primitives.updatedAt,
         });
@@ -45,25 +46,11 @@ export class BranchService implements BranchRepository {
             where: {
                 id: id.value,
                 tenantId,
+                isDeleted: false,
             },
         });
 
-        if (!row) {
-            return null;
-        }
-
-        return BranchAggregate.fromPrimitives({
-            id: row.id,
-            tenantId: row.tenantId,
-            name: row.name,
-            address: row.address,
-            phone: row.phone,
-            city: row.city,
-            department: row.department,
-            isActive: row.isActive,
-            createdAt: row.createdAt,
-            updatedAt: row.updatedAt,
-        });
+        return row ? BranchMapper.toAggregate(row) : null;
     }
 
     public async existsByName(name: BranchName, tenantId: string): Promise<boolean> {
@@ -71,6 +58,8 @@ export class BranchService implements BranchRepository {
             .createQueryBuilder("branch")
             .where("branch.name ILIKE :name", { name: BranchService.escapeLike(name.value) })
             .andWhere("branch.tenantId = :tenantId", { tenantId })
+            // Una sucursal eliminada libera su nombre.
+            .andWhere("branch.isDeleted = false")
             .getCount();
 
         return count > 0;
@@ -82,6 +71,7 @@ export class BranchService implements BranchRepository {
             where: {
                 id: id.value,
                 tenantId,
+                isDeleted: false,
             },
         });
 
@@ -92,7 +82,7 @@ export class BranchService implements BranchRepository {
         const primitives = branch.toPrimitives();
 
         await this.branchRepository.update(
-            { id: primitives.id, tenantId: primitives.tenantId },
+            { id: primitives.id, tenantId: primitives.tenantId, isDeleted: false },
             {
                 name: primitives.name,
                 address: primitives.address,
@@ -100,6 +90,7 @@ export class BranchService implements BranchRepository {
                 city: primitives.city,
                 department: primitives.department,
                 isActive: primitives.isActive,
+                isDeleted: primitives.isDeleted,
                 updatedAt: new Date(),
             }
         );
@@ -111,7 +102,8 @@ export class BranchService implements BranchRepository {
     ): Promise<Paginated<BranchResponse>> {
         const query = this.branchRepository
             .createQueryBuilder("branch")
-            .where("branch.tenantId = :tenantId", { tenantId: filters.tenantId });
+            .where("branch.tenantId = :tenantId", { tenantId: filters.tenantId })
+            .andWhere("branch.isDeleted = false");
 
         if (filters.branchId) {
             query.andWhere("branch.id = :branchId", { branchId: filters.branchId });

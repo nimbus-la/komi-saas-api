@@ -28,6 +28,7 @@ export class BranchMapper {
             city: entity.city,
             department: entity.department,
             isActive: entity.isActive,
+            isDeleted: entity.isDeleted,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
         });

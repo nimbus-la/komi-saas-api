@@ -15,6 +15,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
     private city: BranchCity;
     private department: BranchDepartment;
     private isActive: boolean;
+    private isDeleted: boolean;
     private createdAt: Date;
     private updatedAt: Date;
 
@@ -27,6 +28,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         city: BranchCity,
         department: BranchDepartment,
         isActive: boolean,
+        isDeleted: boolean,
         createdAt: Date,
         updatedAt: Date,
     ) {
@@ -39,6 +41,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         this.city = city;
         this.department = department;
         this.isActive = isActive;
+        this.isDeleted = isDeleted;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     };
@@ -67,6 +70,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             params.city,
             params.department,
             true,
+            false,
             now,
             now
         );
@@ -97,6 +101,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             city: this.city.value,
             department: this.department.value,
             isActive: this.isActive,
+            isDeleted: this.isDeleted,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
         };
@@ -112,6 +117,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             BranchCity.create(primitives.city),
             BranchDepartment.create(primitives.department),
             primitives.isActive,
+            primitives.isDeleted,
             primitives.createdAt,
             primitives.updatedAt,
         );
@@ -189,6 +195,16 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         }
 
         this.isActive = true;
+    }
+
+    /**
+     * Borrado lógico: la fila se queda porque users e inventario la referencian.
+     * No se revisa si ya estaba eliminada porque el repositorio nunca devuelve
+     * sucursales eliminadas; eliminar dos veces responde 1207.
+     */
+    public delete(): void {
+        this.isDeleted = true;
+        this.touch();
     }
 
     /** Mismo nombre sin importar mayúsculas: "centro" y "Centro" son el mismo. */
