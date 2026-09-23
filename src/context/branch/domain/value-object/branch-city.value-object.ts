@@ -12,16 +12,16 @@ export class BranchCity {
 
         if (value.length < this.MIN_LENGTH) {
             throw new InvalidBranchCityException(`mínimo ${this.MIN_LENGTH} caracteres`);
-        };
+        }
 
         if (value.length > this.MAX_LENGTH) {
             throw new InvalidBranchCityException(`máximo ${this.MAX_LENGTH} caracteres`);
-        };
+        }
 
         return new BranchCity(value);
-    };
+    }
 
     public equals(other: BranchCity): boolean {
         return this.value.toLowerCase() === other.value.toLowerCase();
-    };
-};
+    }
+}

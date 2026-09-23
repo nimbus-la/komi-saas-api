@@ -5,5 +5,4 @@ export interface CreateBranchApplicationParams {
     phone: string;
     city: string;
     department: string;
-    //isActive: boolean;
 }

@@ -3,7 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { BranchEntity } from "./infrastructure/persistence/models/branch.entity";
 import { BranchController } from "./infrastructure/http/branch.controller";
 import { BranchRepository } from "./domain";
-import { BranchService } from "./infrastructure/persistence/repositories/branch.repository";
+import { TypeOrmBranchRepository } from "./infrastructure/persistence/repositories/branch.repository";
 import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesUseCase, UpdateBranchUseCase } from "./application";
 import { TenantModule } from "../tenants/tenant.module";
 import { TenantRepository } from "../tenants/domain";
@@ -23,7 +23,7 @@ import { TenantRepository } from "../tenants/domain";
     providers: [
         {
             provide: BranchRepository,
-            useClass: BranchService,
+            useClass: TypeOrmBranchRepository,
         },
 
         {
@@ -68,4 +68,4 @@ import { TenantRepository } from "../tenants/domain";
         BranchRepository,
     ],
 })
-export class BranchModule {};
+export class BranchModule {}

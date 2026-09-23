@@ -13,7 +13,7 @@ import { BranchMapper } from "../mappers/branch.mapper";
 const UNIQUE_VIOLATION = "23505";
 
 @Injectable()
-export class BranchService implements BranchRepository {
+export class TypeOrmBranchRepository implements BranchRepository {
 
     constructor(
         @InjectRepository(BranchEntity)
@@ -42,7 +42,7 @@ export class BranchService implements BranchRepository {
         } catch (error) {
             // existsByName ya lo revisa antes, pero dos creaciones simultáneas
             // lo pasan y el índice único es quien resuelve.
-            if (BranchService.isUniqueViolation(error)) {
+            if (TypeOrmBranchRepository.isUniqueViolation(error)) {
                 throw new BranchNameAlreadyExistsException(primitives.name);
             }
 
@@ -69,7 +69,7 @@ export class BranchService implements BranchRepository {
     public async existsByName(name: BranchName, tenantId: string): Promise<boolean> {
         const count = await this.branchRepository
             .createQueryBuilder("branch")
-            .where("branch.name ILIKE :name", { name: BranchService.escapeLike(name.value) })
+            .where("branch.name ILIKE :name", { name: TypeOrmBranchRepository.escapeLike(name.value) })
             .andWhere("branch.tenantId = :tenantId", { tenantId })
             // Una sucursal eliminada libera su nombre.
             .andWhere("branch.isDeleted = false")
@@ -111,7 +111,7 @@ export class BranchService implements BranchRepository {
             );
         } catch (error) {
             // Mismo caso que en save: dos renombrados simultáneos.
-            if (BranchService.isUniqueViolation(error)) {
+            if (TypeOrmBranchRepository.isUniqueViolation(error)) {
                 throw new BranchNameAlreadyExistsException(primitives.name);
             }
 
@@ -141,7 +141,7 @@ export class BranchService implements BranchRepository {
                   OR branch.phone ILIKE :text
                   OR branch.city ILIKE :text
                   OR branch.department ILIKE :text)`,
-                { text: `%${BranchService.escapeLike(text)}%` },
+                { text: `%${TypeOrmBranchRepository.escapeLike(text)}%` },
             );
         }
 

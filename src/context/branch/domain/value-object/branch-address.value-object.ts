@@ -11,11 +11,11 @@ export class BranchAddress {
 
         if (value.length < this.MIN_LENGTH) {
             throw new InvalidBranchAddressException(`mínimo ${this.MIN_LENGTH} caracteres`);
-        };
+        }
 
         if (value.length > this.MAX_LENGTH) {
             throw new InvalidBranchAddressException( `máximo ${this.MAX_LENGTH} caracteres` );
-        };
+        }
 
         return new BranchAddress(value);
     }

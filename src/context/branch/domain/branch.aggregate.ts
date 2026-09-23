@@ -44,7 +44,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         this.isDeleted = isDeleted;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-    };
+    }
 
     private touch(): void {
         this.updatedAt = new Date();
@@ -89,7 +89,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         );
 
         return branch;
-    };
+    }
 
     public toPrimitives(): BranchPrimitives {
         return {
@@ -121,7 +121,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             primitives.createdAt,
             primitives.updatedAt,
         );
-    };
+    }
 
     public update(params: {
         name?: BranchName;
@@ -215,4 +215,4 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
     public get active(): boolean {
         return this.isActive;
     }
-};
+}

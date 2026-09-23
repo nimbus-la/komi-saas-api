@@ -12,11 +12,11 @@ export class BranchPhone {
 
         if (value.length < this.MIN_LENGTH) {
             throw new InvalidBranchPhoneException(`mínimo ${this.MIN_LENGTH} caracteres`);
-        };
+        }
 
         if (value.length > this.MAX_LENGTH) {
             throw new InvalidBranchPhoneException(`máximo ${this.MAX_LENGTH} caracteres`);
-        };
+        }
 
         return new BranchPhone(value);
     }

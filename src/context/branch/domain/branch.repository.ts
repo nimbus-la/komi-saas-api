@@ -9,7 +9,6 @@ export abstract class BranchRepository {
 
     abstract save(branch: BranchAggregate): Promise<void>;
     abstract update(branch: BranchAggregate): Promise<void>;
-    // abstract delete(id: BranchId): Promise<void>;
 
     /**
      * El negocio va en la consulta, no se comprueba después: pedir la sucursal por
