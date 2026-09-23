@@ -1,12 +1,13 @@
 import { AggregateRoot } from "@/shared";
-import { BranchAddress, BranchCity, BranchDepartment, BranchId, BranchName, BranchPhone} from "./value-object";
-import { BranchPrimitives } from "./types";
+
+import { BranchPrimitives } from "./interfaces";
+import { BranchAddress, BranchCity, BranchDepartment, BranchId, BranchName, BranchPhone } from "./value-object";
 import { BranchAlreadyActiveException, BranchAlreadyInactiveException, BranchEmptyUpdateException, BranchFieldUnchangedException } from "./exceptions/branch-exceptions";
 
 
 
-export class BranchAggregate  extends AggregateRoot<BranchId>{
-
+/** Sucursal de un negocio. Nace activa y nunca se borra de la base, solo se marca como eliminada. */
+export class BranchAggregate extends AggregateRoot<BranchId> {
     private readonly tenantId: string;
     private name: BranchName;
     private address: BranchAddress;
@@ -17,6 +18,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
     private isDeleted: boolean;
     private createdAt: Date;
     private updatedAt: Date;
+
 
     private constructor(
         id: BranchId,
@@ -45,9 +47,11 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         this.updatedAt = updatedAt;
     }
 
+
     private touch(): void {
         this.updatedAt = new Date();
     }
+
 
     public static create(params: {
         tenantId: string;
@@ -75,6 +79,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         );
     }
 
+
     public toPrimitives(): BranchPrimitives {
         return {
             id: this.id.value,
@@ -90,6 +95,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             updatedAt: this.updatedAt,
         };
     }
+
 
     public static fromPrimitives(primitives: BranchPrimitives): BranchAggregate {
         return new BranchAggregate(
@@ -107,6 +113,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         );
     }
 
+
     public update(params: {
         name?: BranchName;
         address?: BranchAddress;
@@ -120,8 +127,8 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             throw new BranchEmptyUpdateException(this.id.value);
         }
 
-        // Se compara el texto exacto y no con equals(), que ignora mayúsculas:
-        // corregir "centro" por "Centro" es un cambio válido.
+        // Se compara el texto exacto porque equals ignora las mayúsculas,
+        // y corregir centro por Centro sí cuenta como un cambio.
         const unchanged = [
             { field: 'nombre', sent: params.name, current: this.name },
             { field: 'dirección', sent: params.address, current: this.address },
@@ -134,8 +141,8 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
             throw new BranchFieldUnchangedException(unchanged.field);
         }
 
-        // Va antes de asignar los demás campos: si el estado ya es el pedido,
-        // lanza 1216/1217 sin dejar el agregado a medio cambiar.
+        // El estado se cambia antes que los demás campos para que, si ya era el pedido,
+        // la excepción salga sin dejar la sucursal a medio actualizar.
         if (params.isActive === true) {
             this.activate();
         } else if (params.isActive === false) {
@@ -161,9 +168,10 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         if (params.department) {
             this.department = params.department;
         }
-    
+
         this.touch();
     }
+
 
     public deactivate(): void {
         if (!this.isActive) {
@@ -173,6 +181,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         this.isActive = false;
     }
 
+
     public activate(): void {
         if (this.isActive) {
             throw new BranchAlreadyActiveException(this.id.value);
@@ -181,21 +190,25 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         this.isActive = true;
     }
 
+
     /**
-     * Borrado lógico: la fila se queda porque users e inventario la referencian.
-     * No se revisa si ya estaba eliminada porque el repositorio nunca devuelve
-     * sucursales eliminadas; eliminar dos veces responde 1207.
+     * Marca la sucursal como eliminada sin borrar la fila, porque los usuarios y el
+     * inventario la siguen referenciando. No se revisa si ya estaba eliminada porque
+     * el repositorio nunca devuelve sucursales eliminadas, así que un segundo borrado
+     * responde que la sucursal no existe.
      */
     public delete(): void {
         this.isDeleted = true;
         this.touch();
     }
 
-    /** Mismo nombre sin importar mayúsculas: "centro" y "Centro" son el mismo. */
+
+    /** Compara el nombre sin distinguir mayúsculas de minúsculas. */
     public hasName(name: BranchName): boolean {
         return this.name.equals(name);
     }
 
+    
     public get active(): boolean {
         return this.isActive;
     }

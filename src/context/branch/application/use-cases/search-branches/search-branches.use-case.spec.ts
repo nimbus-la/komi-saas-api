@@ -1,5 +1,5 @@
 import { Paginated } from '@/interfaces';
-import { BranchResponse } from '@/context/branch/domain/types/branch-response';
+import { BranchResponse } from '@/context/branch/domain/interfaces/branch.interfaces';
 
 import { SearchBranchesUseCase } from './search-branches.use-case';
 

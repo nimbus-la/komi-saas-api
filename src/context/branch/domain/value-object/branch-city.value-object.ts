@@ -1,6 +1,7 @@
 import { InvalidBranchCityException } from "../exceptions/branch-exceptions";
 
 
+/** Ciudad de la sucursal, entre 2 y 50 caracteres. */
 export class BranchCity {
     private static readonly MIN_LENGTH = 2;
     private static readonly MAX_LENGTH = 50;

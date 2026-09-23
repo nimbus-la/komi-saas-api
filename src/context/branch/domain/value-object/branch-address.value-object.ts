@@ -1,5 +1,6 @@
 import { InvalidBranchAddressException } from "../exceptions/branch-exceptions";
 
+/** Dirección de la sucursal, entre 5 y 100 caracteres. */
 export class BranchAddress {
     private static readonly MIN_LENGTH = 5;
     private static readonly MAX_LENGTH = 100;

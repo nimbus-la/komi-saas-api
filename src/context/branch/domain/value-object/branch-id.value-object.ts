@@ -1,5 +1,6 @@
 import { generateUUID, Uuid } from "@/shared";
 
+/** Identificador único de la sucursal. */
 export class BranchId extends Uuid {
     private constructor(value: string) {
         super(value);

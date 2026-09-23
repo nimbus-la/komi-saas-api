@@ -1,6 +1,7 @@
 import { InvalidBranchNameException } from "../exceptions/branch-exceptions";
 
 
+/** Nombre de la sucursal, entre 2 y 30 caracteres. Se compara sin distinguir mayúsculas. */
 export class BranchName {
     private static readonly MIN_LENGTH = 2;
     private static readonly MAX_LENGTH = 30;

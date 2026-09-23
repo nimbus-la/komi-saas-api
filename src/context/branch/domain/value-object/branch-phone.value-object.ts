@@ -1,6 +1,7 @@
 import { InvalidBranchPhoneException } from "../exceptions/branch-exceptions";
 
 
+/** Teléfono de la sucursal, entre 7 y 15 caracteres. */
 export class BranchPhone {
     private static readonly MIN_LENGTH = 7;
     private static readonly MAX_LENGTH = 15;

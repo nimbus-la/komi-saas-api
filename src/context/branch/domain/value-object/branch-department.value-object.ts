@@ -1,6 +1,7 @@
 import { InvalidBranchDepartmentException } from "../exceptions/branch-exceptions";
 
 
+/** Departamento de la sucursal, entre 2 y 50 caracteres. */
 export class BranchDepartment {
     private static readonly MIN_LENGTH = 2;
     private static readonly MAX_LENGTH = 50;

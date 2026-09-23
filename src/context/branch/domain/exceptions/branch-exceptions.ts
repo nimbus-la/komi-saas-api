@@ -1,8 +1,8 @@
 import { DomainException } from "@/shared";
 
 /**
- * Se lanza cuando la sucursal no existe, está eliminada o es de otro negocio.
- * Los tres casos responden igual para no revelar sucursales ajenas. Código 1207.
+ * La sucursal no existe, está eliminada o pertenece a otro negocio. Los tres casos
+ * responden igual para no revelar sucursales ajenas. Código 1207.
  */
 export class BranchNotFoundException extends DomainException {
     constructor(branchId: string) {
@@ -12,6 +12,7 @@ export class BranchNotFoundException extends DomainException {
         });
     }
 }
+
 
 /** El negocio donde se quiere crear la sucursal no existe. Código 1205. */
 export class BranchTenantNotFoundException extends DomainException {
@@ -23,7 +24,8 @@ export class BranchTenantNotFoundException extends DomainException {
     }
 }
 
-/** Se lanza cuando el nombre de la sucursal ya está registrado. Código 1206. */
+
+/** El nombre de la sucursal ya está registrado en el negocio. Código 1206. */
 export class BranchNameAlreadyExistsException extends DomainException {
     constructor(name: string) {
         super({
@@ -32,6 +34,7 @@ export class BranchNameAlreadyExistsException extends DomainException {
         });
     }
 }
+
 
 /** Se intenta desactivar una sucursal que ya está inactiva. Código 1216. */
 export class BranchAlreadyInactiveException extends DomainException {
@@ -43,6 +46,7 @@ export class BranchAlreadyInactiveException extends DomainException {
     }
 }
 
+
 /** Se intenta activar una sucursal que ya está activa. Código 1217. */
 export class BranchAlreadyActiveException extends DomainException {
     constructor(branchId: string) {
@@ -52,6 +56,7 @@ export class BranchAlreadyActiveException extends DomainException {
         });
     }
 }
+
 
 /** Se intenta actualizar una sucursal sin enviar ningún cambio. Código 1031. */
 export class BranchEmptyUpdateException extends DomainException {
@@ -63,6 +68,7 @@ export class BranchEmptyUpdateException extends DomainException {
     }
 }
 
+
 /** Se intenta actualizar un campo con el mismo valor que ya tiene. Código 1032. */
 export class BranchFieldUnchangedException extends DomainException {
     constructor(field: string) {
@@ -73,7 +79,8 @@ export class BranchFieldUnchangedException extends DomainException {
     }
 }
 
-/** Se lanza cuando el nombre de la sucursal es inválido. Código 1009. */
+
+/** El nombre de la sucursal no cumple la longitud permitida. Código 1009. */
 export class InvalidBranchNameException extends DomainException {
     constructor(reason: string){
         super({
@@ -83,7 +90,8 @@ export class InvalidBranchNameException extends DomainException {
     }
 }
 
-/** Se lanza cuando la dirección de la sucursal es inválida. Código 1010. */
+
+/** La dirección de la sucursal no cumple la longitud permitida. Código 1010. */
 export class InvalidBranchAddressException extends DomainException {
     constructor(reason: string) {
         super({
@@ -93,7 +101,8 @@ export class InvalidBranchAddressException extends DomainException {
     }
 }
 
-/** Se lanza cuando la ciudad de la sucursal es inválida. Código 1012. */
+
+/** La ciudad de la sucursal no cumple la longitud permitida. Código 1012. */
 export class InvalidBranchCityException extends DomainException {
     constructor(reason: string) {
         super({
@@ -103,7 +112,8 @@ export class InvalidBranchCityException extends DomainException {
     }
 }
 
-/** Se lanza cuando el departamento de la sucursal es inválido. Código 1013. */
+
+/** El departamento de la sucursal no cumple la longitud permitida. Código 1013. */
 export class InvalidBranchDepartmentException extends DomainException {
     constructor(reason: string) {
         super({
@@ -113,7 +123,8 @@ export class InvalidBranchDepartmentException extends DomainException {
     }
 }
 
-/** Se lanza cuando el teléfono de la sucursal es inválido. Código 1011. */
+
+/** El teléfono de la sucursal no cumple la longitud permitida. Código 1011. */
 export class InvalidBranchPhoneException extends DomainException {
     constructor(reason: string){
         super({
