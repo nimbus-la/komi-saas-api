@@ -123,6 +123,7 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
         phone?: BranchPhone;
         city?: BranchCity;
         department?: BranchDepartment;
+        isActive?: boolean;
     }): void {
 
         if (Object.keys(params).length === 0) {
@@ -141,6 +142,14 @@ export class BranchAggregate  extends AggregateRoot<BranchId>{
 
         if (unchanged) {
             throw new BranchFieldUnchangedException(unchanged.field);
+        }
+
+        // Va antes de asignar los demás campos: si el estado ya es el pedido,
+        // lanza 1216/1217 sin dejar el agregado a medio cambiar.
+        if (params.isActive === true) {
+            this.activate();
+        } else if (params.isActive === false) {
+            this.deactivate();
         }
 
         if (params.name) {

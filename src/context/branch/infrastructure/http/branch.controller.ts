@@ -7,7 +7,7 @@ import type { AuthenticatedUser } from "@/auth/infrastructure/types";
 import { UpdateBranchDto } from "./dto/update-branch.dto";
 import { CreateBranchDto } from "./dto/create-branch.dto";
 import { SearchBranchesDto } from "./dto/search-branches.dto";
-import { CreateBranchUseCase, DeleteBranchUseCase, SearchBranchesUseCase, UpdateBranchUseCase } from "../../application";
+import { CreateBranchUseCase, SearchBranchesUseCase, UpdateBranchUseCase } from "../../application";
 
 
 /**
@@ -23,7 +23,6 @@ export class BranchController {
     constructor(
         private readonly createBranch: CreateBranchUseCase,
         private readonly updateBranch: UpdateBranchUseCase,
-        private readonly deleteBranch: DeleteBranchUseCase,
         private readonly searchBranches: SearchBranchesUseCase,
     ) { }
 
@@ -53,6 +52,7 @@ export class BranchController {
 
 
     @Patch("/update")
+    @ResponseMessage('Sucursal actualizada exitosamente.')
     public async update(
         @CurrentUser() user: AuthenticatedUser,
         @Body() dto: UpdateBranchDto,
@@ -60,16 +60,6 @@ export class BranchController {
         await this.updateBranch.execute(dto.branchId, user.tenantId, dto);
     }
 
-
-    @Patch('/status')
-    @ResponseMessage('Estado de la sucursal actualizado exitosamente.')
-    public async updateStatus(
-        @CurrentUser() user: AuthenticatedUser,
-        @Body() body: { branchId: string }
-    ) {
-        // TODO: Cambiar el nombre de la función a toggleStatus o algo así, porque no es solo desactivar, sino que puede reactivar también.
-        await this.deleteBranch.execute(body.branchId, user.tenantId);
-    }
 
     // TODO: Eliminar sucursal. Hace falta un estado nuevo en el dominio (is_deleted)
     // en lugar de borrar la fila, porque otras tablas la referencian.

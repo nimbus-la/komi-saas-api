@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength } from "class-validator";
+import { IsBoolean, IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength } from "class-validator";
 
 /**
  * Mismas reglas que CreateBranchDto, pero todos los campos son opcionales.
@@ -40,4 +40,9 @@ export class UpdateBranchDto {
     @MinLength(2)
     @MaxLength(50)
     department?: string;
+
+    /** true activa la sucursal y false la desactiva. */
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
 }

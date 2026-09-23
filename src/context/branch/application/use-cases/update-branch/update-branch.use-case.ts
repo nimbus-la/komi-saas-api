@@ -6,6 +6,7 @@ export interface UpdateBranchParams {
     phone?: string;
     city?: string;
     department?: string;
+    isActive?: boolean;
 }
 
 export class UpdateBranchUseCase {
@@ -55,6 +56,9 @@ export class UpdateBranchUseCase {
                 : {}),
             ...(params.department !== undefined
                 ? { department: BranchDepartment.create(params.department) }
+                : {}),
+            ...(params.isActive !== undefined
+                ? { isActive: params.isActive }
                 : {}),
         });
 

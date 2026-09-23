@@ -69,7 +69,7 @@ export class BranchService implements BranchRepository {
     public async existsByName(name: BranchName, tenantId: string): Promise<boolean> {
         const count = await this.branchRepository
             .createQueryBuilder("branch")
-            .where("branch.name ILIKE :name", { name: name.value })
+            .where("branch.name ILIKE :name", { name: BranchService.escapeLike(name.value) })
             .andWhere("branch.tenantId = :tenantId", { tenantId })
             .getCount();
 
