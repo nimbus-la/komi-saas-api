@@ -1,14 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { QueryFailedError, Repository } from "typeorm";
 
-import { BranchAggregate, BranchId, BranchName, BranchRepository, BranchResponse, } from "../../../domain";
+import { Paginated, Pagination } from "@/interfaces";
+
+import { BranchAggregate, BranchId, BranchName, BranchNameAlreadyExistsException, BranchRepository, BranchResponse, SearchBranchesFilters } from "../../../domain";
 
 import { BranchEntity } from "../models/branch.entity";
 import { BranchMapper } from "../mappers/branch.mapper";
 
+/** Violación de restricción única en PostgreSQL. */
+const UNIQUE_VIOLATION = "23505";
+
 @Injectable()
-export class BranchService implements BranchRepository {
+export class TypeOrmBranchRepository implements BranchRepository {
 
     constructor(
         @InjectRepository(BranchEntity)
@@ -27,37 +32,22 @@ export class BranchService implements BranchRepository {
             city: primitives.city,
             department: primitives.department,
             isActive: primitives.isActive,
+            isDeleted: primitives.isDeleted,
             createdAt: primitives.createdAt,
             updatedAt: primitives.updatedAt,
         });
 
-        await this.branchRepository.save(row);
-    }
+        try {
+            await this.branchRepository.save(row);
+        } catch (error) {
+            // existsByName ya lo revisa antes, pero dos creaciones simultáneas
+            // lo pasan y el índice único es quien resuelve.
+            if (TypeOrmBranchRepository.isUniqueViolation(error)) {
+                throw new BranchNameAlreadyExistsException(primitives.name);
+            }
 
-    public async searchById(id: BranchId, tenantId: string): Promise<BranchResponse | null> {
-        const row = await this.branchRepository.findOne({
-            where: {
-                id: id.value,
-                tenantId,
-            },
-        });
-
-        if (!row) {
-            return null;
+            throw error;
         }
-
-        return {
-            id: row.id,
-            tenantId: row.tenantId,
-            name: row.name,
-            address: row.address,
-            phone: row.phone,
-            city: row.city,
-            department: row.department,
-            created_at: row.createdAt,
-            updated_at: row.updatedAt,
-            isActive: row.isActive,
-        };
     }
 
     public async searchAggregateById(
@@ -69,32 +59,20 @@ export class BranchService implements BranchRepository {
             where: {
                 id: id.value,
                 tenantId,
+                isDeleted: false,
             },
         });
 
-        if (!row) {
-            return null;
-        }
-
-        return BranchAggregate.fromPrimitives({
-            id: row.id,
-            tenantId: row.tenantId,
-            name: row.name,
-            address: row.address,
-            phone: row.phone,
-            city: row.city,
-            department: row.department,
-            isActive: row.isActive,
-            createdAt: row.createdAt,
-            updatedAt: row.updatedAt,
-        });
+        return row ? BranchMapper.toAggregate(row) : null;
     }
 
     public async existsByName(name: BranchName, tenantId: string): Promise<boolean> {
         const count = await this.branchRepository
             .createQueryBuilder("branch")
-            .where("branch.name ILIKE :name", { name: name.value })
+            .where("branch.name ILIKE :name", { name: TypeOrmBranchRepository.escapeLike(name.value) })
             .andWhere("branch.tenantId = :tenantId", { tenantId })
+            // Una sucursal eliminada libera su nombre.
+            .andWhere("branch.isDeleted = false")
             .getCount();
 
         return count > 0;
@@ -106,6 +84,8 @@ export class BranchService implements BranchRepository {
             where: {
                 id: id.value,
                 tenantId,
+                isActive: true,
+                isDeleted: false,
             },
         });
 
@@ -115,28 +95,84 @@ export class BranchService implements BranchRepository {
     public async update(branch: BranchAggregate): Promise<void> {
         const primitives = branch.toPrimitives();
 
-        await this.branchRepository.update(
-            { id: primitives.id, tenantId: primitives.tenantId },
-            {
-                name: primitives.name,
-                address: primitives.address,
-                phone: primitives.phone,
-                city: primitives.city,
-                department: primitives.department,
-                isActive: primitives.isActive,
-                updatedAt: new Date(),
+        try {
+            await this.branchRepository.update(
+                { id: primitives.id, tenantId: primitives.tenantId, isDeleted: false },
+                {
+                    name: primitives.name,
+                    address: primitives.address,
+                    phone: primitives.phone,
+                    city: primitives.city,
+                    department: primitives.department,
+                    isActive: primitives.isActive,
+                    isDeleted: primitives.isDeleted,
+                    updatedAt: primitives.updatedAt,
+                }
+            );
+        } catch (error) {
+            // Mismo caso que en save: dos renombrados simultáneos.
+            if (TypeOrmBranchRepository.isUniqueViolation(error)) {
+                throw new BranchNameAlreadyExistsException(primitives.name);
             }
-        );
+
+            throw error;
+        }
     }
 
-    public async searchByTenantId(tenantId: string,): Promise<BranchResponse[]> {
+    public async search(
+        filters: SearchBranchesFilters,
+        pagination: Pagination,
+    ): Promise<Paginated<BranchResponse>> {
+        const query = this.branchRepository
+            .createQueryBuilder("branch")
+            .where("branch.tenantId = :tenantId", { tenantId: filters.tenantId })
+            .andWhere("branch.isDeleted = false");
 
-        const rows = await this.branchRepository.find({
-            where: {
-                tenantId,
-            },
-        });
+        if (filters.branchId) {
+            query.andWhere("branch.id = :branchId", { branchId: filters.branchId });
+        }
 
-        return rows.map((row) => BranchMapper.toResponse(row))
+        const text = filters.text?.trim();
+
+        if (text) {
+            query.andWhere(
+                `(branch.name ILIKE :text
+                  OR branch.address ILIKE :text
+                  OR branch.phone ILIKE :text
+                  OR branch.city ILIKE :text
+                  OR branch.department ILIKE :text)`,
+                { text: `%${TypeOrmBranchRepository.escapeLike(text)}%` },
+            );
+        }
+
+        if (filters.branchStatus !== undefined) {
+            query.andWhere("branch.isActive = :status", { status: filters.branchStatus });
+        }
+
+        // El id desempata para que el orden sea estable entre páginas.
+        const [rows, total] = await query
+            .orderBy("branch.name", "ASC")
+            .addOrderBy("branch.id", "ASC")
+            .skip((pagination.pageNumber - 1) * pagination.pageSize)
+            .take(pagination.pageSize)
+            .getManyAndCount();
+
+        return {
+            rows: rows.map((row) => BranchMapper.toResponse(row)),
+            pageNumber: pagination.pageNumber,
+            pageSize: pagination.pageSize,
+            total,
+        };
+    }
+
+    /** Postgres responde 23505 cuando se viola un índice único. */
+    private static isUniqueViolation(error: unknown): boolean {
+        return error instanceof QueryFailedError
+            && (error.driverError as { code?: string }).code === UNIQUE_VIOLATION;
+    }
+
+    /** Escapa los comodines de LIKE para que "%" o "_" se busquen como texto. */
+    private static escapeLike(text: string): string {
+        return text.replace(/[\\%_]/g, (character) => `\\${character}`);
     }
 }

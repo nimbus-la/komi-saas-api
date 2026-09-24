@@ -1,6 +1,7 @@
 import { InvalidBranchNameException } from "../exceptions/branch-exceptions";
 
 
+/** Nombre de la sucursal, entre 2 y 30 caracteres. Se compara sin distinguir mayúsculas. */
 export class BranchName {
     private static readonly MIN_LENGTH = 2;
     private static readonly MAX_LENGTH = 30;
@@ -12,11 +13,11 @@ export class BranchName {
 
         if (value.length < this.MIN_LENGTH) {
             throw new InvalidBranchNameException(`mínimo ${this.MIN_LENGTH} caracteres`);
-        };
+        }
 
         if (value.length > this.MAX_LENGTH) {
             throw new InvalidBranchNameException(`máximo ${this.MAX_LENGTH} caracteres`);
-        };
+        }
 
         return new BranchName(value);
     }

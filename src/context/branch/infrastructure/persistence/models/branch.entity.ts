@@ -27,6 +27,9 @@ export class BranchEntity {
     @Column({ name: 'branch_is_active', type: 'boolean', default: true })
     isActive!: boolean;
 
+    @Column({ name: 'branch_is_deleted', type: 'boolean', default: false })
+    isDeleted!: boolean;
+
     @Column({ name: 'branch_created_at', type: 'timestamptz' })
     createdAt!: Date;
 

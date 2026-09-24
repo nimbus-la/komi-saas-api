@@ -1,6 +1,7 @@
 import { InvalidBranchDepartmentException } from "../exceptions/branch-exceptions";
 
 
+/** Departamento de la sucursal, entre 2 y 50 caracteres. */
 export class BranchDepartment {
     private static readonly MIN_LENGTH = 2;
     private static readonly MAX_LENGTH = 50;
@@ -12,16 +13,16 @@ export class BranchDepartment {
 
         if (value.length < this.MIN_LENGTH) {
             throw new InvalidBranchDepartmentException(`mínimo ${this.MIN_LENGTH} caracteres`);
-        };
+        }
 
         if (value.length > this.MAX_LENGTH) {
             throw new InvalidBranchDepartmentException(`máximo ${this.MAX_LENGTH} caracteres`);
-        };
+        }
 
         return new BranchDepartment(value);
-    };
+    }
 
     public equals(other: BranchDepartment): boolean {
         return this.value.toLowerCase() === other.value.toLowerCase();
-    };
-};
+    }
+}

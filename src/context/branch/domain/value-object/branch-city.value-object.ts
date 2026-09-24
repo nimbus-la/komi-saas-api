@@ -1,6 +1,7 @@
 import { InvalidBranchCityException } from "../exceptions/branch-exceptions";
 
 
+/** Ciudad de la sucursal, entre 2 y 50 caracteres. */
 export class BranchCity {
     private static readonly MIN_LENGTH = 2;
     private static readonly MAX_LENGTH = 50;
@@ -12,16 +13,16 @@ export class BranchCity {
 
         if (value.length < this.MIN_LENGTH) {
             throw new InvalidBranchCityException(`mínimo ${this.MIN_LENGTH} caracteres`);
-        };
+        }
 
         if (value.length > this.MAX_LENGTH) {
             throw new InvalidBranchCityException(`máximo ${this.MAX_LENGTH} caracteres`);
-        };
+        }
 
         return new BranchCity(value);
-    };
+    }
 
     public equals(other: BranchCity): boolean {
         return this.value.toLowerCase() === other.value.toLowerCase();
-    };
-};
+    }
+}

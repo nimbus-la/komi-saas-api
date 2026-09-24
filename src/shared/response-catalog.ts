@@ -46,8 +46,11 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1028': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un usuario con rol operativo debe pertenecer a una sucursal.' },
     '1029': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre completo del usuario no es válido.' },
     '1030': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se proporcionaron datos para actualizar el usuario.' },
-    '1031': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La contraseña actual no es correcta.' },
-    '1032': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No estás autorizado para cambiar la contraseña de este usuario.' },
+    '1031': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar la sucursal.' },
+    '1032': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El valor enviado es igual al actual de la sucursal.' },
+    '1033': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La contraseña actual no es correcta.' },
+    '1034': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No estás autorizado para cambiar la contraseña de este usuario.' },
+
 
     // 11xx - Autenticación
     '1100': { status: ResponseStatus.Error, category: ErrorCategory.Unauthorized, message: 'Las credenciales proporcionadas no son válidas.' },
@@ -79,6 +82,8 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1213': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra activo.' },
     '1214': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra inactivo.' },
     '1215': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El usuario ya se encuentra inactivo.' },
+    '1216': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'La sucursal ya se encuentra desactivada.' },
+    '1217': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'La sucursal ya se encuentra activa.' },
 
     // 13xx — estándar de errores de INVENTARIO (1300-1399)
     //   1300-1309 Item (catálogo) · 1310-1319 Lote · 1320-1329 Movimientos de stock

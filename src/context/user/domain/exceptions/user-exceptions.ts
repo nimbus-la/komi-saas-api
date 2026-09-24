@@ -175,7 +175,7 @@ export class EmptyUpdateException extends DomainException {
 export class IncorrectCurrentPasswordException extends DomainException {
   constructor() {
     super({
-      code: "1031",
+      code: "1033",
       detail: "La contraseña actual no es correcta.",
     });
   }
@@ -184,7 +184,7 @@ export class IncorrectCurrentPasswordException extends DomainException {
 export class UnauthorizedPasswordChangeException extends DomainException {
   constructor() {
     super({
-      code: "1032",
+      code: "1034",
       detail:
         "El usuario no tiene permisos para cambiar la contraseña de otro usuario.",
     });
