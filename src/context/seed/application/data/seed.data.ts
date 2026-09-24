@@ -7,6 +7,8 @@
  * se generan al crear cada cosa.
  */
 
+import { CREPERIA_LA_ALAMEDA } from './creperia-la-alameda.data';
+
 
 /** Contraseña de todos los usuarios sembrados. Cumple las reglas de `UserPlainPassword`. */
 export const SEED_PASSWORD = 'Komi12345678';
@@ -381,4 +383,7 @@ export const SEED_TENANTS: SeedTenant[] = [
             },
         ],
     },
+
+    // Negocio grande, en su propio archivo por el tamaño de su catálogo.
+    CREPERIA_LA_ALAMEDA,
 ];
