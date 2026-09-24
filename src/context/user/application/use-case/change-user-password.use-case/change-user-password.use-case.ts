@@ -6,6 +6,7 @@ import {
   UserNotFoundException,
   UserPlainPassword,
   UserRepository,
+  UserRolScope,
   UserTenantId,
 } from "@/context/user/domain";
 import { PasswordHasher } from "../../ports/password-hasher";
@@ -38,7 +39,8 @@ export class ChangeUserPasswordUseCase {
     }
 
     const isOwnPassword = authenticatedUserId === targetUserId;
-    const isAdministrative = rolScope === "ADMINISTRATIVE";
+    const scope = UserRolScope.create(rolScope);
+    const isAdministrative = scope.isAdministrative();
 
     if (!isOwnPassword && !isAdministrative) {
       throw new UnauthorizedPasswordChangeException();

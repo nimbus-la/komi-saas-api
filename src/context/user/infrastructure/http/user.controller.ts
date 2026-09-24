@@ -26,6 +26,7 @@ import {
 import { ReassignUserDto } from "./dto/reassign-user.dto";
 import { SearchUsersDto } from "./dto/search-users.dto";
 import { ChangeUserPasswordDto } from "./dto/change-user-password.dto";
+import { ToggleUserStatusDto } from "./dto/toggle-user-status.dto";
 
 @Controller("user")
 export class UserController {
@@ -79,7 +80,7 @@ export class UserController {
   @Patch("status")
   public async toggleStatus(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { userId: string },
+    @Body() body: ToggleUserStatusDto,
   ): Promise<void> {
     await this.toggleUserStatus.execute(user.tenantId, body.userId);
   }
