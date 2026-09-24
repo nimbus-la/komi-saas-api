@@ -60,12 +60,12 @@ describe('RunSeedUseCase', () => {
         expect(removeTenantsBySlug).toHaveBeenCalledWith(SEED_TENANTS.map((tenant) => tenant.slug));
     });
 
-    it('crea los cuatro negocios y uno de ellos con una sola sucursal', async () => {
+    it('crea todos los negocios y uno de ellos con una sola sucursal', async () => {
         const { useCase } = buildHarness();
 
         const summary = await useCase.execute();
 
-        expect(summary).toHaveLength(4);
+        expect(summary).toHaveLength(SEED_TENANTS.length);
         expect(summary.some((tenant) => tenant.branches.length === 1)).toBe(true);
     });
 
