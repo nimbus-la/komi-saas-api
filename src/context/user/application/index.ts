@@ -8,3 +8,4 @@ export * from './ports/password-hasher';
 export * from './ports/tenant-checker';
 export * from './ports/branch-checker';
 export * from './ports/rol-finder';
+export * from './use-case/change-user-password.use-case/change-user-password.use-case';

@@ -27,6 +27,7 @@ import { Module } from "@nestjs/common";
 import { TenantModule } from "../tenants/tenant.module";
 import { EventPublisher } from "@/shared";
 import { EventEmitterPublisher } from "@/infrastructure";
+import { ChangeUserPasswordUseCase } from "./application/use-case/change-user-password.use-case/change-user-password.use-case";
 
 @Module({
   imports: [
@@ -99,10 +100,17 @@ import { EventEmitterPublisher } from "@/infrastructure";
 
     {
       provide: UpdateUserUseCase,
+      useFactory: (repository: UserRepository) =>
+        new UpdateUserUseCase(repository),
+      inject: [UserRepository],
+    },
+
+    {
+      provide: ChangeUserPasswordUseCase,
       useFactory: (
         repository: UserRepository,
         passwordHasher: PasswordHasher,
-      ) => new UpdateUserUseCase(repository, passwordHasher),
+      ) => new ChangeUserPasswordUseCase(repository, passwordHasher),
       inject: [UserRepository, PasswordHasher],
     },
 
@@ -125,13 +133,15 @@ import { EventEmitterPublisher } from "@/infrastructure";
 
     {
       provide: SearchUserUseCase,
-      useFactory: (repository: UserRepository) => new SearchUserUseCase(repository),
+      useFactory: (repository: UserRepository) =>
+        new SearchUserUseCase(repository),
       inject: [UserRepository],
     },
 
     {
       provide: SearchAllUsersUseCase,
-      useFactory: (repository: UserRepository) => new SearchAllUsersUseCase(repository),
+      useFactory: (repository: UserRepository) =>
+        new SearchAllUsersUseCase(repository),
       inject: [UserRepository],
     },
   ],

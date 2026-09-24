@@ -162,3 +162,31 @@ export class UserRolNotFoundException extends DomainException {
     });
   }
 }
+
+export class EmptyUpdateException extends DomainException {
+  constructor() {
+    super({
+      code: "1030",
+      detail: "No se proporcionaron datos para actualizar el usuario.",
+    });
+  }
+}
+
+export class IncorrectCurrentPasswordException extends DomainException {
+  constructor() {
+    super({
+      code: "1033",
+      detail: "La contraseña actual no es correcta.",
+    });
+  }
+}
+
+export class UnauthorizedPasswordChangeException extends DomainException {
+  constructor() {
+    super({
+      code: "1034",
+      detail:
+        "El usuario no tiene permisos para cambiar la contraseña de otro usuario.",
+    });
+  }
+}

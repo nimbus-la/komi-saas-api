@@ -5,6 +5,7 @@ import {
   UserName,
   UserRepository,
   UserResponse,
+  UserSearchParams,
   UserTenantId,
 } from "@/context/user/domain";
 import { UserMapper } from "../mappers/user.mapper";
@@ -49,7 +50,10 @@ export class TypeOrmUserRepository implements UserRepository {
     await this.userRepository.save(row);
   }
 
-  public async searchById( tenantId: UserTenantId, id: UserId): Promise<UserResponse | null> {
+  public async searchById(
+    tenantId: UserTenantId,
+    id: UserId,
+  ): Promise<UserResponse | null> {
     const row = await this.userRepository.findOne({
       where: {
         id: id.value,
@@ -82,7 +86,10 @@ export class TypeOrmUserRepository implements UserRepository {
     return UserMapper.toAggregate(row);
   }
 
-  public async searchAggregateById(tenantId: UserTenantId, id: UserId): Promise<UserAggregate | null> {
+  public async searchAggregateById(
+    tenantId: UserTenantId,
+    id: UserId,
+  ): Promise<UserAggregate | null> {
     const row = await this.userRepository.findOne({
       where: {
         tenantId: tenantId.value,
@@ -100,14 +107,81 @@ export class TypeOrmUserRepository implements UserRepository {
   public async searchAll(
     tenantId: UserTenantId,
     pagination: Pagination,
+    params: UserSearchParams,
   ): Promise<Paginated<UserResponse>> {
-    const [rows, total] = await this.userRepository.findAndCount({
-      where: {
+    const query = this.userRepository
+      .createQueryBuilder("user")
+      .where("user.tenant_id = :tenantId", {
         tenantId: tenantId.value,
-      },
-      skip: (pagination.pageNumber - 1) * pagination.pageSize,
-      take: pagination.pageSize,
-    });
+      });
+
+    if (params.firstName !== undefined) {
+      query.andWhere("LOWER(user.user_first_name) LIKE LOWER(:firstName)", {
+        firstName: `%${params.firstName}%`,
+      });
+    }
+
+    if (params.secondName !== undefined) {
+      query.andWhere("LOWER(user.user_second_name) LIKE LOWER(:secondName)", {
+        secondName: `%${params.secondName}%`,
+      });
+    }
+
+    if (params.firstLastName !== undefined) {
+      query.andWhere(
+        "LOWER(user.user_first_last_name) LIKE LOWER(:firstLastName)",
+        {
+          firstLastName: `%${params.firstLastName}%`,
+        },
+      );
+    }
+
+    if (params.secondLastName !== undefined) {
+      query.andWhere(
+        "LOWER(user.user_second_last_name) LIKE LOWER(:secondLastName)",
+        {
+          secondLastName: `%${params.secondLastName}%`,
+        },
+      );
+    }
+
+    if (params.userName !== undefined) {
+      query.andWhere("LOWER(user.user_name) LIKE LOWER(:userName)", {
+        userName: `%${params.userName}%`,
+      });
+    }
+
+    if (params.rolId !== undefined) {
+      query.andWhere("user.rol_id = :rolId", {
+        rolId: params.rolId,
+      });
+    }
+
+    if (params.branchId !== undefined) {
+      query.andWhere("user.branch_id = :branchId", {
+        branchId: params.branchId,
+      });
+    }
+
+    if (params.isActive !== undefined) {
+      query.andWhere("user.user_is_active = :isActive", {
+        isActive: params.isActive,
+      });
+    }
+
+    if (params.sex !== undefined) {
+      query.andWhere("user.user_sex = :sex", {
+        sex: params.sex,
+      });
+    }
+
+    query
+      .orderBy("user.user_created_at", "DESC")
+      .addOrderBy("user.user_id", "DESC")
+      .skip((pagination.pageNumber - 1) * pagination.pageSize)
+      .take(pagination.pageSize);
+
+    const [rows, total] = await query.getManyAndCount();
 
     return {
       rows: UserMapper.toResponseList(rows),
@@ -117,7 +191,10 @@ export class TypeOrmUserRepository implements UserRepository {
     };
   }
 
-  public async update( tenantId: UserTenantId, user: UserAggregate): Promise<void> {
+  public async update(
+    tenantId: UserTenantId,
+    user: UserAggregate,
+  ): Promise<void> {
     const primitives = user.toPrimitives();
 
     await this.userRepository.update(

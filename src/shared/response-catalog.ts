@@ -45,8 +45,11 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1027': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un usuario con rol administrativo no puede pertenecer a una sucursal.' },
     '1028': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un usuario con rol operativo debe pertenecer a una sucursal.' },
     '1029': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre completo del usuario no es válido.' },
+    '1030': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se proporcionaron datos para actualizar el usuario.' },
     '1031': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar la sucursal.' },
     '1032': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El valor enviado es igual al actual de la sucursal.' },
+    '1033': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La contraseña actual no es correcta.' },
+    '1034': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No estás autorizado para cambiar la contraseña de este usuario.' },
 
 
     // 11xx - Autenticación
