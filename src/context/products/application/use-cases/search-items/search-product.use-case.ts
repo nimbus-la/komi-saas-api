@@ -88,7 +88,7 @@ export class SearchProductsUseCase {
                         ingredient,
                         info,
                         stock: branchId !== undefined
-                            ? this.evaluateStock(ingredient, info, branchId)
+                            ? this.evaluateStock(ingredient, info)
                             : undefined,
                     };
                 });
@@ -153,18 +153,15 @@ export class SearchProductsUseCase {
 
     /**
      * Estado de un insumo en la sucursal. Si no vino del inventario (borrado o de
-     * otro negocio) se reporta agotado, con stock 0 y sin mínimo.
+     * otro negocio) se reporta agotado.
      */
     private evaluateStock(
         ingredient: RecipeIngredientPrimitives,
         info: InventoryItemRecipeInfo | undefined,
-        branchId: string,
     ): IngredientStockEvaluation {
         const branchStock = info?.branchStock;
 
         return {
-            inventoryItemId: ingredient.inventoryItemId,
-            name: info?.name ?? "",
             status: resolveIngredientStockStatus(
                 info !== undefined && branchStock !== undefined
                     ? { isActive: info.isActive, ...branchStock }
@@ -172,10 +169,6 @@ export class SearchProductsUseCase {
                 ingredient.quantity,
             ),
             isOptional: ingredient.isOptional,
-            currentStock: branchStock?.currentStock ?? "0",
-            minStock: branchStock?.minStock ?? null,
-            requiredQuantity: ingredient.quantity,
-            branchId,
         };
     }
 }

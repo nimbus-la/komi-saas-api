@@ -275,7 +275,8 @@ describe('SearchProductsUseCase', () => {
             expect(rows[0]).not.toHaveProperty('stockAlert');
         });
 
-        it('da ERROR con el detalle de cada insumo con problemas', async () => {
+        // El detalle de qué insumo falla va en el stockStatus de cada ingrediente.
+        it('da ERROR sin detalle de insumos cuando uno obligatorio está agotado', async () => {
             const { useCase } = buildHarness(page([ingredient('pan'), ingredient('carne', '0.2')]));
 
             const { rows } = await useCase.execute(
@@ -283,20 +284,7 @@ describe('SearchProductsUseCase', () => {
                 { pageNumber: 1, pageSize: 20 },
             );
 
-            expect(rows[0]?.stockAlert).toEqual({
-                level: 'ERROR',
-                items: [
-                    {
-                        inventoryItemId: 'pan', name: 'Pan', status: 'LOW', isOptional: false,
-                        currentStock: '3', minStock: '5', requiredQuantity: '1', branchId: BRANCH_ID,
-                    },
-                    // No vino del inventario: agotado, con stock 0 y sin mínimo.
-                    {
-                        inventoryItemId: 'carne', name: '', status: 'OUT', isOptional: false,
-                        currentStock: '0', minStock: null, requiredQuantity: '0.2', branchId: BRANCH_ID,
-                    },
-                ],
-            });
+            expect(rows[0]?.stockAlert).toBe('ERROR');
         });
 
         it('da WARNING cuando el único agotado es opcional', async () => {
@@ -310,7 +298,7 @@ describe('SearchProductsUseCase', () => {
                 { pageNumber: 1, pageSize: 20 },
             );
 
-            expect(rows[0]?.stockAlert?.level).toBe('WARNING');
+            expect(rows[0]?.stockAlert).toBe('WARNING');
         });
 
         it('devuelve null cuando todos los insumos están bien', async () => {

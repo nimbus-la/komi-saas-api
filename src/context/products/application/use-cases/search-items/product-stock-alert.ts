@@ -1,9 +1,10 @@
 import { IngredientStockStatus } from "@/context/products/domain/recipe/recipe-ingredient-primitives";
-import { ProductStockAlert, StockAlertItem } from "@/context/products/domain/types/product.response";
+import { StockAlertLevel } from "@/context/products/domain/types/product.response";
 
 /** Resultado de evaluar un insumo de la receta en la sucursal. */
-export interface IngredientStockEvaluation extends Omit<StockAlertItem, 'status'> {
+export interface IngredientStockEvaluation {
     status: IngredientStockStatus;
+    isOptional: boolean;
 }
 
 /**
@@ -15,23 +16,16 @@ export interface IngredientStockEvaluation extends Omit<StockAlertItem, 'status'
  */
 export const buildProductStockAlert = (
     evaluations: IngredientStockEvaluation[],
-): ProductStockAlert | null => {
-    const items: StockAlertItem[] = [];
+): StockAlertLevel | null => {
+    const withProblems = evaluations.filter((evaluation) => evaluation.status !== 'OK');
 
-    for (const evaluation of evaluations) {
-        if (evaluation.status !== 'OK') {
-            items.push({ ...evaluation, status: evaluation.status });
-        }
-    }
-
-    if (items.length === 0) {
+    if (withProblems.length === 0) {
         return null;
     }
 
-    const blocksProduct = items.some((item) => item.status === 'OUT' && !item.isOptional);
+    const blocksProduct = withProblems.some(
+        (evaluation) => evaluation.status === 'OUT' && !evaluation.isOptional,
+    );
 
-    return {
-        level: blocksProduct ? 'ERROR' : 'WARNING',
-        items,
-    };
+    return blocksProduct ? 'ERROR' : 'WARNING';
 };
