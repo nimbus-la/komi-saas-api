@@ -26,5 +26,10 @@ export abstract class ProductCategoryRepository {
     abstract search(
         filters: SearchCategoriesFilters,
         pagination: Pagination,
-    ): Promise<Paginated<ProductCategory>>;
+    ): Promise<Paginated<CategoryWithProductCount>>;
+}
+
+export interface CategoryWithProductCount {
+    category: ProductCategory;
+    productCount: number;
 }
