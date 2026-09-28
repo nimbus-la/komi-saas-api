@@ -9,7 +9,7 @@ import {
 } from "../../../domain";
 import { ProductResponse } from "@/context/products/domain/types/product.response";
 import { TenantChecker } from "../../ports/tenant-checker";
-import { InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
+import { InventoryItemRecipeInfo, InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
 import { ProductCategoryProvider } from "../../ports/ProductCategoryProvider";
 import { BranchChecker } from "../../ports/branch-checker";
 
@@ -53,6 +53,19 @@ export class SearchProductsUseCase {
         const { rows, pageNumber, pageSize, total } =
             await this.repository.search(filters, pagination);
 
+        // Todos los insumos de la página en una sola carga, sin repetir ids.
+        const inventoryItemIds = [
+            ...new Set(
+                rows.flatMap((product) =>
+                    product.ingredients.map((ingredient) => ingredient.inventoryItemId),
+                ),
+            ),
+        ];
+
+        const recipeInfo = inventoryItemIds.length > 0
+            ? await this.recipeInfoProvider.getMany(filters.tenantId, inventoryItemIds)
+            : new Map<string, InventoryItemRecipeInfo>();
+
         const products = await Promise.all(
             rows.map(async (product) => {
 
@@ -78,33 +91,28 @@ export class SearchProductsUseCase {
 
                     createdAt: product.createdAt,
                     updatedAt: product.updatedAt,
-                    ingredients: await Promise.all(
-                        product.ingredients.map(async (ingredient) => {
+                    ingredients: product.ingredients.map((ingredient) => {
 
-                            const info = await this.recipeInfoProvider.get(
-                                filters.tenantId,
-                                ingredient.inventoryItemId,
-                            );
+                        const info = recipeInfo.get(ingredient.inventoryItemId);
 
-                            return {
-                                ...ingredient,
-                                name: info?.name ?? "",
-                                unitOfMeasure: info?.unitOfMeasure ?? "",
-                                unitCostAmount: info?.unitCostAmount ?? null,
-                                lineCostAmount:
-                                    info?.unitCostAmount == null
-                                        ? null
-                                        : (
-                                            Number(info.unitCostAmount) *
-                                            Number(ingredient.quantity)
-                                        ).toString(),
-                                hasStock:
-                                    info
-                                        ? Number(info.currentStock) >= Number(ingredient.quantity)
-                                        : false,
-                            };
-                        }),
-                    ),
+                        return {
+                            ...ingredient,
+                            name: info?.name ?? "",
+                            unitOfMeasure: info?.unitOfMeasure ?? "",
+                            unitCostAmount: info?.unitCostAmount ?? null,
+                            lineCostAmount:
+                                info?.unitCostAmount == null
+                                    ? null
+                                    : (
+                                        Number(info.unitCostAmount) *
+                                        Number(ingredient.quantity)
+                                    ).toString(),
+                            hasStock:
+                                info
+                                    ? Number(info.currentStock) >= Number(ingredient.quantity)
+                                    : false,
+                        };
+                    }),
                 };
             }),
         );

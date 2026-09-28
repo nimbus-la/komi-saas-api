@@ -18,7 +18,10 @@ import { SearchProductsUseCase } from './search-product.use-case';
 const TENANT_ID = '550e8400-e29b-41d4-a716-446655440000';
 const BRANCH_ID = '6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 
-const buildProduct = (id: string): ProductResponse => ({
+const buildProduct = (
+    id: string,
+    ingredients: ProductResponse['ingredients'] = [],
+): ProductResponse => ({
     id,
     tenantId: TENANT_ID,
     productCategoryId: 'categoria-1',
@@ -32,22 +35,32 @@ const buildProduct = (id: string): ProductResponse => ({
     productStatus: true,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-    ingredients: [],
+    ingredients,
+});
+
+const ingredient = (inventoryItemId: string, quantity = '1') => ({
+    id: `receta-${inventoryItemId}`,
+    inventoryItemId,
+    quantity,
+    isOptional: false,
 });
 
 const buildHarness = (page: Paginated<ProductResponse>, branchExists = true) => {
     const search = jest.fn().mockResolvedValue(page);
     const existsInTenant = jest.fn().mockResolvedValue(branchExists);
+    const getMany = jest.fn().mockResolvedValue(new Map([
+        ['pan', { inventoryItemId: 'pan', name: 'Pan', unitOfMeasure: 'UND', unitCostAmount: '500', currentStock: '10' }],
+    ]));
 
     const useCase = new SearchProductsUseCase(
         { search } as never,
         { exists: jest.fn().mockResolvedValue(true) },
-        { get: jest.fn().mockResolvedValue(null) },
+        { getMany },
         { get: jest.fn().mockResolvedValue({ name: 'Platos fuertes' }) },
         { existsInTenant },
     );
 
-    return { useCase, search, existsInTenant };
+    return { useCase, search, existsInTenant, getMany };
 };
 
 
@@ -139,6 +152,65 @@ describe('SearchProductsUseCase', () => {
             ).rejects.toBeInstanceOf(BranchNotFoundForProductsException);
 
             expect(search).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('carga de los insumos de la receta', () => {
+        it('consulta el inventario una sola vez por página y sin ids repetidos', async () => {
+            const { useCase, getMany } = buildHarness({
+                rows: [
+                    buildProduct('producto-1', [ingredient('pan'), ingredient('carne')]),
+                    buildProduct('producto-2', [ingredient('pan')]),
+                ],
+                pageNumber: 1,
+                pageSize: 20,
+                total: 2,
+            });
+
+            await useCase.execute(
+                { tenantId: TENANT_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(getMany).toHaveBeenCalledTimes(1);
+            expect(getMany).toHaveBeenCalledWith(TENANT_ID, ['pan', 'carne']);
+        });
+
+        it('no consulta el inventario si ningún producto tiene receta', async () => {
+            const { useCase, getMany } = buildHarness({
+                rows: [buildProduct('producto-1')],
+                pageNumber: 1,
+                pageSize: 20,
+                total: 1,
+            });
+
+            await useCase.execute(
+                { tenantId: TENANT_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(getMany).not.toHaveBeenCalled();
+        });
+
+        // Un insumo que no vino del inventario (borrado o de otro negocio)
+        // sale sin nombre ni costo, igual que antes de cargar en bloque.
+        it('arma cada ingrediente con la información de su insumo', async () => {
+            const { useCase } = buildHarness({
+                rows: [buildProduct('producto-1', [ingredient('pan', '2'), ingredient('carne')])],
+                pageNumber: 1,
+                pageSize: 20,
+                total: 1,
+            });
+
+            const { rows } = await useCase.execute(
+                { tenantId: TENANT_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(rows[0]?.ingredients).toEqual([
+                expect.objectContaining({ inventoryItemId: 'pan', name: 'Pan', lineCostAmount: '1000', hasStock: true }),
+                expect.objectContaining({ inventoryItemId: 'carne', name: '', lineCostAmount: null, hasStock: false }),
+            ]);
         });
     });
 });

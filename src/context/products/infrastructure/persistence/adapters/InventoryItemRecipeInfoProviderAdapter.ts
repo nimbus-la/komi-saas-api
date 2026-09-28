@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { InventoryItemRepository } from "@/context/inventory";
+import { InventoryItem, InventoryItemRepository } from "@/context/inventory";
 import { InventoryItemId } from "@/context/inventory/domain/value-objects/inventory-item-id.value-object";
 
 import {
@@ -16,20 +16,25 @@ export class InventoryItemRecipeInfoProviderAdapter
         private readonly inventory: InventoryItemRepository,
     ) { }
 
-    async get(
+    async getMany(
         tenantId: string,
-        inventoryItemId: string,
-    ): Promise<InventoryItemRecipeInfo | null> {
+        inventoryItemIds: string[],
+    ): Promise<Map<string, InventoryItemRecipeInfo>> {
 
-        const item = await this.inventory.findById(
-            InventoryItemId.create(inventoryItemId),
+        const items = await this.inventory.findByIds(
+            inventoryItemIds.map((id) => InventoryItemId.create(id)),
             tenantId,
         );
 
-        if (!item) {
-            return null;
-        }
+        return new Map(
+            items.map((item) => {
+                const info = this.toRecipeInfo(item);
+                return [info.inventoryItemId, info];
+            }),
+        );
+    }
 
+    private toRecipeInfo(item: InventoryItem): InventoryItemRecipeInfo {
         const primitive = item.toPrimitives();
 
         const currentStock = primitive.batches.reduce(

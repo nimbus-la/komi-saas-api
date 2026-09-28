@@ -7,8 +7,12 @@ export interface InventoryItemRecipeInfo {
 }
 
 export abstract class InventoryItemRecipeInfoProvider {
-    abstract get(
+    /**
+     * Información de varios insumos en una sola carga, indexada por su id. Los
+     * que no existan o sean de otro negocio no aparecen en el Map.
+     */
+    abstract getMany(
         tenantId: string,
-        inventoryItemId: string,
-    ): Promise<InventoryItemRecipeInfo | null>;
+        inventoryItemIds: string[],
+    ): Promise<Map<string, InventoryItemRecipeInfo>>;
 }
