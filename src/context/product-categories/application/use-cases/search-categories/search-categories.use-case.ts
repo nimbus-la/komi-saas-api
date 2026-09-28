@@ -1,7 +1,7 @@
 import { Paginated, Pagination } from "@/interfaces";
 
 import {
-    CategoryPrimitives,
+    CategoryListItem,
     ProductCategoryRepository,
     SearchCategoriesFilters,
     TenantIdRequiredForSearchException,
@@ -18,7 +18,7 @@ export class SearchCategoriesUseCase {
     public async execute(
         filters: SearchCategoriesFilters,
         pagination: Pagination,
-    ): Promise<Paginated<CategoryPrimitives>> {
+    ): Promise<Paginated<CategoryListItem>> {
 
         if (!filters.tenantId) {
             throw new TenantIdRequiredForSearchException();
@@ -34,7 +34,10 @@ export class SearchCategoriesUseCase {
             await this.repository.search(filters, pagination);
 
         return {
-            rows: rows.map((category) => category.toPrimitives()),
+            rows: rows.map(({ category, productCount }) => ({
+                ...category.toPrimitives(),
+                productCount,
+            })),
             pageNumber,
             pageSize,
             total,

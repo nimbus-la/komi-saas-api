@@ -10,6 +10,7 @@ import { ProductCategoryEntity } from "../models/product-category.entity";
 import {
     ProductCategory,
     ProductCategoryAlreadyExistsException,
+    CategoryWithProductCount,
     ProductCategoryRepository,
     SearchCategoriesFilters,
 } from "../../../domain";
@@ -109,10 +110,18 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
     async search(
         filters: SearchCategoriesFilters,
         pagination: Pagination,
-    ): Promise<Paginated<ProductCategory>> {
+    ): Promise<Paginated<CategoryWithProductCount>> {
+        // La tabla product pertenece al módulo de productos, por eso se cuenta
+        // con una subconsulta en SQL y no con una relación de TypeORM.
         const query: SelectQueryBuilder<ProductCategoryEntity> =
             this.categoryRepository
                 .createQueryBuilder("category")
+                .addSelect(
+                    `(SELECT COUNT(*)::int FROM product p
+                      WHERE p.product_category_id = category.id
+                        AND p.tenant_id = :tenantId)`,
+                    "product_count",
+                )
                 .where("category.tenantId = :tenantId", {
                     tenantId: filters.tenantId,
                 });
@@ -156,10 +165,20 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
             .skip((pagination.pageNumber - 1) * pagination.pageSize)
             .take(pagination.pageSize);
 
-        const [rows, total] = await query.getManyAndCount();
+        const [{ entities, raw }, total] = await Promise.all([
+            query.getRawAndEntities<{ category_id: string; product_count: number }>(),
+            query.getCount(),
+        ]);
+
+        const countById = new Map(
+            raw.map((row) => [row.category_id, row.product_count]),
+        );
 
         return {
-            rows: rows.map(ProductCategoryMapper.toDomain),
+            rows: entities.map((entity) => ({
+                category: ProductCategoryMapper.toDomain(entity),
+                productCount: countById.get(entity.id) ?? 0,
+            })),
             pageNumber: pagination.pageNumber,
             pageSize: pagination.pageSize,
             total,
