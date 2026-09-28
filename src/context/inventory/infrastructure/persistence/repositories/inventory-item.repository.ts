@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
-import { DataSource, EntityManager, Repository } from "typeorm";
+import { DataSource, EntityManager, In, Repository } from "typeorm";
 
 import { Paginated, Pagination } from "@/interfaces";
 import { InventoryItemRepository, InventoryItem, InventoryItemId, InventoryItemName } from "../../../domain";
@@ -98,27 +98,50 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
             return { rows: [], pageNumber: pagination.pageNumber, pageSize: pagination.pageSize, total };
         };
 
-        const batchRows = await this.activeBatchesOf(rows.map((r) => r.id), branchId);
-        const groupedBatch = this.groupByItemBatch(batchRows);
-
-        const branchConfigRows = await this.branchConfigsOf(rows.map((s) => s.id), branchId);
-        const groupedBranchConfig = this.groupByItemBranchConfig(branchConfigRows)
-
-        const data = rows.map((row) =>
-            InventoryItemPersistenceMapper.toAggregate(
-                row,
-                groupedBatch.get(row.id) ?? [],
-                groupedBranchConfig.get(row.id) ?? []
-            ),
-        );
+        const data = await this.toAggregates(rows, branchId);
 
         return { rows: data, pageNumber: pagination.pageNumber, pageSize: pagination.pageSize, total };
     };
 
 
 
+    public async findByIds(ids: InventoryItemId[], tenantId: string, branchId?: string): Promise<InventoryItem[]> {
+        if (ids.length === 0) return [];
+
+        const rows = await this.items.find({
+            where: { id: In(ids.map((id) => id.value)), tenantId },
+        });
+
+        if (rows.length === 0) return [];
+
+        return this.toAggregates(rows, branchId);
+    };
+
+
+
     public async existsByName(name: InventoryItemName, tenantId: string): Promise<boolean> {
         return (await this.items.count({ where: { name: name.value, tenantId } })) > 0;
+    };
+
+
+
+    /**
+     * Arma los agregados de varios items con dos consultas en total (lotes y
+     * overrides), en lugar de dos por item.
+     */
+    private async toAggregates(rows: InventoryItemEntity[], branchId?: string): Promise<InventoryItem[]> {
+        const itemIds = rows.map((row) => row.id);
+
+        const groupedBatch = this.groupByItemBatch(await this.activeBatchesOf(itemIds, branchId));
+        const groupedBranchConfig = this.groupByItemBranchConfig(await this.branchConfigsOf(itemIds, branchId));
+
+        return rows.map((row) =>
+            InventoryItemPersistenceMapper.toAggregate(
+                row,
+                groupedBatch.get(row.id) ?? [],
+                groupedBranchConfig.get(row.id) ?? []
+            ),
+        );
     };
 
 

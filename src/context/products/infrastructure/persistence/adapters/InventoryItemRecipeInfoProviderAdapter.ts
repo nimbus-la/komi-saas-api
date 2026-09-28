@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { InventoryItemRepository } from "@/context/inventory";
+import { InventoryItem, InventoryItemRepository } from "@/context/inventory";
 import { InventoryItemId } from "@/context/inventory/domain/value-objects/inventory-item-id.value-object";
 
 import {
@@ -16,20 +16,28 @@ export class InventoryItemRecipeInfoProviderAdapter
         private readonly inventory: InventoryItemRepository,
     ) { }
 
-    async get(
+    async getMany(
         tenantId: string,
-        inventoryItemId: string,
-    ): Promise<InventoryItemRecipeInfo | null> {
+        inventoryItemIds: string[],
+        branchId?: string,
+    ): Promise<Map<string, InventoryItemRecipeInfo>> {
 
-        const item = await this.inventory.findById(
-            InventoryItemId.create(inventoryItemId),
+        // Se carga el item completo (todas las sedes) para que el costo y el
+        // stock general no cambien; el de la sucursal se calcula aparte.
+        const items = await this.inventory.findByIds(
+            inventoryItemIds.map((id) => InventoryItemId.create(id)),
             tenantId,
         );
 
-        if (!item) {
-            return null;
-        }
+        return new Map(
+            items.map((item) => {
+                const info = this.toRecipeInfo(item, branchId);
+                return [info.inventoryItemId, info];
+            }),
+        );
+    }
 
+    private toRecipeInfo(item: InventoryItem, branchId?: string): InventoryItemRecipeInfo {
         const primitive = item.toPrimitives();
 
         const currentStock = primitive.batches.reduce(
@@ -59,6 +67,15 @@ export class InventoryItemRecipeInfoProviderAdapter
             unitOfMeasure: primitive.unitOfMeasure,
             unitCostAmount,
             currentStock: currentStock.toString(),
+            isActive: primitive.isActive,
+            ...(branchId !== undefined
+                ? {
+                    branchStock: {
+                        currentStock: item.currentStockForBranch(branchId).getValue(),
+                        minStock: item.resolveMinimumForBranch(branchId)?.getValue() ?? null,
+                    },
+                }
+                : {}),
         };
     }
 }

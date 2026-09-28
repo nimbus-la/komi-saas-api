@@ -2,14 +2,19 @@ import { Paginated, Pagination } from "@/interfaces";
 
 import { SearchProductsFilters } from "@/context/products/domain/types/product-application";
 import {
+    BranchNotFoundForProductsException,
     ProductRepository,
     TenantIdRequiredForSearchException,
     TenantNotFoundException,
 } from "../../../domain";
 import { ProductResponse } from "@/context/products/domain/types/product.response";
 import { TenantChecker } from "../../ports/tenant-checker";
-import { InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
+import { InventoryItemRecipeInfo, InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
 import { ProductCategoryProvider } from "../../ports/ProductCategoryProvider";
+import { BranchChecker } from "../../ports/branch-checker";
+import { resolveIngredientStockStatus } from "./ingredient-stock-status";
+import { buildProductStockAlert, IngredientStockEvaluation } from "./product-stock-alert";
+import { RecipeIngredientPrimitives } from "@/context/products/domain/recipe/recipe-ingredient-primitives";
 
 export class SearchProductsUseCase {
     constructor(
@@ -17,7 +22,7 @@ export class SearchProductsUseCase {
         private readonly tenantChecker: TenantChecker,
         private readonly recipeInfoProvider: InventoryItemRecipeInfoProvider,
         private readonly productCategoryProvider: ProductCategoryProvider,
-
+        private readonly branchChecker: BranchChecker,
     ) { }
 
     public async execute(
@@ -37,8 +42,34 @@ export class SearchProductsUseCase {
             throw new TenantNotFoundException(filters.tenantId);
         }
 
+        if (filters.branchId !== undefined) {
+            const branchExists = await this.branchChecker.existsInTenant(
+                filters.branchId,
+                filters.tenantId,
+            );
+
+            if (!branchExists) {
+                throw new BranchNotFoundForProductsException(filters.branchId);
+            }
+        }
+
         const { rows, pageNumber, pageSize, total } =
             await this.repository.search(filters, pagination);
+
+        // Todos los insumos de la página en una sola carga, sin repetir ids.
+        const inventoryItemIds = [
+            ...new Set(
+                rows.flatMap((product) =>
+                    product.ingredients.map((ingredient) => ingredient.inventoryItemId),
+                ),
+            ),
+        ];
+
+        const recipeInfo = inventoryItemIds.length > 0
+            ? await this.recipeInfoProvider.getMany(filters.tenantId, inventoryItemIds, filters.branchId)
+            : new Map<string, InventoryItemRecipeInfo>();
+
+        const { branchId } = filters;
 
         const products = await Promise.all(
             rows.map(async (product) => {
@@ -47,6 +78,20 @@ export class SearchProductsUseCase {
                     filters.tenantId,
                     product.productCategoryId,
                 );
+
+                // Cada insumo se evalúa una vez; el resultado alimenta tanto el
+                // stockStatus del ingrediente como la alerta del producto.
+                const evaluated = product.ingredients.map((ingredient) => {
+                    const info = recipeInfo.get(ingredient.inventoryItemId);
+
+                    return {
+                        ingredient,
+                        info,
+                        stock: branchId !== undefined
+                            ? this.evaluateStock(ingredient, info)
+                            : undefined,
+                    };
+                });
 
                 return {
                     id: product.id,
@@ -65,33 +110,35 @@ export class SearchProductsUseCase {
 
                     createdAt: product.createdAt,
                     updatedAt: product.updatedAt,
-                    ingredients: await Promise.all(
-                        product.ingredients.map(async (ingredient) => {
+                    ingredients: evaluated.map(({ ingredient, info, stock }) => {
 
-                            const info = await this.recipeInfoProvider.get(
-                                filters.tenantId,
-                                ingredient.inventoryItemId,
-                            );
-
-                            return {
-                                ...ingredient,
-                                name: info?.name ?? "",
-                                unitOfMeasure: info?.unitOfMeasure ?? "",
-                                unitCostAmount: info?.unitCostAmount ?? null,
-                                lineCostAmount:
-                                    info?.unitCostAmount == null
-                                        ? null
-                                        : (
-                                            Number(info.unitCostAmount) *
-                                            Number(ingredient.quantity)
-                                        ).toString(),
-                                hasStock:
-                                    info
-                                        ? Number(info.currentStock) >= Number(ingredient.quantity)
-                                        : false,
-                            };
-                        }),
-                    ),
+                        return {
+                            ...ingredient,
+                            name: info?.name ?? "",
+                            unitOfMeasure: info?.unitOfMeasure ?? "",
+                            unitCostAmount: info?.unitCostAmount ?? null,
+                            lineCostAmount:
+                                info?.unitCostAmount == null
+                                    ? null
+                                    : (
+                                        Number(info.unitCostAmount) *
+                                        Number(ingredient.quantity)
+                                    ).toString(),
+                            hasStock:
+                                info
+                                    ? Number(info.currentStock) >= Number(ingredient.quantity)
+                                    : false,
+                            // Sin sucursal no se evalúa: el campo no se incluye.
+                            ...(stock !== undefined ? { stockStatus: stock.status } : {}),
+                        };
+                    }),
+                    ...(branchId !== undefined
+                        ? {
+                            stockAlert: buildProductStockAlert(
+                                evaluated.flatMap(({ stock }) => (stock !== undefined ? [stock] : [])),
+                            ),
+                        }
+                        : {}),
                 };
             }),
         );
@@ -101,6 +148,27 @@ export class SearchProductsUseCase {
             pageNumber,
             pageSize,
             total,
+        };
+    }
+
+    /**
+     * Estado de un insumo en la sucursal. Si no vino del inventario (borrado o de
+     * otro negocio) se reporta agotado.
+     */
+    private evaluateStock(
+        ingredient: RecipeIngredientPrimitives,
+        info: InventoryItemRecipeInfo | undefined,
+    ): IngredientStockEvaluation {
+        const branchStock = info?.branchStock;
+
+        return {
+            status: resolveIngredientStockStatus(
+                info !== undefined && branchStock !== undefined
+                    ? { isActive: info.isActive, ...branchStock }
+                    : null,
+                ingredient.quantity,
+            ),
+            isOptional: ingredient.isOptional,
         };
     }
 }

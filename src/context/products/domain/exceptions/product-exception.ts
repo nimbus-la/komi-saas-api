@@ -104,3 +104,16 @@ export class TenantIdRequiredForSearchException extends DomainException {
         });
     }
 }
+
+/**
+ * La sucursal enviada para evaluar el stock de los insumos no existe o es de
+ * otro negocio. Ambos casos responden igual para no revelar sucursales ajenas.
+ */
+export class BranchNotFoundForProductsException extends DomainException {
+    constructor(branchId: string) {
+        super({
+            code: "1410",
+            detail: `La sucursal ${branchId} no existe o no está disponible.`,
+        });
+    }
+}

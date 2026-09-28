@@ -42,4 +42,6 @@ export interface SearchProductsFilters {
     text?: string | undefined;
     productCategoryId?: string | undefined;
     productStatus?: boolean | undefined;
+    /** Sucursal en la que se evalúa el stock de los insumos; sin ella no se evalúa. */
+    branchId?: string | undefined;
 }

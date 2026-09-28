@@ -23,6 +23,9 @@ import { InventoryItemRecipeInfoProvider } from "./application/ports/inventory-i
 import { InventoryItemRecipeInfoProviderAdapter } from "./infrastructure/persistence/adapters/InventoryItemRecipeInfoProviderAdapter";
 import { ProductCategoryProvider } from "./application/ports/ProductCategoryProvider";
 import { ProductCategoryProviderAdapter } from "./infrastructure/persistence/adapters/ProductCategoryProviderAdapter";
+import { BranchChecker } from "./application/ports/branch-checker";
+import { BranchCheckerAdapter } from "./infrastructure/persistence/adapters/branch-checker.adapter";
+import { BranchModule } from "../branch/branch.module";
 
 @Module({
   imports: [
@@ -35,7 +38,7 @@ import { ProductCategoryProviderAdapter } from "./infrastructure/persistence/ada
     CategoriesModule,
     TenantModule,
     InventoryModule,
-
+    BranchModule,
   ],
 
   controllers: [
@@ -72,6 +75,10 @@ import { ProductCategoryProviderAdapter } from "./infrastructure/persistence/ada
     {
       provide: InventoryItemRecipeInfoProvider,
       useExisting: InventoryItemRecipeInfoProviderAdapter,
+    },
+    {
+      provide: BranchChecker,
+      useClass: BranchCheckerAdapter,
     },
     {
       provide: EventPublisher,
@@ -143,13 +150,14 @@ import { ProductCategoryProviderAdapter } from "./infrastructure/persistence/ada
         tenantChecker: TenantChecker,
         recipeInfoProvider: InventoryItemRecipeInfoProvider,
         productCategoryProvider: ProductCategoryProvider,
-
+        branchChecker: BranchChecker,
       ) => {
         return new SearchProductsUseCase(
           repository,
           tenantChecker,
           recipeInfoProvider,
-          productCategoryProvider
+          productCategoryProvider,
+          branchChecker,
         );
       },
 
@@ -158,7 +166,7 @@ import { ProductCategoryProviderAdapter } from "./infrastructure/persistence/ada
         TenantChecker,
         InventoryItemRecipeInfoProvider,
         ProductCategoryProvider,
-
+        BranchChecker,
       ],
     },
   ],
