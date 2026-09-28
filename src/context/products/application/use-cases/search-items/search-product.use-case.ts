@@ -12,6 +12,7 @@ import { TenantChecker } from "../../ports/tenant-checker";
 import { InventoryItemRecipeInfo, InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
 import { ProductCategoryProvider } from "../../ports/ProductCategoryProvider";
 import { BranchChecker } from "../../ports/branch-checker";
+import { resolveIngredientStockStatus } from "./ingredient-stock-status";
 
 export class SearchProductsUseCase {
     constructor(
@@ -63,7 +64,7 @@ export class SearchProductsUseCase {
         ];
 
         const recipeInfo = inventoryItemIds.length > 0
-            ? await this.recipeInfoProvider.getMany(filters.tenantId, inventoryItemIds)
+            ? await this.recipeInfoProvider.getMany(filters.tenantId, inventoryItemIds, filters.branchId)
             : new Map<string, InventoryItemRecipeInfo>();
 
         const products = await Promise.all(
@@ -111,6 +112,17 @@ export class SearchProductsUseCase {
                                 info
                                     ? Number(info.currentStock) >= Number(ingredient.quantity)
                                     : false,
+                            // Sin sucursal no se evalúa: el campo no se incluye.
+                            ...(filters.branchId !== undefined
+                                ? {
+                                    stockStatus: resolveIngredientStockStatus(
+                                        info?.branchStock
+                                            ? { isActive: info.isActive, ...info.branchStock }
+                                            : null,
+                                        ingredient.quantity,
+                                    ),
+                                }
+                                : {}),
                         };
                     }),
                 };

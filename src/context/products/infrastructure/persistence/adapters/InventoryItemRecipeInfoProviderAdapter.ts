@@ -19,8 +19,11 @@ export class InventoryItemRecipeInfoProviderAdapter
     async getMany(
         tenantId: string,
         inventoryItemIds: string[],
+        branchId?: string,
     ): Promise<Map<string, InventoryItemRecipeInfo>> {
 
+        // Se carga el item completo (todas las sedes) para que el costo y el
+        // stock general no cambien; el de la sucursal se calcula aparte.
         const items = await this.inventory.findByIds(
             inventoryItemIds.map((id) => InventoryItemId.create(id)),
             tenantId,
@@ -28,13 +31,13 @@ export class InventoryItemRecipeInfoProviderAdapter
 
         return new Map(
             items.map((item) => {
-                const info = this.toRecipeInfo(item);
+                const info = this.toRecipeInfo(item, branchId);
                 return [info.inventoryItemId, info];
             }),
         );
     }
 
-    private toRecipeInfo(item: InventoryItem): InventoryItemRecipeInfo {
+    private toRecipeInfo(item: InventoryItem, branchId?: string): InventoryItemRecipeInfo {
         const primitive = item.toPrimitives();
 
         const currentStock = primitive.batches.reduce(
@@ -64,6 +67,15 @@ export class InventoryItemRecipeInfoProviderAdapter
             unitOfMeasure: primitive.unitOfMeasure,
             unitCostAmount,
             currentStock: currentStock.toString(),
+            isActive: primitive.isActive,
+            ...(branchId !== undefined
+                ? {
+                    branchStock: {
+                        currentStock: item.currentStockForBranch(branchId).getValue(),
+                        minStock: item.resolveMinimumForBranch(branchId)?.getValue() ?? null,
+                    },
+                }
+                : {}),
         };
     }
 }

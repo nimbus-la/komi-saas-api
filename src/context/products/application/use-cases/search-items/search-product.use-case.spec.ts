@@ -49,7 +49,10 @@ const buildHarness = (page: Paginated<ProductResponse>, branchExists = true) => 
     const search = jest.fn().mockResolvedValue(page);
     const existsInTenant = jest.fn().mockResolvedValue(branchExists);
     const getMany = jest.fn().mockResolvedValue(new Map([
-        ['pan', { inventoryItemId: 'pan', name: 'Pan', unitOfMeasure: 'UND', unitCostAmount: '500', currentStock: '10' }],
+        ['pan', {
+            inventoryItemId: 'pan', name: 'Pan', unitOfMeasure: 'UND', unitCostAmount: '500', currentStock: '10', isActive: true,
+            branchStock: { currentStock: '3', minStock: '5' },
+        }],
     ]));
 
     const useCase = new SearchProductsUseCase(
@@ -173,7 +176,7 @@ describe('SearchProductsUseCase', () => {
             );
 
             expect(getMany).toHaveBeenCalledTimes(1);
-            expect(getMany).toHaveBeenCalledWith(TENANT_ID, ['pan', 'carne']);
+            expect(getMany).toHaveBeenCalledWith(TENANT_ID, ['pan', 'carne'], undefined);
         });
 
         it('no consulta el inventario si ningún producto tiene receta', async () => {
@@ -210,6 +213,45 @@ describe('SearchProductsUseCase', () => {
             expect(rows[0]?.ingredients).toEqual([
                 expect.objectContaining({ inventoryItemId: 'pan', name: 'Pan', lineCostAmount: '1000', hasStock: true }),
                 expect.objectContaining({ inventoryItemId: 'carne', name: '', lineCostAmount: null, hasStock: false }),
+            ]);
+        });
+    });
+
+    describe('estado de stock por sucursal', () => {
+        const page = {
+            rows: [buildProduct('producto-1', [ingredient('pan'), ingredient('carne')])],
+            pageNumber: 1,
+            pageSize: 20,
+            total: 1,
+        };
+
+        it('no incluye stockStatus cuando no se envía branchId', async () => {
+            const { useCase } = buildHarness(page);
+
+            const { rows } = await useCase.execute(
+                { tenantId: TENANT_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            for (const item of rows[0]?.ingredients ?? []) {
+                expect(item).not.toHaveProperty('stockStatus');
+            }
+        });
+
+        it('evalúa cada insumo con el stock de la sucursal enviada', async () => {
+            const { useCase, getMany } = buildHarness(page);
+
+            const { rows } = await useCase.execute(
+                { tenantId: TENANT_ID, branchId: BRANCH_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(getMany).toHaveBeenCalledWith(TENANT_ID, ['pan', 'carne'], BRANCH_ID);
+            expect(rows[0]?.ingredients).toEqual([
+                // 3 en la sede con mínimo 5: bajo mínimo, aunque en total haya 10.
+                expect.objectContaining({ inventoryItemId: 'pan', stockStatus: 'LOW' }),
+                // No vino del inventario: se trata como agotado.
+                expect.objectContaining({ inventoryItemId: 'carne', stockStatus: 'OUT' }),
             ]);
         });
     });
