@@ -13,6 +13,8 @@ import { InventoryItemRecipeInfo, InventoryItemRecipeInfoProvider } from "../../
 import { ProductCategoryProvider } from "../../ports/ProductCategoryProvider";
 import { BranchChecker } from "../../ports/branch-checker";
 import { resolveIngredientStockStatus } from "./ingredient-stock-status";
+import { buildProductStockAlert, IngredientStockEvaluation } from "./product-stock-alert";
+import { RecipeIngredientPrimitives } from "@/context/products/domain/recipe/recipe-ingredient-primitives";
 
 export class SearchProductsUseCase {
     constructor(
@@ -67,6 +69,8 @@ export class SearchProductsUseCase {
             ? await this.recipeInfoProvider.getMany(filters.tenantId, inventoryItemIds, filters.branchId)
             : new Map<string, InventoryItemRecipeInfo>();
 
+        const { branchId } = filters;
+
         const products = await Promise.all(
             rows.map(async (product) => {
 
@@ -74,6 +78,20 @@ export class SearchProductsUseCase {
                     filters.tenantId,
                     product.productCategoryId,
                 );
+
+                // Cada insumo se evalúa una vez; el resultado alimenta tanto el
+                // stockStatus del ingrediente como la alerta del producto.
+                const evaluated = product.ingredients.map((ingredient) => {
+                    const info = recipeInfo.get(ingredient.inventoryItemId);
+
+                    return {
+                        ingredient,
+                        info,
+                        stock: branchId !== undefined
+                            ? this.evaluateStock(ingredient, info, branchId)
+                            : undefined,
+                    };
+                });
 
                 return {
                     id: product.id,
@@ -92,9 +110,7 @@ export class SearchProductsUseCase {
 
                     createdAt: product.createdAt,
                     updatedAt: product.updatedAt,
-                    ingredients: product.ingredients.map((ingredient) => {
-
-                        const info = recipeInfo.get(ingredient.inventoryItemId);
+                    ingredients: evaluated.map(({ ingredient, info, stock }) => {
 
                         return {
                             ...ingredient,
@@ -113,18 +129,16 @@ export class SearchProductsUseCase {
                                     ? Number(info.currentStock) >= Number(ingredient.quantity)
                                     : false,
                             // Sin sucursal no se evalúa: el campo no se incluye.
-                            ...(filters.branchId !== undefined
-                                ? {
-                                    stockStatus: resolveIngredientStockStatus(
-                                        info?.branchStock
-                                            ? { isActive: info.isActive, ...info.branchStock }
-                                            : null,
-                                        ingredient.quantity,
-                                    ),
-                                }
-                                : {}),
+                            ...(stock !== undefined ? { stockStatus: stock.status } : {}),
                         };
                     }),
+                    ...(branchId !== undefined
+                        ? {
+                            stockAlert: buildProductStockAlert(
+                                evaluated.flatMap(({ stock }) => (stock !== undefined ? [stock] : [])),
+                            ),
+                        }
+                        : {}),
                 };
             }),
         );
@@ -134,6 +148,34 @@ export class SearchProductsUseCase {
             pageNumber,
             pageSize,
             total,
+        };
+    }
+
+    /**
+     * Estado de un insumo en la sucursal. Si no vino del inventario (borrado o de
+     * otro negocio) se reporta agotado, con stock 0 y sin mínimo.
+     */
+    private evaluateStock(
+        ingredient: RecipeIngredientPrimitives,
+        info: InventoryItemRecipeInfo | undefined,
+        branchId: string,
+    ): IngredientStockEvaluation {
+        const branchStock = info?.branchStock;
+
+        return {
+            inventoryItemId: ingredient.inventoryItemId,
+            name: info?.name ?? "",
+            status: resolveIngredientStockStatus(
+                info !== undefined && branchStock !== undefined
+                    ? { isActive: info.isActive, ...branchStock }
+                    : null,
+                ingredient.quantity,
+            ),
+            isOptional: ingredient.isOptional,
+            currentStock: branchStock?.currentStock ?? "0",
+            minStock: branchStock?.minStock ?? null,
+            requiredQuantity: ingredient.quantity,
+            branchId,
         };
     }
 }

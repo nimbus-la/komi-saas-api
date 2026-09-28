@@ -255,4 +255,80 @@ describe('SearchProductsUseCase', () => {
             ]);
         });
     });
+
+    describe('alerta de stock del producto', () => {
+        const page = (ingredients: ProductResponse['ingredients']) => ({
+            rows: [buildProduct('producto-1', ingredients)],
+            pageNumber: 1,
+            pageSize: 20,
+            total: 1,
+        });
+
+        it('no incluye stockAlert cuando no se envía branchId', async () => {
+            const { useCase } = buildHarness(page([ingredient('pan')]));
+
+            const { rows } = await useCase.execute(
+                { tenantId: TENANT_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(rows[0]).not.toHaveProperty('stockAlert');
+        });
+
+        it('da ERROR con el detalle de cada insumo con problemas', async () => {
+            const { useCase } = buildHarness(page([ingredient('pan'), ingredient('carne', '0.2')]));
+
+            const { rows } = await useCase.execute(
+                { tenantId: TENANT_ID, branchId: BRANCH_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(rows[0]?.stockAlert).toEqual({
+                level: 'ERROR',
+                items: [
+                    {
+                        inventoryItemId: 'pan', name: 'Pan', status: 'LOW', isOptional: false,
+                        currentStock: '3', minStock: '5', requiredQuantity: '1', branchId: BRANCH_ID,
+                    },
+                    // No vino del inventario: agotado, con stock 0 y sin mínimo.
+                    {
+                        inventoryItemId: 'carne', name: '', status: 'OUT', isOptional: false,
+                        currentStock: '0', minStock: null, requiredQuantity: '0.2', branchId: BRANCH_ID,
+                    },
+                ],
+            });
+        });
+
+        it('da WARNING cuando el único agotado es opcional', async () => {
+            const { useCase } = buildHarness(page([
+                ingredient('pan'),
+                { ...ingredient('carne'), isOptional: true },
+            ]));
+
+            const { rows } = await useCase.execute(
+                { tenantId: TENANT_ID, branchId: BRANCH_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(rows[0]?.stockAlert?.level).toBe('WARNING');
+        });
+
+        it('devuelve null cuando todos los insumos están bien', async () => {
+            const { useCase, getMany } = buildHarness(page([ingredient('pan')]));
+
+            getMany.mockResolvedValue(new Map([
+                ['pan', {
+                    inventoryItemId: 'pan', name: 'Pan', unitOfMeasure: 'UND', unitCostAmount: '500', currentStock: '10', isActive: true,
+                    branchStock: { currentStock: '10', minStock: '5' },
+                }],
+            ]));
+
+            const { rows } = await useCase.execute(
+                { tenantId: TENANT_ID, branchId: BRANCH_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(rows[0]?.stockAlert).toBeNull();
+        });
+    });
 });
