@@ -24,6 +24,11 @@ export class SearchProductsDto {
     @IsUUID()
     productCategoryId?: string;
 
+    /** Sucursal en la que se evalúa el stock de los insumos de cada receta. */
+    @IsOptional()
+    @IsUUID()
+    branchId?: string;
+
     /**
      * Llega como string en el query: sin este Transform, "false" sería truthy.
      *

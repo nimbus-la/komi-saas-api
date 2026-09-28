@@ -1,6 +1,8 @@
 import { Paginated } from '@/interfaces';
 import { ProductResponse } from '@/context/products/domain/types/product.response';
 
+import { BranchNotFoundForProductsException } from '@/context/products/domain/exceptions/product-exception';
+
 import { SearchProductsUseCase } from './search-product.use-case';
 
 
@@ -14,6 +16,7 @@ import { SearchProductsUseCase } from './search-product.use-case';
  */
 
 const TENANT_ID = '550e8400-e29b-41d4-a716-446655440000';
+const BRANCH_ID = '6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 
 const buildProduct = (id: string): ProductResponse => ({
     id,
@@ -32,17 +35,19 @@ const buildProduct = (id: string): ProductResponse => ({
     ingredients: [],
 });
 
-const buildHarness = (page: Paginated<ProductResponse>) => {
+const buildHarness = (page: Paginated<ProductResponse>, branchExists = true) => {
     const search = jest.fn().mockResolvedValue(page);
+    const existsInTenant = jest.fn().mockResolvedValue(branchExists);
 
     const useCase = new SearchProductsUseCase(
         { search } as never,
         { exists: jest.fn().mockResolvedValue(true) },
         { get: jest.fn().mockResolvedValue(null) },
         { get: jest.fn().mockResolvedValue({ name: 'Platos fuertes' }) },
+        { existsInTenant },
     );
 
-    return { useCase, search };
+    return { useCase, search, existsInTenant };
 };
 
 
@@ -94,5 +99,46 @@ describe('SearchProductsUseCase', () => {
         expect(result.rows).toHaveLength(1);
         expect(result.rows[0]?.id).toBe('producto-1');
         expect(result).toMatchObject({ pageNumber: 1, pageSize: 20, total: 47 });
+    });
+
+    describe('sucursal para evaluar el stock', () => {
+        const emptyPage = { rows: [], pageNumber: 1, pageSize: 20, total: 0 };
+
+        it('no consulta la sucursal cuando no se envía branchId', async () => {
+            const { useCase, existsInTenant } = buildHarness(emptyPage);
+
+            await useCase.execute(
+                { tenantId: TENANT_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(existsInTenant).not.toHaveBeenCalled();
+        });
+
+        it('valida que la sucursal pertenezca al negocio', async () => {
+            const { useCase, existsInTenant } = buildHarness(emptyPage);
+
+            await useCase.execute(
+                { tenantId: TENANT_ID, branchId: BRANCH_ID },
+                { pageNumber: 1, pageSize: 20 },
+            );
+
+            expect(existsInTenant).toHaveBeenCalledWith(BRANCH_ID, TENANT_ID);
+        });
+
+        // Una sucursal de otro negocio responde igual que una inexistente,
+        // y no se llega a buscar productos.
+        it('rechaza una sucursal que no es del negocio', async () => {
+            const { useCase, search } = buildHarness(emptyPage, false);
+
+            await expect(
+                useCase.execute(
+                    { tenantId: TENANT_ID, branchId: BRANCH_ID },
+                    { pageNumber: 1, pageSize: 20 },
+                ),
+            ).rejects.toBeInstanceOf(BranchNotFoundForProductsException);
+
+            expect(search).not.toHaveBeenCalled();
+        });
     });
 });

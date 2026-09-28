@@ -2,6 +2,7 @@ import { Paginated, Pagination } from "@/interfaces";
 
 import { SearchProductsFilters } from "@/context/products/domain/types/product-application";
 import {
+    BranchNotFoundForProductsException,
     ProductRepository,
     TenantIdRequiredForSearchException,
     TenantNotFoundException,
@@ -10,6 +11,7 @@ import { ProductResponse } from "@/context/products/domain/types/product.respons
 import { TenantChecker } from "../../ports/tenant-checker";
 import { InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
 import { ProductCategoryProvider } from "../../ports/ProductCategoryProvider";
+import { BranchChecker } from "../../ports/branch-checker";
 
 export class SearchProductsUseCase {
     constructor(
@@ -17,7 +19,7 @@ export class SearchProductsUseCase {
         private readonly tenantChecker: TenantChecker,
         private readonly recipeInfoProvider: InventoryItemRecipeInfoProvider,
         private readonly productCategoryProvider: ProductCategoryProvider,
-
+        private readonly branchChecker: BranchChecker,
     ) { }
 
     public async execute(
@@ -35,6 +37,17 @@ export class SearchProductsUseCase {
 
         if (!tenantExists) {
             throw new TenantNotFoundException(filters.tenantId);
+        }
+
+        if (filters.branchId !== undefined) {
+            const branchExists = await this.branchChecker.existsInTenant(
+                filters.branchId,
+                filters.tenantId,
+            );
+
+            if (!branchExists) {
+                throw new BranchNotFoundForProductsException(filters.branchId);
+            }
         }
 
         const { rows, pageNumber, pageSize, total } =
