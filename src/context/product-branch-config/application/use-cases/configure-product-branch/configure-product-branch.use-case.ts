@@ -17,7 +17,7 @@ import { ProductChecker } from "../../ports/product-checker";
  * juntas; si una falla, no se guarda ninguna.
  *
  * Este caso de uso nunca borra. Si una sucursal quedaría sin precio ni estado
- * propios, el agregado lanza el error 1412. Para quitar una configuración está
+ * propios, el agregado lanza el error 1421. Para quitar una configuración está
  * el caso de uso de eliminar.
  */
 export class ConfigureProductBranchUseCase {

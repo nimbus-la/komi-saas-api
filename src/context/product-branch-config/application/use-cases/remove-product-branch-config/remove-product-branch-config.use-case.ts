@@ -12,7 +12,7 @@ import { RemoveProductBranchConfigParams } from "../../../domain/interfaces/prod
  *
  * No hace falta validar el producto ni las sucursales por aparte, porque la
  * búsqueda ya filtra por negocio: lo que sea de otro negocio simplemente no
- * aparece y termina en el error 1413.
+ * aparece y termina en el error 1422.
  */
 export class RemoveProductBranchConfigUseCase {
     constructor(

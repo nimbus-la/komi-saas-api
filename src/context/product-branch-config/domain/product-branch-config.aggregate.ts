@@ -1,8 +1,8 @@
-import { AggregateRoot, Money } from "@/shared";
+import { AggregateRoot, BasePriceError, Money } from "@/shared";
 
 import { ProductBranchConfigId } from "./value-objects/product-config-id.value-object";
 import { ProductBranchConfigPrimitives } from "./interfaces/product-branch-config.interface";
-import { EmptyProductBranchConfigException, InvalidBranchPriceException } from "./exceptions/product-branch-config.exception";
+import { EmptyProductBranchConfigException } from "./exceptions/product-branch-config.exception";
 
 
 /**
@@ -102,9 +102,14 @@ export class ProductBranchConfig extends AggregateRoot<ProductBranchConfigId> {
     }
 
 
+    /**
+     * Money ya rechaza los montos negativos; aquí solo falta el cero. Se usa el
+     * mismo error del precio base del producto, así cualquier precio inválido
+     * responde con el mismo código.
+     */
     private static ensureValidPrice(price: Money | null): void {
         if (price !== null && price.equals(Money.zero(price.currency))) {
-            throw new InvalidBranchPriceException();
+            throw new BasePriceError("El precio del producto en la sucursal debe ser mayor que 0.");
         };
     }
 

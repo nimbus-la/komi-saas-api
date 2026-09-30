@@ -56,7 +56,7 @@ describe("ConfigureProductBranchUseCase", () => {
         await expect(useCase.execute({
             ...base,
             branches: [{ branchId: NORTH, price: "1000" }, { branchId: NORTH, isAvailable: false }],
-        })).rejects.toMatchObject({ code: "1414" });
+        })).rejects.toMatchObject({ code: "1423" });
         expect(repository.saveMany).not.toHaveBeenCalled();
     });
 
@@ -82,7 +82,7 @@ describe("ConfigureProductBranchUseCase", () => {
         await expect(useCase.execute({
             ...base,
             branches: [{ branchId: NORTH, price: "15000" }, { branchId: SOUTH, price: null }],
-        })).rejects.toMatchObject({ code: "1412" });
+        })).rejects.toMatchObject({ code: "1421" });
         expect(repository.saveMany).not.toHaveBeenCalled();
     });
 
@@ -90,7 +90,7 @@ describe("ConfigureProductBranchUseCase", () => {
         const { useCase, repository } = buildHarness();
 
         await expect(useCase.execute({ ...base, branches: [{ branchId: NORTH, price: null, isAvailable: null }] }))
-            .rejects.toMatchObject({ code: "1412" });
+            .rejects.toMatchObject({ code: "1421" });
         expect(repository.saveMany).not.toHaveBeenCalled();
     });
 });

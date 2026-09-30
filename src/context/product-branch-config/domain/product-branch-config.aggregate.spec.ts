@@ -11,12 +11,12 @@ const baseParams = {
 describe("ProductBranchConfig", () => {
     it("rechaza un precio en 0", () => {
         expect(() => ProductBranchConfig.create({ ...baseParams, price: Money.of("0"), isAvailable: null }))
-            .toThrow(expect.objectContaining({ code: "1411" }));
+            .toThrow(expect.objectContaining({ code: "1016" }));
     });
 
     it("rechaza una configuración que no sobrescribe nada", () => {
         expect(() => ProductBranchConfig.create({ ...baseParams, price: null, isAvailable: null }))
-            .toThrow(expect.objectContaining({ code: "1412" }));
+            .toThrow(expect.objectContaining({ code: "1421" }));
     });
 
     it("cambia solo el campo enviado", () => {
@@ -31,7 +31,7 @@ describe("ProductBranchConfig", () => {
         const config = ProductBranchConfig.create({ ...baseParams, price: Money.of("12000"), isAvailable: null });
 
         expect(() => config.change({ price: null }))
-            .toThrow(expect.objectContaining({ code: "1412" }));
+            .toThrow(expect.objectContaining({ code: "1421" }));
         expect(config.toPrimitives()).toMatchObject({ price: "12000.00" });
     });
 

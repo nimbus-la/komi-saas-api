@@ -31,7 +31,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1013': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El departamento de la sucursal no es válido.' },
     '1014': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El identificador no es válido.' },
     '1015': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad ingresada no es válida.' },
-    '1016': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio base del producto debe ser mayor que 0.' },
+    '1016': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio debe ser mayor que 0.' },
     '1017': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El código del rol no es válido.' },
     '1018': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del rol no es válido.' },
     '1019': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de usuario no es válido.' },
@@ -122,37 +122,41 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1351': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se puede cambiar la perecibilidad; el item ya tiene lotes.' },
     '1352': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Debe enviar al menos un campo para actualizar.' },
 
-    // Rangos de códigos de error
-    // Productos: 1400 - 1433
-    '1400': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró el producto que intentas editar.' },
+    // Rangos de códigos de error del módulo de productos. Cada parte tiene 20
+    // códigos para crecer, y del 1481 al 1499 quedan libres por si hace falta
+    // otra parte más.
+    // Productos: 1400 - 1420
+    '1400': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró el producto.' },
     '1401': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del producto es inválido.' },
-    '1402': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe un producto registrado con ese nombre' },
+    '1402': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe un producto registrado con ese nombre.' },
     '1403': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se pudo obtener el siguiente valor de la secuencia de SKU.' },
     '1404': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra desactivado.' },
     '1405': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra activado.' },
-    '1406': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ítem de inventario especificado no pertenece al tenant proporcionado.' },
     '1407': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen de beneficio no puede ser menor que 0.' },
     '1408': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se encontraron cambios para actualizar el producto.' },
-    '1409': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El tenantId es obligatorio para buscar' },
+    '1409': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El negocio es obligatorio para buscar productos.' },
     '1410': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal no existe o no está disponible.' },
-    '1411': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio del producto en la sucursal debe ser mayor que 0.' },
-    '1412': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La configuración de la sucursal debe indicar el precio, el estado o ambos.' },
-    '1413': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal no tiene una configuración para este producto.' },
-    '1414': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Una sucursal aparece repetida en la lista.' },
 
-    // Categorías: 1434 - 1466
-    '1434': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría.' },
-    '1435': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe una categoría registrada con ese nombre.' },
-    '1436': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra activada.' },
-    '1437': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra desactivada.' },
-    '1438': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la categoría debe tener al menos 2 caracteres.' },
-    '1439': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la categoría debe tener como máximo 120 caracteres.' },
+    // Configuración del producto por sucursal: 1421 - 1440
+    // El precio en 0 usa 1016, el mismo del precio base del producto.
+    '1421': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La configuración de la sucursal debe indicar el precio, el estado o ambos.' },
+    '1422': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal no tiene una configuración para este producto.' },
+    '1423': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Una sucursal aparece repetida en la lista.' },
 
-    // Recetas: 1467 - 4999
-    '1467': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado ya se encuentra agregado a la receta.' },
-    '1468': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente no se encuentra agregado a la receta.' },
-    '1469': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se encontró el ítem de inventario.' },
-    '1470': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El ingrediente seleccionado no está disponible para este negocio.' },
+    // Categorías: 1441 - 1460
+    '1441': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría.' },
+    '1442': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe una categoría registrada con ese nombre.' },
+    '1443': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra activada.' },
+    '1444': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La categoría ya se encuentra desactivada.' },
+    '1445': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la categoría debe tener al menos 2 caracteres.' },
+    '1446': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre de la categoría debe tener como máximo 120 caracteres.' },
+    '1447': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El negocio es obligatorio para operar sobre categorías.' },
+
+    // Recetas: 1461 - 1480
+    '1461': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El ingrediente seleccionado ya se encuentra agregado a la receta.' },
+    '1462': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El ingrediente no se encuentra agregado a la receta.' },
+    '1463': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'El ingrediente seleccionado no está disponible para este negocio.' },
+    '1464': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La cantidad del ingrediente debe ser mayor que cero.' },
 
 
     // Menús del sidebar: 1600 - 1609

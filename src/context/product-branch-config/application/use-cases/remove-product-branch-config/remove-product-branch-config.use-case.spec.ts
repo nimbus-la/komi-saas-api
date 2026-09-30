@@ -36,7 +36,7 @@ describe("RemoveProductBranchConfigUseCase", () => {
         const { useCase, repository } = buildHarness([configFor(NORTH)]);
 
         await expect(useCase.execute({ ...base, branchIds: [NORTH, SOUTH] }))
-            .rejects.toMatchObject({ code: "1413" });
+            .rejects.toMatchObject({ code: "1422" });
         expect(repository.deleteMany).not.toHaveBeenCalled();
     });
 
@@ -44,7 +44,7 @@ describe("RemoveProductBranchConfigUseCase", () => {
         const { useCase, repository } = buildHarness([configFor(NORTH)]);
 
         await expect(useCase.execute({ ...base, branchIds: [NORTH, NORTH] }))
-            .rejects.toMatchObject({ code: "1414" });
+            .rejects.toMatchObject({ code: "1423" });
         expect(repository.deleteMany).not.toHaveBeenCalled();
     });
 });
