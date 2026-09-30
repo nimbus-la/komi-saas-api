@@ -5,21 +5,18 @@ export abstract class ProductBranchConfigRepository {
     /** Crea o actualiza varias configuraciones en una sola transacción. */
     abstract saveMany(configs: ProductBranchConfig[]): Promise<void>;
 
-    abstract findByProductAndBranch(
-        tenantId: string,
-        productId: string,
-        branchId: string,
-    ): Promise<ProductBranchConfig | null>;
-
     /** Configuraciones del producto en todas sus sucursales. */
     abstract findByProduct(
         tenantId: string,
         productId: string,
     ): Promise<ProductBranchConfig[]>;
 
-    /** Quita la configuración para que la sucursal herede todo del producto. */
-    abstract delete(
-        id: ProductBranchConfigId,
+    /**
+     * Borra varias configuraciones de una vez, solo si son del negocio. Las
+     * sucursales afectadas vuelven a heredar todo del producto.
+     */
+    abstract deleteMany(
+        ids: ProductBranchConfigId[],
         tenantId: string,
     ): Promise<void>;
 }

@@ -30,9 +30,9 @@ export interface SearchProductBranchConfigsParams {
 }
 
 
-/** Quitar la configuración de un producto en una sucursal. */
+/** Quitar la configuración de un producto en una o varias sucursales a la vez. */
 export interface RemoveProductBranchConfigParams {
     tenantId: string;
     productId: string;
-    branchId: string;
+    branchIds: string[];
 }

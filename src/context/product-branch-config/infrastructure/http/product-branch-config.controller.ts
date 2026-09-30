@@ -47,12 +47,13 @@ export class ProductBranchConfigController {
     }
 
 
+    /** La lista de sucursales viaja en el body, igual que en configurar. */
     @Delete("delete")
     @ResponseMessage("Configuración del producto en la sucursal eliminada exitosamente.")
     public async remove(
         @CurrentUser() user: AuthenticatedUser,
-        @Query() query: RemoveProductBranchConfigDto,
+        @Body() dto: RemoveProductBranchConfigDto,
     ): Promise<void> {
-        await this.removeProductBranchConfig.execute({ ...query, tenantId: user.tenantId });
+        await this.removeProductBranchConfig.execute({ ...dto, tenantId: user.tenantId });
     }
 }

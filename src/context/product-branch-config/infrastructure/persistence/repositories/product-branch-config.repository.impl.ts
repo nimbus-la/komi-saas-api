@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 
 import { ProductBranchConfig } from "../../../domain/product-branch-config.aggregate";
 import { ProductBranchConfigRepository } from "../../../domain/product-branch-config.repository";
@@ -24,18 +24,6 @@ export class ProductBranchConfigRepositoryImpl extends ProductBranchConfigReposi
     await this.repository.save(configs.map((config) => ProductBranchConfigMapper.toPersistence(config)));
   }
 
-  public async findByProductAndBranch(
-    tenantId: string,
-    productId: string,
-    branchId: string,
-  ): Promise<ProductBranchConfig | null> {
-    const row = await this.repository.findOne({
-      where: { tenantId, productId, branchId },
-    });
-
-    return row ? ProductBranchConfigMapper.toDomain(row) : null;
-  }
-
   public async findByProduct(
     tenantId: string,
     productId: string,
@@ -49,10 +37,12 @@ export class ProductBranchConfigRepositoryImpl extends ProductBranchConfigReposi
     return rows.map((row) => ProductBranchConfigMapper.toDomain(row));
   }
 
-  public async delete(
-    id: ProductBranchConfigId,
+  public async deleteMany(
+    ids: ProductBranchConfigId[],
     tenantId: string,
   ): Promise<void> {
-    await this.repository.delete({ id: id.value, tenantId });
+    // Es una sola sentencia DELETE, así que se borran todas o ninguna. Filtrar
+    // también por tenantId evita tocar filas de otro negocio aunque llegue un id ajeno.
+    await this.repository.delete({ id: In(ids.map((id) => id.value)), tenantId });
   }
 }
