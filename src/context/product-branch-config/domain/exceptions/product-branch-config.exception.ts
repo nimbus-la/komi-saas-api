@@ -19,3 +19,13 @@ export class EmptyProductBranchConfigException extends DomainException {
         });
     }
 }
+
+
+export class ProductBranchConfigNotFoundException extends DomainException {
+    constructor(productId: string, branchId: string) {
+        super({
+            code: "1413",
+            detail: `La sucursal ${branchId} no tiene una configuración para el producto ${productId}.`,
+        });
+    }
+}
