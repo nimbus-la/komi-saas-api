@@ -6,6 +6,7 @@ import { ConditionalModule } from '@nestjs/config';
 import { AllExceptionsFilter, AppConfigModule, DatabaseModule, LoggingModule, ResponseInterceptor } from './infrastructure';
 import { TenantModule } from './context/tenants/tenant.module';
 import { ProductsModule } from './context/products/products.module';
+import { ProductBranchConfigModule } from './context/product-branch-config/product-branch-config.module';
 import { CategoriesModule } from './context/product-categories/categories.module';
 import { InventoryModule } from './context/inventory/inventory-item.module';
 import { InventoryMovementModule } from './context/inventory-movements';
@@ -27,6 +28,7 @@ import { Enviroment } from './infrastructure/config/env.validation';
     InventoryMovementModule,
     TenantModule,
     ProductsModule,
+    ProductBranchConfigModule,
     CategoriesModule,
     RolModule,
     MenusModule,
