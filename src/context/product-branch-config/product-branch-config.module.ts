@@ -15,6 +15,7 @@ import {
 } from "./application";
 import { ProductsModule } from "../products/products.module";
 import { BranchModule } from "../branch/branch.module";
+import { ProductBranchConfigController } from "./infrastructure/http/product-branch-config.controller";
 
 @Module({
     imports: [
@@ -23,6 +24,10 @@ import { BranchModule } from "../branch/branch.module";
         ]),
         ProductsModule,
         BranchModule,
+    ],
+
+    controllers: [
+        ProductBranchConfigController,
     ],
 
     providers: [
