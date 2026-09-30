@@ -5,74 +5,92 @@ import { ConfigureProductBranchUseCase } from "./configure-product-branch.use-ca
 
 const TENANT_ID = "550e8400-e29b-41d4-a716-446655440000";
 const PRODUCT_ID = "7a1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b";
-const BRANCH_ID = "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b";
+const NORTH = "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b";
+const SOUTH = "8e2d3b4c-5e6f-4a71-9b8c-0d1e2f3a4b5c";
 
-const ids = { tenantId: TENANT_ID, productId: PRODUCT_ID, branchId: BRANCH_ID };
+const base = { tenantId: TENANT_ID, productId: PRODUCT_ID };
 
 const buildHarness = (options: {
-    current?: ProductBranchConfig | null;
+    current?: ProductBranchConfig[];
     productExists?: boolean;
-    branchExists?: boolean;
+    foreignBranch?: string;
 } = {}) => {
     const repository = {
-        findByProductAndBranch: jest.fn().mockResolvedValue(options.current ?? null),
-        save: jest.fn().mockResolvedValue(undefined),
-        delete: jest.fn().mockResolvedValue(undefined),
+        findByProduct: jest.fn().mockResolvedValue(options.current ?? []),
+        saveMany: jest.fn().mockResolvedValue(undefined),
     };
 
     const useCase = new ConfigureProductBranchUseCase(
         repository as never,
         { existsInTenant: jest.fn().mockResolvedValue(options.productExists ?? true) },
-        { existsInTenant: jest.fn().mockResolvedValue(options.branchExists ?? true) },
+        { existsInTenant: jest.fn().mockImplementation(async (branchId: string) => branchId !== options.foreignBranch) },
     );
 
     return { useCase, repository };
 };
 
+const savedConfigs = (saveMany: jest.Mock): ProductBranchConfig[] => saveMany.mock.calls[0][0];
+
 describe("ConfigureProductBranchUseCase", () => {
     it("rechaza un producto que no es del negocio", async () => {
         const { useCase, repository } = buildHarness({ productExists: false });
 
-        await expect(useCase.execute({ ...ids, price: "1000" }))
+        await expect(useCase.execute({ ...base, branches: [{ branchId: NORTH, price: "1000" }] }))
             .rejects.toMatchObject({ code: "1400" });
-        expect(repository.save).not.toHaveBeenCalled();
+        expect(repository.saveMany).not.toHaveBeenCalled();
     });
 
-    it("rechaza una sucursal que no es del negocio", async () => {
-        const { useCase, repository } = buildHarness({ branchExists: false });
+    it("rechaza la lista completa si una sucursal no es del negocio", async () => {
+        const { useCase, repository } = buildHarness({ foreignBranch: SOUTH });
 
-        await expect(useCase.execute({ ...ids, price: "1000" }))
-            .rejects.toMatchObject({ code: "1410" });
-        expect(repository.save).not.toHaveBeenCalled();
+        await expect(useCase.execute({
+            ...base,
+            branches: [{ branchId: NORTH, price: "1000" }, { branchId: SOUTH, price: "2000" }],
+        })).rejects.toMatchObject({ code: "1410" });
+        expect(repository.saveMany).not.toHaveBeenCalled();
     });
 
-    it("crea la configuración solo con precio y deja el estado heredado", async () => {
+    it("rechaza una sucursal repetida en la lista", async () => {
         const { useCase, repository } = buildHarness();
 
-        const result = await useCase.execute({ ...ids, price: "18000" });
-
-        expect(result).toMatchObject({ price: "18000.00", currency: "COP", isAvailable: null });
-        expect(repository.save).toHaveBeenCalledTimes(1);
+        await expect(useCase.execute({
+            ...base,
+            branches: [{ branchId: NORTH, price: "1000" }, { branchId: NORTH, isAvailable: false }],
+        })).rejects.toMatchObject({ code: "1414" });
+        expect(repository.saveMany).not.toHaveBeenCalled();
     });
 
-    it("en una configuración existente solo cambia el campo enviado", async () => {
-        const current = ProductBranchConfig.create({ ...ids, price: Money.of("18000"), isAvailable: true });
-        const { useCase, repository } = buildHarness({ current });
+    it("crea una sucursal y cambia otra en la misma petición", async () => {
+        const existing = ProductBranchConfig.create({ ...base, branchId: SOUTH, price: Money.of("18000"), isAvailable: true });
+        const { useCase, repository } = buildHarness({ current: [existing] });
 
-        const result = await useCase.execute({ ...ids, isAvailable: false });
+        await useCase.execute({
+            ...base,
+            branches: [{ branchId: NORTH, price: "15000" }, { branchId: SOUTH, isAvailable: false }],
+        });
 
-        expect(result).toMatchObject({ id: current.id.value, price: "18000.00", isAvailable: false });
-        expect(repository.save).toHaveBeenCalledWith(current);
+        const [created, changed] = savedConfigs(repository.saveMany);
+        expect(repository.saveMany).toHaveBeenCalledTimes(1);
+        expect(created?.toPrimitives()).toMatchObject({ branchId: NORTH, price: "15000.00", isAvailable: null });
+        expect(changed?.toPrimitives()).toMatchObject({ id: existing.id.value, price: "18000.00", isAvailable: false });
     });
 
-    it("borra la configuración cuando todo vuelve a heredarse del producto", async () => {
-        const current = ProductBranchConfig.create({ ...ids, price: Money.of("18000"), isAvailable: true });
-        const { useCase, repository } = buildHarness({ current });
+    it("rechaza sin guardar nada si una entrada deja la sucursal sin precio ni estado", async () => {
+        const existing = ProductBranchConfig.create({ ...base, branchId: SOUTH, price: Money.of("18000"), isAvailable: null });
+        const { useCase, repository } = buildHarness({ current: [existing] });
 
-        const result = await useCase.execute({ ...ids, price: null, isAvailable: null });
+        await expect(useCase.execute({
+            ...base,
+            branches: [{ branchId: NORTH, price: "15000" }, { branchId: SOUTH, price: null }],
+        })).rejects.toMatchObject({ code: "1412" });
+        expect(repository.saveMany).not.toHaveBeenCalled();
+    });
 
-        expect(result).toBeNull();
-        expect(repository.delete).toHaveBeenCalledWith(current.id, TENANT_ID);
-        expect(repository.save).not.toHaveBeenCalled();
+    it("rechaza crear una sucursal con precio y estado en null", async () => {
+        const { useCase, repository } = buildHarness();
+
+        await expect(useCase.execute({ ...base, branches: [{ branchId: NORTH, price: null, isAvailable: null }] }))
+            .rejects.toMatchObject({ code: "1412" });
+        expect(repository.saveMany).not.toHaveBeenCalled();
     });
 });

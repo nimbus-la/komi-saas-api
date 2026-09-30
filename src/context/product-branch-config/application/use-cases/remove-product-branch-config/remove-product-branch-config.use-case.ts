@@ -1,11 +1,6 @@
 import { ProductBranchConfigNotFoundException } from "../../../domain/exceptions/product-branch-config.exception";
 import { ProductBranchConfigRepository } from "../../../domain/product-branch-config.repository";
-
-export interface RemoveProductBranchConfigParams {
-    tenantId: string;
-    productId: string;
-    branchId: string;
-}
+import { RemoveProductBranchConfigParams } from "../../../domain/interfaces/product-branch-config-application.interface";
 
 /**
  * Quita la configuración para que la sucursal vuelva a heredar todo del

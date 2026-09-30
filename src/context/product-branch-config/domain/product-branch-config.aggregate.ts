@@ -114,28 +114,23 @@ export class ProductBranchConfig extends AggregateRoot<ProductBranchConfigId> {
     }
 
 
-    /** null devuelve la sucursal al precio del producto. */
-    public changePrice(price: Money | null): void {
+    /**
+     * Cambia solo las claves presentes; null devuelve ese valor al del producto.
+     * La configuración nunca queda vacía: para quitarla se elimina.
+     */
+    public change(params: { price?: Money | null; isAvailable?: boolean | null }): void {
+        const price = params.price !== undefined ? params.price : this.price;
+        const isAvailable = params.isAvailable !== undefined ? params.isAvailable : this.isAvailable;
+
         ProductBranchConfig.ensureValidPrice(price);
 
+        if (price === null && isAvailable === null) {
+            throw new EmptyProductBranchConfigException();
+        };
+
         this.price = price;
-        this.touch();
-    }
-
-
-    /** null devuelve la sucursal al estado del producto. */
-    public changeAvailability(isAvailable: boolean | null): void {
         this.isAvailable = isAvailable;
         this.touch();
-    }
-
-
-    /**
-     * La configuración ya no sobrescribe nada. Los métodos change* la pueden
-     * dejar así; el caso de uso decide si la borra en vez de guardarla.
-     */
-    public isEmpty(): boolean {
-        return this.price === null && this.isAvailable === null;
     }
 
 

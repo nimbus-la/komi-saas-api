@@ -1,16 +1,13 @@
-import { IsBoolean, IsNumberString, IsOptional, IsUUID } from "class-validator";
+import { Type } from "class-transformer";
+import { ArrayMinSize, IsArray, IsBoolean, IsNumberString, IsOptional, IsUUID, ValidateNested } from "class-validator";
 
 
 /**
- * Precio y estado de un producto en una sucursal. Parcial: un campo que no se
- * envía no cambia, y un campo en null vuelve a heredar el valor del producto.
- *
- *   { "productId": "uuid", "branchId": "uuid", "price": "18000", "isAvailable": null }
+ * Una entrada de la lista: precio y estado del producto en UNA sucursal. Un
+ * campo que no se envía no cambia, y un campo en null vuelve a heredar el valor
+ * del producto.
  */
-export class ConfigureProductBranchDto {
-    @IsUUID()
-    productId!: string;
-
+export class BranchConfigEntryDto {
     @IsUUID()
     branchId!: string;
 
@@ -21,4 +18,25 @@ export class ConfigureProductBranchDto {
     @IsOptional()
     @IsBoolean({ message: 'isAvailable debe ser true, false o null.' })
     isAvailable?: boolean | null;
+};
+
+
+/**
+ * Configuración del producto en varias sucursales. Parcial: solo toca las
+ * sucursales enviadas.
+ *
+ *   { "productId": "uuid", "branches": [
+ *       { "branchId": "uuid-norte", "price": "18000" },
+ *       { "branchId": "uuid-sur",   "isAvailable": false }
+ *   ] }
+ */
+export class ConfigureProductBranchDto {
+    @IsUUID()
+    productId!: string;
+
+    @IsArray()
+    @ArrayMinSize(1, { message: 'Debe enviar al menos una sucursal.' })
+    @ValidateNested({ each: true })
+    @Type(() => BranchConfigEntryDto)
+    branches!: BranchConfigEntryDto[];
 };

@@ -19,13 +19,20 @@ describe("ProductBranchConfig", () => {
             .toThrow(expect.objectContaining({ code: "1412" }));
     });
 
-    it("queda vacía cuando se devuelven precio y estado al producto", () => {
+    it("cambia solo el campo enviado", () => {
         const config = ProductBranchConfig.create({ ...baseParams, price: Money.of("12000"), isAvailable: false });
 
-        config.changePrice(null);
-        config.changeAvailability(null);
+        config.change({ price: null });
 
-        expect(config.isEmpty()).toBe(true);
+        expect(config.toPrimitives()).toMatchObject({ price: null, currency: null, isAvailable: false });
+    });
+
+    it("no se deja vacía al devolver precio y estado al producto", () => {
+        const config = ProductBranchConfig.create({ ...baseParams, price: Money.of("12000"), isAvailable: null });
+
+        expect(() => config.change({ price: null }))
+            .toThrow(expect.objectContaining({ code: "1412" }));
+        expect(config.toPrimitives()).toMatchObject({ price: "12000.00" });
     });
 
     it("se reconstruye igual desde sus primitivos", () => {

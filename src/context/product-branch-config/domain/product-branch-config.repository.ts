@@ -2,8 +2,8 @@ import { ProductBranchConfig } from "./product-branch-config.aggregate";
 import { ProductBranchConfigId } from "./value-objects/product-config-id.value-object";
 
 export abstract class ProductBranchConfigRepository {
-    /** Crea o actualiza la configuración. */
-    abstract save(config: ProductBranchConfig): Promise<void>;
+    /** Crea o actualiza varias configuraciones en una sola transacción. */
+    abstract saveMany(configs: ProductBranchConfig[]): Promise<void>;
 
     abstract findByProductAndBranch(
         tenantId: string,
@@ -17,7 +17,7 @@ export abstract class ProductBranchConfigRepository {
         productId: string,
     ): Promise<ProductBranchConfig[]>;
 
-    /** Se usa cuando la configuración queda vacía (isEmpty). */
+    /** Quita la configuración para que la sucursal herede todo del producto. */
     abstract delete(
         id: ProductBranchConfigId,
         tenantId: string,

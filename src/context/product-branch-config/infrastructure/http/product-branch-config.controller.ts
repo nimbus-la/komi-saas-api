@@ -36,10 +36,7 @@ export class ProductBranchConfigController {
     }
 
 
-    /**
-     * Devuelve la configuración resultante, o nada si todo volvió a heredarse
-     * del producto y la configuración se borró.
-     */
+    /** Devuelve todas las configuraciones del producto después del cambio. */
     @Patch("configure")
     @ResponseMessage("Configuración del producto en la sucursal guardada exitosamente.")
     public async configure(

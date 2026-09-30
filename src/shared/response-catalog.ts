@@ -138,6 +138,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1411': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio del producto en la sucursal debe ser mayor que 0.' },
     '1412': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La configuración de la sucursal debe indicar el precio, el estado o ambos.' },
     '1413': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal no tiene una configuración para este producto.' },
+    '1414': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Una sucursal aparece repetida en la lista.' },
 
     // Categorías: 1434 - 1466
     '1434': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría.' },

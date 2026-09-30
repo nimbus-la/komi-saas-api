@@ -2,12 +2,8 @@ import { ProductNotFoundException } from "@/context/products/domain/exceptions/p
 
 import { ProductBranchConfigRepository } from "../../../domain/product-branch-config.repository";
 import { ProductBranchConfigPrimitives } from "../../../domain/interfaces/product-branch-config.interface";
+import { SearchProductBranchConfigsParams } from "../../../domain/interfaces/product-branch-config-application.interface";
 import { ProductChecker } from "../../ports/product-checker";
-
-export interface SearchProductBranchConfigsParams {
-    tenantId: string;
-    productId: string;
-}
 
 /** Configuraciones del producto en todas las sucursales del negocio. */
 export class SearchProductBranchConfigsUseCase {

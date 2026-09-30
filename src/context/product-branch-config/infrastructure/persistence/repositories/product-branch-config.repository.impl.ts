@@ -18,9 +18,10 @@ export class ProductBranchConfigRepositoryImpl extends ProductBranchConfigReposi
     super();
   }
 
-  public async save(config: ProductBranchConfig): Promise<void> {
-    // save hace el upsert por la llave primaria: crea o actualiza.
-    await this.repository.save(ProductBranchConfigMapper.toPersistence(config));
+  public async saveMany(configs: ProductBranchConfig[]): Promise<void> {
+    // save con un arreglo hace el upsert por la llave primaria de todas las
+    // filas dentro de una sola transacción: o se guardan todas o ninguna.
+    await this.repository.save(configs.map((config) => ProductBranchConfigMapper.toPersistence(config)));
   }
 
   public async findByProductAndBranch(
