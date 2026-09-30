@@ -135,6 +135,8 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1408': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se encontraron cambios para actualizar el producto.' },
     '1409': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El tenantId es obligatorio para buscar' },
     '1410': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal no existe o no está disponible.' },
+    '1411': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio del producto en la sucursal debe ser mayor que 0.' },
+    '1412': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La configuración de la sucursal debe indicar el precio, el estado o ambos.' },
 
     // Categorías: 1434 - 1466
     '1434': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró la categoría.' },
