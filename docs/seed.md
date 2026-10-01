@@ -210,9 +210,26 @@ Los negocios pequeños tienen entre seis y nueve insumos, y Crepería La Alameda
 
 Los negocios pequeños tienen tres categorías y entre cuatro y cinco productos. Crepería La Alameda tiene 12 categorías (entradas, crepes de sal y de dulce, waffles, ensaladas, pitas y paninis, pizzetas, helados y postres, malteadas, bebidas calientes, bebidas frías y para llevar) con 93 productos, entre cuatro y doce por categoría. Cada producto tiene una receta con insumos de su mismo negocio, y algunos ingredientes están marcados como opcionales. En Crepería La Alameda hay dos insumos que no aparecen en ninguna receta (azúcar morena y chips de chocolate), para probar insumos sin uso.
 
+### Configuración de productos por sucursal
+
+Algunos productos tienen precio o estado propios en una sucursal, para probar el listado de productos con `branchId`:
+
+| Negocio | Producto | Sucursal | Configuración |
+|---|---|---|---|
+| Sabor Criollo | Bandeja paisa | Envigado | Precio 34000 |
+| Sabor Criollo | Porción de aguacate | Laureles | No disponible |
+| Sabor Criollo | Aguapanela con leche | Centro | Precio 5000 |
+| Sabor Criollo | Aguapanela con leche | Envigado | Precio 5500 y no disponible |
+| La Parrilla del Puerto | Camarones al ajillo | Malecón | Precio 48000 |
+| La Parrilla del Puerto | Michelada | Alto Prado | No disponible |
+| Café Montaña | Capuchino | Cable | Precio 7500 |
+| Café Montaña | Croissant de mantequilla | Chipre | No disponible |
+
+Arepas Doña Rosa y Crepería La Alameda no tienen ninguna, así que todos sus productos usan los valores generales en cualquier sucursal. Las configuraciones se escriben en el campo `branchConfigs` de cada producto en el archivo de datos, nombrando la sucursal por su nombre.
+
 ## Qué pasa si lo llamas otra vez
 
-Antes de crear, el seed borra los negocios de prueba con todo lo que depende de ellos: sesiones, movimientos, recetas, productos, categorías, mínimos por sucursal, lotes, insumos, usuarios y sucursales. Después los crea de nuevo. Por eso puedes llamarlo las veces que quieras y siempre queda el mismo conjunto de datos.
+Antes de crear, el seed borra los negocios de prueba con todo lo que depende de ellos: sesiones, movimientos, recetas, productos con su configuración por sucursal, categorías, mínimos por sucursal, lotes, insumos, usuarios y sucursales. Después los crea de nuevo. Por eso puedes llamarlo las veces que quieras y siempre queda el mismo conjunto de datos.
 
 Hay que tener en cuenta tres cosas:
 

@@ -75,12 +75,24 @@ export interface SeedRecipeIngredient {
 }
 
 
+/**
+ * Precio o estado propios del producto en una sucursal. Lo que no se ponga se
+ * toma del producto, y al menos uno de los dos tiene que venir.
+ */
+export interface SeedProductBranchConfig {
+    branch: string;
+    price?: string;
+    isAvailable?: boolean;
+}
+
+
 export interface SeedProduct {
     name: string;
     description: string;
     basePrice: string;
     profitMargin: string;
     recipe: SeedRecipeIngredient[];
+    branchConfigs?: SeedProductBranchConfig[];
 }
 
 
@@ -170,6 +182,7 @@ export const SEED_TENANTS: SeedTenant[] = [
                             { item: 'Plátano maduro', quantity: '1' },
                             { item: 'Aguacate', quantity: '1', isOptional: true },
                         ],
+                        branchConfigs: [{ branch: 'Envigado', price: '34000' }],
                     },
                     {
                         name: 'Calentado', description: 'Arroz y fríjoles del día con huevo frito.', basePrice: '16000', profitMargin: '40',
@@ -186,14 +199,14 @@ export const SEED_TENANTS: SeedTenant[] = [
                 description: 'Porciones adicionales para cualquier plato.',
                 products: [
                     { name: 'Porción de maduro', description: 'Plátano maduro frito.', basePrice: '5000', profitMargin: '50', recipe: [{ item: 'Plátano maduro', quantity: '1' }] },
-                    { name: 'Porción de aguacate', description: 'Medio aguacate en tajadas.', basePrice: '6000', profitMargin: '50', recipe: [{ item: 'Aguacate', quantity: '1' }] },
+                    { name: 'Porción de aguacate', description: 'Medio aguacate en tajadas.', basePrice: '6000', profitMargin: '50', recipe: [{ item: 'Aguacate', quantity: '1' }], branchConfigs: [{ branch: 'Laureles', isAvailable: false }] },
                 ],
             },
             {
                 name: 'Bebidas',
                 description: 'Bebidas preparadas en la casa.',
                 products: [
-                    { name: 'Aguapanela con leche', description: 'Aguapanela caliente con leche entera.', basePrice: '4500', profitMargin: '60', recipe: [{ item: 'Panela', quantity: '60' }, { item: 'Leche entera', quantity: '150' }] },
+                    { name: 'Aguapanela con leche', description: 'Aguapanela caliente con leche entera.', basePrice: '4500', profitMargin: '60', recipe: [{ item: 'Panela', quantity: '60' }, { item: 'Leche entera', quantity: '150' }], branchConfigs: [{ branch: 'Centro', price: '5000' }, { branch: 'Envigado', price: '5500', isAvailable: false }] },
                 ],
             },
         ],
@@ -250,7 +263,7 @@ export const SEED_TENANTS: SeedTenant[] = [
                 name: 'Mariscos',
                 description: 'Preparaciones del mar.',
                 products: [
-                    { name: 'Camarones al ajillo', description: 'Camarones salteados con limón y yuca.', basePrice: '45000', profitMargin: '45', recipe: [{ item: 'Camarón', quantity: '250' }, { item: 'Limón', quantity: '1' }, { item: 'Yuca', quantity: '150', isOptional: true }] },
+                    { name: 'Camarones al ajillo', description: 'Camarones salteados con limón y yuca.', basePrice: '45000', profitMargin: '45', recipe: [{ item: 'Camarón', quantity: '250' }, { item: 'Limón', quantity: '1' }, { item: 'Yuca', quantity: '150', isOptional: true }], branchConfigs: [{ branch: 'Malecón', price: '48000' }] },
                 ],
             },
             {
@@ -258,7 +271,7 @@ export const SEED_TENANTS: SeedTenant[] = [
                 description: 'Bebidas frías.',
                 products: [
                     { name: 'Cerveza', description: 'Cerveza nacional en botella.', basePrice: '6000', profitMargin: '70', recipe: [{ item: 'Cerveza nacional', quantity: '1' }] },
-                    { name: 'Michelada', description: 'Cerveza con limón y sal.', basePrice: '9000', profitMargin: '65', recipe: [{ item: 'Cerveza nacional', quantity: '1' }, { item: 'Limón', quantity: '2' }, { item: 'Sal marina', quantity: '10' }] },
+                    { name: 'Michelada', description: 'Cerveza con limón y sal.', basePrice: '9000', profitMargin: '65', recipe: [{ item: 'Cerveza nacional', quantity: '1' }, { item: 'Limón', quantity: '2' }, { item: 'Sal marina', quantity: '10' }], branchConfigs: [{ branch: 'Alto Prado', isAvailable: false }] },
                 ],
             },
         ],
@@ -307,7 +320,7 @@ export const SEED_TENANTS: SeedTenant[] = [
                 description: 'Bebidas a base de espresso.',
                 products: [
                     { name: 'Espresso', description: 'Shot doble de café de origen.', basePrice: '4000', profitMargin: '70', recipe: [{ item: 'Café en grano', quantity: '18' }] },
-                    { name: 'Capuchino', description: 'Espresso con leche vaporizada.', basePrice: '7000', profitMargin: '65', recipe: [{ item: 'Café en grano', quantity: '18' }, { item: 'Leche entera', quantity: '180' }, { item: 'Azúcar', quantity: '10', isOptional: true }] },
+                    { name: 'Capuchino', description: 'Espresso con leche vaporizada.', basePrice: '7000', profitMargin: '65', recipe: [{ item: 'Café en grano', quantity: '18' }, { item: 'Leche entera', quantity: '180' }, { item: 'Azúcar', quantity: '10', isOptional: true }], branchConfigs: [{ branch: 'Cable', price: '7500' }] },
                 ],
             },
             {
@@ -315,7 +328,7 @@ export const SEED_TENANTS: SeedTenant[] = [
                 description: 'Horneados del día.',
                 products: [
                     { name: 'Pandebono', description: 'Pandebono recién horneado.', basePrice: '3000', profitMargin: '55', recipe: [{ item: 'Harina de trigo', quantity: '40' }, { item: 'Queso campesino', quantity: '30' }] },
-                    { name: 'Croissant de mantequilla', description: 'Hojaldre de mantequilla.', basePrice: '6500', profitMargin: '50', recipe: [{ item: 'Harina de trigo', quantity: '60' }, { item: 'Mantequilla', quantity: '30' }] },
+                    { name: 'Croissant de mantequilla', description: 'Hojaldre de mantequilla.', basePrice: '6500', profitMargin: '50', recipe: [{ item: 'Harina de trigo', quantity: '60' }, { item: 'Mantequilla', quantity: '30' }], branchConfigs: [{ branch: 'Chipre', isAvailable: false }] },
                 ],
             },
             {
