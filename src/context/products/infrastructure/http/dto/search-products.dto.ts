@@ -24,7 +24,11 @@ export class SearchProductsDto {
     @IsUUID()
     productCategoryId?: string;
 
-    /** Sucursal en la que se evalúa el stock de los insumos de cada receta. */
+    /**
+     * Sucursal en la que se evalúa el stock de los insumos de cada receta.
+     * También define el precio y el estado de cada producto según su
+     * configuración en esa sucursal; sin configuración salen los generales.
+     */
     @IsOptional()
     @IsUUID()
     branchId?: string;
