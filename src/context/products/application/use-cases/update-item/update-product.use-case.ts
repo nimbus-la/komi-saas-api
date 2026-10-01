@@ -73,8 +73,8 @@ export class UpdateProductUseCase {
 
                 if (!exists) {
                     throw new InventoryItemNotValidForTenantException(
-                        params.tenantId,
                         ingredient.inventoryItemId,
+                        params.tenantId,
                     );
                 }
             }

@@ -159,7 +159,7 @@ Cada regla rota lanza una subclase de `DomainException` con un código y un deta
 export class ProductCategoryAlreadyExistsException extends DomainException {
     constructor(name: string) {
         super({
-            code: "1435",
+            code: "1442",
             detail: `La categoría "${name}" ya existe.`,
         });
     }
@@ -170,7 +170,7 @@ export class ProductCategoryAlreadyExistsException extends DomainException {
 - El **detalle** es para el log. Puede llevar ids y datos técnicos porque nunca llega al cliente.
 - Si el código no está en el catálogo, la respuesta sale como error interno `9999`. Es fácil que pase sin darse cuenta.
 
-Cada módulo tiene su rango de códigos, anotado con comentarios en el catálogo. Por ejemplo, inventario usa del 1300 al 1399, productos del 1400 al 1433 y categorías del 1434 al 1466. Antes de elegir un código nuevo, revisa que no esté usado.
+Cada módulo tiene su rango de códigos, anotado con comentarios en el catálogo. Por ejemplo, inventario usa del 1300 al 1399. El módulo de productos usa del 1400 al 1499, repartido en partes de 20 códigos: productos del 1400 al 1420, configuración por sucursal del 1421 al 1440, categorías del 1441 al 1460 y recetas del 1461 al 1480. Del 1481 al 1499 queda libre. Antes de elegir un código nuevo, revisa que no esté usado.
 
 Nunca lances `Error` ni `HttpException` desde el dominio o la aplicación.
 

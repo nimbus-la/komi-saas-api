@@ -64,19 +64,6 @@ export class ProductAlreadyActivatedException extends DomainException {
 }
 
 
-export class InventoryItemNotValidForTenantException extends DomainException {
-
-    constructor(
-        inventoryItemId: string,
-        tenantId: string,
-    ) {
-        super({
-            code: "1406",
-            detail:
-                `El item de inventario ${inventoryItemId} no pertenece al tenant ${tenantId}.`,
-        });
-    }
-}
 export class InvalidProfitMarginException extends DomainException {
     constructor() {
         super({
@@ -100,7 +87,7 @@ export class TenantIdRequiredForSearchException extends DomainException {
     constructor() {
         super({
             code: "1409",
-            detail: "El tenantId es obligatorio para buscar productos.",
+            detail: "El negocio es obligatorio para buscar productos.",
         });
     }
 }

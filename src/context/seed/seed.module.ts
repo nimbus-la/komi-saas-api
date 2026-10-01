@@ -18,6 +18,8 @@ import { CategoriesModule } from "../product-categories/categories.module";
 import { ProductCategoryRepository } from "../product-categories/domain";
 import { ProductsModule } from "../products/products.module";
 import { ProductRepository } from "../products/domain";
+import { ProductBranchConfigModule } from "../product-branch-config/product-branch-config.module";
+import { ProductBranchConfigRepository } from "../product-branch-config/domain/product-branch-config.repository";
 
 import { SeedDataCleaner } from "./application/ports/seed-data-cleaner";
 import { RunSeedUseCase } from "./application/use-cases/run-seed/run-seed.use-case";
@@ -40,6 +42,7 @@ import { TypeOrmSeedDataCleaner } from "./infrastructure/persistence/adapters/ty
         InventoryModule,
         CategoriesModule,
         ProductsModule,
+        ProductBranchConfigModule,
     ],
 
     controllers: [SeedController],
@@ -59,6 +62,7 @@ import { TypeOrmSeedDataCleaner } from "./infrastructure/persistence/adapters/ty
                 inventoryItems: InventoryItemRepository,
                 categories: ProductCategoryRepository,
                 products: ProductRepository,
+                productBranchConfigs: ProductBranchConfigRepository,
                 eventPublisher: EventPublisher,
             ) => new RunSeedUseCase(
                 cleaner,
@@ -70,6 +74,7 @@ import { TypeOrmSeedDataCleaner } from "./infrastructure/persistence/adapters/ty
                 inventoryItems,
                 categories,
                 products,
+                productBranchConfigs,
                 eventPublisher,
             ),
             inject: [
@@ -82,6 +87,7 @@ import { TypeOrmSeedDataCleaner } from "./infrastructure/persistence/adapters/ty
                 InventoryItemRepository,
                 ProductCategoryRepository,
                 ProductRepository,
+                ProductBranchConfigRepository,
                 EventPublisher,
             ],
         },

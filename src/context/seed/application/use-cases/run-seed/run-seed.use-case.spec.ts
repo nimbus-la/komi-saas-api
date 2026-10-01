@@ -31,6 +31,7 @@ const buildHarness = () => {
 
     const removeTenantsBySlug = jest.fn(async () => { calls.push('clean'); });
     const saveTenant = jest.fn(async () => { calls.push('tenant'); });
+    const saveBranchConfigs = jest.fn();
 
     const useCase = new RunSeedUseCase(
         { removeTenantsBySlug },
@@ -42,10 +43,11 @@ const buildHarness = () => {
         { save: jest.fn(), nextSkuSequence: jest.fn(async () => ++sequence) } as never,
         { save: jest.fn() } as never,
         { save: jest.fn(), nextSkuSequence: jest.fn(async () => ++sequence) } as never,
+        { saveMany: saveBranchConfigs } as never,
         { publish: jest.fn(async (events: ReadonlyArray<DomainEvent>) => { publishedEvents.push(...events); }) },
     );
 
-    return { useCase, calls, removeTenantsBySlug, savedUsers, publishedEvents };
+    return { useCase, calls, removeTenantsBySlug, savedUsers, publishedEvents, saveBranchConfigs };
 };
 
 
@@ -96,5 +98,23 @@ describe('RunSeedUseCase', () => {
         const received = publishedEvents.filter((event) => event.eventName === 'inventory.stock.received');
 
         expect(received).toHaveLength(expectedBatches);
+    });
+
+    // Una configuración por cada sucursal escrita en los datos, en el producto
+    // y la sucursal que le corresponden.
+    it('guarda las configuraciones por sucursal que traen los productos', async () => {
+        const { useCase, saveBranchConfigs } = buildHarness();
+
+        await useCase.execute();
+
+        const expected = SEED_TENANTS
+            .flatMap((tenant) => tenant.categories)
+            .flatMap((category) => category.products)
+            .reduce((total, product) => total + (product.branchConfigs?.length ?? 0), 0);
+
+        const saved = saveBranchConfigs.mock.calls.flatMap(([configs]) => configs as unknown[]);
+
+        expect(expected).toBeGreaterThan(0);
+        expect(saved).toHaveLength(expected);
     });
 });

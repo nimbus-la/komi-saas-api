@@ -24,8 +24,9 @@ const loadEnv = (): void => {
 };
 
 /**
- * 01-init.sql incluye la tabla de sucursales con \ir, que es un comando de psql
- * y el driver pg no lo entiende. Se reemplaza por el contenido del archivo.
+ * 01-init.sql incluye las tablas de sucursales y de productos con \ir, que es un
+ * comando de psql y el driver pg no lo entiende. Se reemplaza por el contenido
+ * de cada archivo.
  */
 const readInitSchema = (): string =>
     readFileSync(join(DB_DIR, '01-init.sql'), 'utf8').replace(

@@ -26,6 +26,7 @@ import { ProductCategoryProviderAdapter } from "./infrastructure/persistence/ada
 import { BranchChecker } from "./application/ports/branch-checker";
 import { BranchCheckerAdapter } from "./infrastructure/persistence/adapters/branch-checker.adapter";
 import { BranchModule } from "../branch/branch.module";
+import { ProductBranchConfigEntity } from "@/context/product-branch-config/infrastructure/persistence/models/product-branch-config.entity";
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { BranchModule } from "../branch/branch.module";
       ProductCategoryEntity,
       RecipeIngredientEntity,
       InventoryItemEntity,
+      ProductBranchConfigEntity,
     ]),
     CategoriesModule,
     TenantModule,

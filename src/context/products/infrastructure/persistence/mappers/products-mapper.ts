@@ -4,12 +4,41 @@ import { ProductEntity } from "../models/product.entity";
 import { Product } from "@/context/products/domain";
 import { RecipeIngredientPrimitives, RecipeIngredientResponse } from "@/context/products/domain/recipe/recipe-ingredient-primitives";
 import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
+import { ProductBranchConfigEntity } from "@/context/product-branch-config/infrastructure/persistence/models/product-branch-config.entity";
 
 export class ProductMapper {
 
+    /**
+     * Con la configuración de una sucursal, su precio reemplaza al general y su
+     * estado solo puede apagar el producto: uno inactivo en general sigue
+     * inactivo aunque la sucursal diga que está disponible.
+     */
     static toResponse(
         row: ProductEntity,
         ingredients: ProductResponse["ingredients"] = [],
+        branchConfig?: ProductBranchConfigEntity,
+    ): ProductResponse {
+        const response = ProductMapper.toGeneralResponse(row, ingredients);
+
+        if (branchConfig === undefined) {
+            return response;
+        }
+
+        return {
+            ...response,
+            ...(branchConfig.priceAmount !== null
+                ? {
+                    productBasePrice: branchConfig.priceAmount,
+                    costCurrency: branchConfig.priceCurrency ?? response.costCurrency,
+                }
+                : {}),
+            productStatus: row.isActive && (branchConfig.isAvailable ?? true),
+        };
+    }
+
+    private static toGeneralResponse(
+        row: ProductEntity,
+        ingredients: ProductResponse["ingredients"],
     ): ProductResponse {
         return {
             id: row.id,

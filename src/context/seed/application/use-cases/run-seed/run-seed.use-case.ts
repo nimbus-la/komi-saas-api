@@ -34,8 +34,18 @@ import { Product, ProductRepository } from "@/context/products/domain";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
 import { ProductSku } from "@/context/products/domain/value-object/product-sku.value-object";
 import { ProfitMargin } from "@/context/products/domain/value-object/profit-margin.value-object";
+import { ProductBranchConfig } from "@/context/product-branch-config/domain/product-branch-config.aggregate";
+import { ProductBranchConfigRepository } from "@/context/product-branch-config/domain/product-branch-config.repository";
 
-import { SEED_PASSWORD, SEED_TENANTS, SeedCategory, SeedInventoryItem, SeedTenant, SeedUser } from "../../data/seed.data";
+import {
+    SEED_PASSWORD,
+    SEED_TENANTS,
+    SeedCategory,
+    SeedInventoryItem,
+    SeedProductBranchConfig,
+    SeedTenant,
+    SeedUser,
+} from "../../data/seed.data";
 import { SeedDataCleaner } from "../../ports/seed-data-cleaner";
 
 
@@ -78,6 +88,7 @@ export class RunSeedUseCase {
         private readonly inventoryItems: InventoryItemRepository,
         private readonly categories: ProductCategoryRepository,
         private readonly products: ProductRepository,
+        private readonly productBranchConfigs: ProductBranchConfigRepository,
         private readonly eventPublisher: EventPublisher,
     ) { }
 
@@ -148,7 +159,7 @@ export class RunSeedUseCase {
         let productCount = 0;
 
         for (const category of data.categories) {
-            productCount += await this.seedCategory(tenantId, category, itemIds);
+            productCount += await this.seedCategory(tenantId, category, itemIds, branchIds);
         }
 
         return {
@@ -275,6 +286,7 @@ export class RunSeedUseCase {
         tenantId: string,
         data: SeedCategory,
         itemIds: Map<string, string>,
+        branchIds: Map<string, string>,
     ): Promise<number> {
         const category = ProductCategory.create({
             tenantId,
@@ -312,9 +324,48 @@ export class RunSeedUseCase {
 
             await this.eventPublisher.publish(product.getDomainEvents());
             product.clearDomainEvents();
+
+            await this.seedBranchConfigs(
+                tenantId,
+                product.id.value,
+                productData.name,
+                productData.branchConfigs ?? [],
+                branchIds,
+            );
         }
 
         return data.products.length;
+    }
+
+
+    /**
+     * Precio o estado propios del producto en algunas sucursales. El agregado
+     * rechaza una configuración vacía o con precio en 0, igual que la API.
+     */
+    private async seedBranchConfigs(
+        tenantId: string,
+        productId: string,
+        productName: string,
+        data: SeedProductBranchConfig[],
+        branchIds: Map<string, string>,
+    ): Promise<void> {
+        if (data.length === 0) {
+            return;
+        }
+
+        const configs = data.map((config) => ProductBranchConfig.create({
+            tenantId,
+            productId,
+            branchId: this.requireId(
+                branchIds,
+                config.branch,
+                `la sucursal "${config.branch}" de la configuración de "${productName}"`,
+            ),
+            price: config.price !== undefined ? Money.of(config.price) : null,
+            isAvailable: config.isAvailable ?? null,
+        }));
+
+        await this.productBranchConfigs.saveMany(configs);
     }
 
 

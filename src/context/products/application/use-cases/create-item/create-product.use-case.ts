@@ -7,9 +7,9 @@ import { TenantChecker } from "../../ports/tenant-checker";
 import { ProductCategoryChecker } from "../../ports/product-category-checker";
 import { InventoryItemChecker } from "../../ports/inventory-item-checker";
 import { ProductCategoryNotFoundException } from "@/context/product-categories";
+import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
 
 import {
-    InventoryItemNotValidForTenantException,
     Product,
     ProductNameAlreadyExistsException,
     ProductRepository,
@@ -60,8 +60,8 @@ export class CreateProductUseCase {
 
             if (!exists) {
                 throw new InventoryItemNotValidForTenantException(
-                    params.tenantId,
                     ingredient.inventoryItemId,
+                    params.tenantId,
                 );
             }
         }
