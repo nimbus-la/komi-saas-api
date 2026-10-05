@@ -5,7 +5,8 @@ import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { SearchProductsDto } from "./dto/search-products.dto";
-import { CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "../../application";
+import { CalculateProfitabilityDto } from "./dto/calculate-profitability.dto";
+import { CalculateProfitabilityUseCase, CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "../../application";
 import { ProfitMargin } from "../../domain/value-object/profit-margin.value-object";
 import { ResponseMessage } from "@/infrastructure";
 
@@ -16,6 +17,7 @@ export class ProductController {
     private readonly createProductUseCase: CreateProductUseCase,
     private readonly updateProductUseCase: UpdateProductUseCase,
     private readonly searchProductsUseCase: SearchProductsUseCase,
+    private readonly calculateProfitabilityUseCase: CalculateProfitabilityUseCase,
   ) { }
 
 
@@ -70,6 +72,23 @@ export class ProductController {
       { ...filters, tenantId: user.tenantId },
       { pageNumber, pageSize },
     );
+  }
+
+
+  @Post("profitability")
+  @ResponseMessage("Rentabilidad calculada exitosamente")
+  public async profitability(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CalculateProfitabilityDto,
+  ) {
+    const { receta, precioVenta, margenObjetivo } = dto;
+
+    return this.calculateProfitabilityUseCase.execute({
+      tenantId: user.tenantId,
+      receta,
+      ...(precioVenta !== undefined ? { precioVenta } : {}),
+      ...(margenObjetivo !== undefined ? { margenObjetivo } : {}),
+    });
   }
 
 

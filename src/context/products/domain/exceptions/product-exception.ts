@@ -104,3 +104,42 @@ export class BranchNotFoundForProductsException extends DomainException {
         });
     }
 }
+
+/** El precio de venta enviado no da el margen objetivo que también se envió. */
+export class PriceMarginMismatchException extends DomainException {
+    constructor(params: {
+        margenObjetivo: string;
+        margenReal: string;
+        precioEsperado: string;
+    }) {
+        super({
+            code: "1411",
+            detail:
+                `El precio de venta da un margen de ${params.margenReal} y no de ${params.margenObjetivo}. ` +
+                `Para ese margen el precio debería ser ${params.precioEsperado}.`,
+        });
+    }
+}
+
+/** Un margen de 100 o más no tiene precio posible, y uno negativo no es objetivo. */
+export class InvalidTargetMarginException extends DomainException {
+    constructor() {
+        super({
+            code: "1412",
+            detail: "El margen objetivo debe ser mayor o igual a 0 y menor que 100.",
+        });
+    }
+}
+
+/**
+ * El insumo no tiene lotes con existencias y por eso no hay costo con qué
+ * calcular. Tomarlo como cero daría una rentabilidad falsa.
+ */
+export class IngredientWithoutCostException extends DomainException {
+    constructor(inventoryItemId: string) {
+        super({
+            code: "1413",
+            detail: `El insumo ${inventoryItemId} no tiene costo porque no tiene existencias registradas.`,
+        });
+    }
+}
