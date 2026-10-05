@@ -7,7 +7,7 @@ import { ProductRepositoryImpl } from "./infrastructure/persistence/repositories
 import { ProductRepository } from "./domain";
 import { UpdateProductUseCase } from "./application/use-cases/update-item/update-product.use-case";
 import { SearchProductsUseCase } from "./application/use-cases/search-items/search-product.use-case";
-import { CreateProductUseCase } from "./application";
+import { CalculateProfitabilityUseCase, CreateProductUseCase } from "./application";
 import { CategoriesModule } from "../product-categories/categories.module";
 import { TenantModule } from "../tenants/tenant.module";
 import { TenantChecker } from "@/context/products/application/ports/tenant-checker";
@@ -169,6 +169,24 @@ import { ProductBranchConfigEntity } from "@/context/product-branch-config/infra
         InventoryItemRecipeInfoProvider,
         ProductCategoryProvider,
         BranchChecker,
+      ],
+    },
+
+    {
+      provide: CalculateProfitabilityUseCase,
+      useFactory: (
+        tenantChecker: TenantChecker,
+        recipeInfoProvider: InventoryItemRecipeInfoProvider,
+      ) => {
+        return new CalculateProfitabilityUseCase(
+          tenantChecker,
+          recipeInfoProvider,
+        );
+      },
+
+      inject: [
+        TenantChecker,
+        InventoryItemRecipeInfoProvider,
       ],
     },
   ],

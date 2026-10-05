@@ -136,6 +136,9 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1408': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se encontraron cambios para actualizar el producto.' },
     '1409': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El negocio es obligatorio para buscar productos.' },
     '1410': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal no existe o no está disponible.' },
+    '1411': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El precio de venta no corresponde al margen objetivo.' },
+    '1412': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen objetivo debe ser mayor o igual a 0 y menor que 100.' },
+    '1413': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'Un insumo de la receta no tiene costo registrado.' },
 
     // Configuración del producto por sucursal: 1421 - 1440
     // El precio en 0 usa 1016, el mismo del precio base del producto.
