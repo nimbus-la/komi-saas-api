@@ -39,32 +39,25 @@ export const JWT_ALGORITHM = 'HS256';
 
 
 /**
- * Nombre con el que viaja el refresh token. Cambiarlo desloguea a todo el mundo:
- * el navegador conserva la cookie vieja, pero con otro nombre nadie la lee.
+ * Nombres de las dos cookies de la sesión. Cambiarlos desloguea a todo el mundo,
+ * porque el navegador conserva las cookies viejas pero nadie las lee.
  *
- * Va sin los prefijos `__Host-` ni `__Secure-`, y no por descuido:
+ * El refresh dejó de llamarse vorea_session cuando su path pasó de /auth a la
+ * raíz. Si hubiera conservado el nombre, el navegador mandaría la vieja y la
+ * nueva juntas a /auth/refresh, y la vieja llegaría primero.
  *
- * - `__Host-` exige `Path=/`, o sea renunciar al acotado de más abajo y mandar
- *   el refresh token en CADA petición a la API. Lo que da a cambio —que un
- *   subdominio hermano no pueda sobrescribir la cookie— vale menos que eso
- *   mientras la API viva en un host propio.
- * - `__Secure-` exige el flag `Secure`, que en desarrollo va apagado porque se
- *   sirve por http plano. El navegador rechazaría la cookie entera y no se
- *   podría probar nada en local.
- *
- * `__Secure-` sí es compatible con `Path=/auth`, así que vale revisarlo el día
- * que todos los entornos vayan por HTTPS.
+ * Van sin el prefijo __Host- porque exige el flag Secure, que en desarrollo va
+ * apagado al servirse por http plano, y el navegador rechazaría la cookie. Vale
+ * agregarlo el día que todos los entornos vayan por HTTPS: impide que un
+ * subdominio vecino sobrescriba la sesión.
  */
 export const ACCESS_COOKIE_NAME = 'jwt_access';
 export const REFRESH_COOKIE_NAME = 'jwt_refresh';
 
 /**
- * A qué rutas la manda el navegador.
- *
- * '/auth' y no '/auth/refresh': el logout también tiene que recibirla para
- * poder borrarla, y una cookie acotada a /auth/refresh sencillamente no llega
- * a /auth/logout. Con '/auth' quedan cubiertos los tres endpoints y el token
- * sigue sin viajar en cada petición al resto de la API, que es de lo que se
- * trata acotar el path.
+ * Las dos cookies viajan a toda la API. La de acceso lo necesita porque el guard
+ * la lee en cada petición, y la de refresh así no depende del prefijo con el que
+ * un proxy exponga la API. Con el path acotado a /auth, un proxy que publique la
+ * API bajo /api dejaba de mandarla sin ningún error.
  */
 export const SESSION_COOKIE_PATH = '/';

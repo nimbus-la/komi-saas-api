@@ -5,58 +5,64 @@ import { Test } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
 
-import { RefreshTokenCookie } from '@/infrastructure';
 import cookieConfig from '@/infrastructure/config/cookie.config';
 import jwtConfig from '@/infrastructure/config/jwt.config';
+import { ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME } from '@/utils';
 
 import { AuthTokens, LoginUseCase, LogoutUseCase, RefreshSessionUseCase } from '../../application';
 import { ExpiredRefreshTokenException, InvalidRefreshTokenException } from '../../domain';
 import { AuthController } from './auth.controller';
+import { SessionCookies } from './session-cookies';
 
 
 /**
- * Lo que se prueba aquí es el contrato HTTP de la sesión, no las reglas: que el
- * refresh token entre y salga por la cookie httpOnly y nunca por el JSON, y que
- * la cookie quede en el estado correcto también cuando la cosa sale mal.
+ * Lo que se prueba aquí es el contrato HTTP de la sesión, no las reglas: que los
+ * dos tokens entren y salgan por cookies httpOnly y nunca por el JSON, y que las
+ * cookies queden en el estado correcto también cuando la cosa sale mal.
  *
  * Los casos de uso van falseados a propósito. Sus reglas ya tienen sus propias
- * pruebas; lo que no estaba cubierto es esta capa, que es justo donde vivían los
- * errores que dejaban el flujo de cookies sin funcionar.
+ * pruebas; lo que no estaba cubierto es esta capa.
  *
- * La aplicación se arma con el MISMO cableado que `main.ts` —cookie-parser y el
- * ValidationPipe con `forbidNonWhitelisted`— porque uno de esos fallos no estaba
- * en el controlador sino en ese cableado, y un test que lo omita no lo ve.
+ * La aplicación se arma con el mismo cableado que main.ts, cookie-parser y el
+ * ValidationPipe con forbidNonWhitelisted, porque un fallo en ese cableado no se
+ * ve si el test lo omite.
  */
 
-const COOKIE = 'vorea_session';
-
+const ACCESS_FIRMADO = 'access-firmado';
 const REFRESH_VIGENTE = 'refresh-que-trae-el-navegador';
 const REFRESH_ROTADO = 'refresh-nuevo-tras-la-rotacion';
 
 const buildTokens = (refreshToken: string): AuthTokens => ({
-    accessToken: 'access-firmado',
+    accessToken: ACCESS_FIRMADO,
     accessExpiresAt: new Date(Date.now() + 900_000),
     refreshToken,
     refreshExpiresAt: new Date(Date.now() + 604_800_000),
 });
 
 
-/** El `Set-Cookie` del refresh, o null si la respuesta no trae ninguno. */
-const setCookieOf = (res: request.Response): string | null => {
+/** El Set-Cookie de la cookie pedida, o null si la respuesta no lo trae. */
+const setCookieOf = (res: request.Response, name: string): string | null => {
     const raw: unknown = res.headers['set-cookie'];
     const all = Array.isArray(raw) ? (raw as string[]) : typeof raw === 'string' ? [raw] : [];
 
-    return all.find((cookie) => cookie.startsWith(`${COOKIE}=`)) ?? null;
+    return all.find((cookie) => cookie.startsWith(`${name}=`)) ?? null;
 };
 
-/** Un `Set-Cookie` borra si viene sin valor y con la fecha en el pasado. */
-const isDeletion = (header: string | null): boolean =>
+
+/** Un Set-Cookie borra si viene sin valor y con la fecha en el pasado. */
+const isDeletion = (header: string | null, name: string): boolean =>
     header !== null
-    && header.startsWith(`${COOKIE}=;`)
+    && header.startsWith(`${name}=;`)
     && header.includes('Expires=Thu, 01 Jan 1970');
 
 
-describe('AuthController (cookie httpOnly)', () => {
+/** Revisa que la respuesta borre las dos cookies de la sesión. */
+const deletesBoth = (res: request.Response): boolean =>
+    isDeletion(setCookieOf(res, ACCESS_COOKIE_NAME), ACCESS_COOKIE_NAME)
+    && isDeletion(setCookieOf(res, REFRESH_COOKIE_NAME), REFRESH_COOKIE_NAME);
+
+
+describe('AuthController (cookies httpOnly)', () => {
     let app: INestApplication;
 
     const loginExecute = jest.fn();
@@ -64,8 +70,8 @@ describe('AuthController (cookie httpOnly)', () => {
     const logoutExecute = jest.fn();
 
     beforeAll(async () => {
-        // La cookie se marca `secure` fuera de desarrollo, y con `secure` el
-        // cliente de pruebas no la vería sobre http plano.
+        // La cookie se marca Secure fuera de desarrollo, y con Secure el cliente
+        // de pruebas no la vería sobre http plano.
         process.env['NODE_ENV'] = 'development';
 
         const moduleRef = await Test.createTestingModule({
@@ -78,7 +84,7 @@ describe('AuthController (cookie httpOnly)', () => {
             ],
             controllers: [AuthController],
             providers: [
-                RefreshTokenCookie,
+                SessionCookies,
                 { provide: LoginUseCase, useValue: { execute: loginExecute } },
                 { provide: RefreshSessionUseCase, useValue: { execute: refreshExecute } },
                 { provide: LogoutUseCase, useValue: { execute: logoutExecute } },
@@ -113,111 +119,115 @@ describe('AuthController (cookie httpOnly)', () => {
 
 
     describe('POST /auth/login', () => {
-        it('deja el refresh en una cookie httpOnly acotada a /auth', async () => {
+        it('deja los dos tokens en cookies httpOnly con path en la raíz', async () => {
             const res = await request(app.getHttpServer())
                 .post('/auth/login')
                 .send({ username: 'ana', password: 'secreta', tenantSlug: 'komi' });
 
-            const cookie = setCookieOf(res);
+            const access = setCookieOf(res, ACCESS_COOKIE_NAME);
+            const refresh = setCookieOf(res, REFRESH_COOKIE_NAME);
 
-            expect(cookie).toContain(`${COOKIE}=${REFRESH_VIGENTE}`);
-            expect(cookie).toContain('HttpOnly');
-            expect(cookie).toContain('Path=/auth');
+            expect(access).toContain(`${ACCESS_COOKIE_NAME}=${ACCESS_FIRMADO}`);
+            expect(refresh).toContain(`${REFRESH_COOKIE_NAME}=${REFRESH_VIGENTE}`);
+
+            for (const cookie of [access, refresh]) {
+                expect(cookie).toContain('HttpOnly');
+                expect(cookie).toContain('Path=/;');
+            }
         });
 
 
-        // El motivo entero del cambio: si el refresh sigue en el JSON, cualquier
+        // Es el motivo de las cookies: si algún token sigue en el JSON, cualquier
         // script de la página lo lee y la cookie no protege de nada.
-        it('no devuelve el refresh en el cuerpo', async () => {
+        it('responde solo los vencimientos y el usuario, sin tokens', async () => {
             const res = await request(app.getHttpServer())
                 .post('/auth/login')
                 .send({ username: 'ana', password: 'secreta', tenantSlug: 'komi' });
 
-            expect(JSON.stringify(res.body)).not.toContain(REFRESH_VIGENTE);
-            expect(res.body).not.toHaveProperty('refreshToken');
+            const body = JSON.stringify(res.body);
+
+            expect(body).not.toContain(ACCESS_FIRMADO);
+            expect(body).not.toContain(REFRESH_VIGENTE);
+            expect(res.body).toHaveProperty('accessExpiresAt');
+            expect(res.body).toHaveProperty('refreshExpiresAt');
+            expect(res.body).toHaveProperty('user');
         });
     });
 
 
     describe('POST /auth/refresh', () => {
-        // Sin cuerpo ninguno: así llega la petición de un cliente que ya solo usa
-        // la cookie, y es el caso que respondía 400.
         it('renueva con la cookie y sin cuerpo', async () => {
             const res = await request(app.getHttpServer())
                 .post('/auth/refresh')
-                .set('Cookie', `${COOKIE}=${REFRESH_VIGENTE}`);
+                .set('Cookie', `${REFRESH_COOKIE_NAME}=${REFRESH_VIGENTE}`);
 
             expect(res.status).toBe(201);
             expect(refreshExecute).toHaveBeenCalledWith(REFRESH_VIGENTE, expect.any(Object));
         });
 
 
-        it('reemplaza la cookie por el refresh rotado', async () => {
+        it('reemplaza las dos cookies y no devuelve tokens en el cuerpo', async () => {
             const res = await request(app.getHttpServer())
                 .post('/auth/refresh')
-                .set('Cookie', `${COOKIE}=${REFRESH_VIGENTE}`);
+                .set('Cookie', `${REFRESH_COOKIE_NAME}=${REFRESH_VIGENTE}`);
 
-            expect(setCookieOf(res)).toContain(`${COOKIE}=${REFRESH_ROTADO}`);
-            expect(JSON.stringify(res.body)).not.toContain(REFRESH_ROTADO);
+            expect(setCookieOf(res, ACCESS_COOKIE_NAME)).toContain(`${ACCESS_COOKIE_NAME}=${ACCESS_FIRMADO}`);
+            expect(setCookieOf(res, REFRESH_COOKIE_NAME)).toContain(`${REFRESH_COOKIE_NAME}=${REFRESH_ROTADO}`);
+
+            const body = JSON.stringify(res.body);
+
+            expect(body).not.toContain(ACCESS_FIRMADO);
+            expect(body).not.toContain(REFRESH_ROTADO);
         });
 
 
-        // Se mantiene mientras haya clientes sin migrar. El día que se retire, este
-        // test es el que avisa de que se está retirando.
-        it('todavía acepta el refresh por el cuerpo', async () => {
+        // El respaldo por cuerpo se retiró: un refresh que llegue ahí se ignora.
+        it('ignora un refresh mandado en el cuerpo', async () => {
+            refreshExecute.mockRejectedValue(new InvalidRefreshTokenException());
+
             await request(app.getHttpServer())
                 .post('/auth/refresh')
                 .send({ refreshToken: REFRESH_VIGENTE });
 
-            expect(refreshExecute).toHaveBeenCalledWith(REFRESH_VIGENTE, expect.any(Object));
-        });
-
-
-        it('la cookie manda sobre el cuerpo cuando llegan los dos', async () => {
-            await request(app.getHttpServer())
-                .post('/auth/refresh')
-                .set('Cookie', `${COOKIE}=${REFRESH_VIGENTE}`)
-                .send({ refreshToken: 'refresh-viejo-del-body' });
-
-            expect(refreshExecute).toHaveBeenCalledWith(REFRESH_VIGENTE, expect.any(Object));
+            expect(refreshExecute).toHaveBeenCalledWith(null, expect.any(Object));
         });
 
 
         describe('cuando el refresh ya no sirve', () => {
-            // Sin esto el navegador guarda una cookie muerta y la reintenta en cada
+            // Sin esto el navegador guarda cookies muertas y las reintenta en cada
             // arranque, contra un token que no va a servir nunca más.
             it.each([
                 ['inválido', new InvalidRefreshTokenException()],
                 ['expirado', new ExpiredRefreshTokenException()],
-            ])('borra la cookie si el token está %s', async (_caso, error) => {
+            ])('borra las dos cookies si el token está %s', async (_caso, error) => {
                 refreshExecute.mockRejectedValue(error);
 
                 const res = await request(app.getHttpServer())
                     .post('/auth/refresh')
-                    .set('Cookie', `${COOKIE}=${REFRESH_VIGENTE}`);
+                    .set('Cookie', `${REFRESH_COOKIE_NAME}=${REFRESH_VIGENTE}`);
 
-                expect(isDeletion(setCookieOf(res))).toBe(true);
+                expect(deletesBoth(res)).toBe(true);
             });
 
 
             /**
-             * La contracara, y el motivo de que no se borre siempre: si lo que falló
-             * fue la base, el token puede seguir siendo válido. Borrarlo ahí saca al
-             * usuario de su sesión por una caída pasajera que no es culpa suya.
+             * La contracara, y el motivo de que no se borren siempre: si lo que
+             * falló fue la base, el token puede seguir siendo válido. Borrarlo ahí
+             * saca al usuario de su sesión por una caída que no es culpa suya.
              */
-            it('NO borra la cookie si lo que falla es la infraestructura', async () => {
+            it('no borra nada si lo que falla es la infraestructura', async () => {
                 refreshExecute.mockRejectedValue(new Error('la base no responde'));
 
                 const res = await request(app.getHttpServer())
                     .post('/auth/refresh')
-                    .set('Cookie', `${COOKIE}=${REFRESH_VIGENTE}`);
+                    .set('Cookie', `${REFRESH_COOKIE_NAME}=${REFRESH_VIGENTE}`);
 
-                expect(setCookieOf(res)).toBeNull();
+                expect(res.headers['set-cookie']).toBeUndefined();
             });
         });
 
 
-        it('sin cookie ni cuerpo, el caso de uso recibe null y decide', async () => {
+        it('sin cookie, el caso de uso recibe null y decide', async () => {
             refreshExecute.mockRejectedValue(new InvalidRefreshTokenException());
 
             await request(app.getHttpServer()).post('/auth/refresh');
@@ -228,13 +238,13 @@ describe('AuthController (cookie httpOnly)', () => {
 
 
     describe('POST /auth/logout', () => {
-        it('revoca con el token de la cookie y la borra', async () => {
+        it('revoca con el refresh de la cookie y borra las dos', async () => {
             const res = await request(app.getHttpServer())
                 .post('/auth/logout')
-                .set('Cookie', `${COOKIE}=${REFRESH_VIGENTE}`);
+                .set('Cookie', `${REFRESH_COOKIE_NAME}=${REFRESH_VIGENTE}`);
 
             expect(logoutExecute).toHaveBeenCalledWith(REFRESH_VIGENTE);
-            expect(isDeletion(setCookieOf(res))).toBe(true);
+            expect(deletesBoth(res)).toBe(true);
         });
 
 
@@ -243,26 +253,26 @@ describe('AuthController (cookie httpOnly)', () => {
          * está. Un 4xx aquí le deja al front una pantalla de fallo sobre algo que
          * no puede arreglar, y encima con el usuario ya fuera.
          */
-        it('sale bien sin cookie ni cuerpo, y borra igual', async () => {
+        it('sale bien sin cookies, y borra igual', async () => {
             const res = await request(app.getHttpServer()).post('/auth/logout');
 
             expect(res.status).toBe(201);
             expect(logoutExecute).toHaveBeenCalledWith(null);
-            expect(isDeletion(setCookieOf(res))).toBe(true);
+            expect(deletesBoth(res)).toBe(true);
         });
 
 
-        // La cookie se borra ANTES de tocar la base: si la revocación revienta, el
-        // navegador ya se quedó sin el token de todos modos.
-        it('borra la cookie aunque la revocación falle', async () => {
+        // Las cookies se borran antes de tocar la base: si la revocación revienta,
+        // el navegador ya se quedó sin los tokens de todos modos.
+        it('borra las cookies aunque la revocación falle', async () => {
             logoutExecute.mockRejectedValue(new Error('la base no responde'));
 
             const res = await request(app.getHttpServer())
                 .post('/auth/logout')
-                .set('Cookie', `${COOKIE}=${REFRESH_VIGENTE}`);
+                .set('Cookie', `${REFRESH_COOKIE_NAME}=${REFRESH_VIGENTE}`);
 
             expect(res.status).toBe(500);
-            expect(isDeletion(setCookieOf(res))).toBe(true);
+            expect(deletesBoth(res)).toBe(true);
         });
     });
 });
