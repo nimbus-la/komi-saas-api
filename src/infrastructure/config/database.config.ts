@@ -1,5 +1,6 @@
 import { registerAs } from "@nestjs/config";
 import { DatabaseConfig } from "@/interfaces";
+import { Enviroment } from "./env.validation";
 
 
 /**
@@ -14,9 +15,9 @@ export default registerAs(
         username: process.env['DB_USER'] ?? 'postgres',
         password: process.env['DB_PASSWORD'] ?? 'postgres',
         database: process.env['DB_NAME'] ?? 'erp',
-        // synchronize NUNCA por defecto: solo si lo activas explícitamente (dev)
-        synchronize: process.env['DB_SYNCHRONIZE'] === 'true',
-        logging: process.env['DB_LOGGING'] === 'true',
+        // Las consultas SQL solo se escriben en el log al desarrollar. En
+        // producción serían ruido, y las que fallan se registran de todos modos.
+        logging: process.env['NODE_ENV'] === Enviroment.Development,
         ssl: process.env['DB_SSL'] === 'true',
     })
 );

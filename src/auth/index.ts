@@ -37,5 +37,4 @@ export * from './infrastructure/persistence/models/session.model';
 export * from './infrastructure/persistence/adapters/auth-user-finder.adapter';
 export * from './infrastructure/persistence/adapters/tenant-resolver.adapter';
 export * from './infrastructure/persistence/repositories/session.repository';
-export * from './infrastructure/http/dto/refresh-token.dto';
 export * from './infrastructure/http/dto/user-payload.dto';

@@ -16,9 +16,6 @@ class PingController {
 
 const WHITELIST_CONFIG: CorsConfig = {
     origins: ['https://app.komi.com'],
-    allowAnyOrigin: false,
-    credentials: true,
-    maxAge: 86400,
     allowLocalhost: false,
 };
 
@@ -93,14 +90,14 @@ describe('CORS (e2e)', () => {
                 .options('/ping')
                 .set('Origin', 'https://app.komi.com')
                 .set('Access-Control-Request-Method', 'POST')
-                .set('Access-Control-Request-Headers', 'authorization,x-tenant-id')
+                .set('Access-Control-Request-Headers', 'authorization,x-request-id')
                 .expect(204);
 
             expect(response.headers['access-control-allow-origin']).toBe('https://app.komi.com');
             expect(response.headers['access-control-allow-methods']).toContain('PATCH');
-            expect(response.headers['access-control-allow-headers']).toContain('X-Tenant-Id');
+            expect(response.headers['access-control-allow-headers']).toContain('X-Request-Id');
             expect(response.headers['access-control-expose-headers']).toContain('X-Total-Count');
-            expect(response.headers['access-control-max-age']).toBe('86400');
+            expect(response.headers['access-control-max-age']).toBe('7200');
         });
 
         it('no autoriza el preflight de un origen no permitido', async () => {
@@ -140,26 +137,6 @@ describe('CORS (e2e)', () => {
                 .expect(200);
 
             expect(response.headers['access-control-allow-origin']).toBeUndefined();
-        });
-    });
-
-    describe("modo '*'", () => {
-        beforeEach(async () => {
-            app = await createApp({
-                ...WHITELIST_CONFIG,
-                origins: [],
-                allowAnyOrigin: true,
-            });
-        });
-
-        it('refleja cualquier origen pero sin credenciales', async () => {
-            const response = await request(app.getHttpServer())
-                .get('/ping')
-                .set('Origin', 'https://cualquiera.com')
-                .expect(200);
-
-            expect(response.headers['access-control-allow-origin']).toBe('https://cualquiera.com');
-            expect(response.headers['access-control-allow-credentials']).toBeUndefined();
         });
     });
 });

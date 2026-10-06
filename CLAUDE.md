@@ -23,7 +23,7 @@ npx tsc --noEmit -p tsconfig.json         # revisar tipos
 
 ## Base de datos
 
-No hay migraciones. El esquema vive en `public/db/01-init.sql`, `02-roles.sql`, etc., y Postgres solo los ejecuta cuando el volumen está vacío (`DB_SYNCHRONIZE=false`). Un cambio de esquema se escribe en esos archivos y en una base existente se aplica a mano. Las entidades se registran en cada módulo con `TypeOrmModule.forFeature` (`autoLoadEntities: true`).
+No hay migraciones. El esquema vive en `public/db/01-init.sql`, `02-roles.sql`, etc., y Postgres solo los ejecuta cuando el volumen está vacío. TypeORM tiene synchronize fijo en false en database.module.ts. Un cambio de esquema se escribe en esos archivos y en una base existente se aplica a mano. Las entidades se registran en cada módulo con `TypeOrmModule.forFeature` (`autoLoadEntities: true`).
 
 Datos de prueba: `POST /seed` (solo con `NODE_ENV=development`) borra y recrea cuatro negocios completos. Los datos están en `src/context/seed/application/data/seed.data.ts`, y el detalle en `docs/seed.md`.
 
@@ -53,7 +53,7 @@ Alias `@/*` apunta a `src/*` (en tsconfig y en las dos configs de jest). `uuid` 
 ### Autenticación y negocios
 
 - `AuthModule` registra dos guards globales, en este orden: `JwtAuthGuard` y después `TenantScopeGuard`. Toda ruta exige JWT salvo las marcadas con `@Public()`.
-- El token de acceso va como Bearer; el refresh token solo viaja en la cookie httpOnly `vorea_session` (`RefreshTokenCookie`) y las sesiones se guardan en la base.
+- Los dos tokens viajan en cookies httpOnly con path en la raíz, jwt_access y jwt_refresh, que escribe y lee SessionCookies. El guard de JWT lee la cookie y acepta el Bearer como alternativa para Postman y pruebas. Las sesiones se guardan en la base. OriginGuard corre primero y rechaza las escrituras que llegan desde un origen fuera de CORS_ORIGINS.
 - El negocio sale del token: los controladores reciben `@CurrentUser() user: AuthenticatedUser` y pasan `user.tenantId` al caso de uso (ver `ProductController`). Los endpoints nuevos no deben aceptar `tenantId` por parámetros, query ni body. `TenantScopeGuard` es una red de seguridad que rechaza cualquier `tenantId` distinto al del token, pero no protege los endpoints que buscan un recurso solo por su id: esos tienen que filtrar por negocio en su propia consulta.
 
 ### TypeScript estricto

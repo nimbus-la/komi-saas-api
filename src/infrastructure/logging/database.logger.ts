@@ -23,9 +23,9 @@ export class DatabaseLogger implements Logger {
     /**
      * @param logger - instancia propia, porque `PinoLogger` es transient y así
      *   fijarle el contexto no se lo cambia a nadie más.
-     * @param logQueries - el `DB_LOGGING` del entorno. TypeORM llama a estos
-     *   métodos siempre y deja la decisión al logger, así que sin mirarlo aquí
-     *   esa variable dejaría de servir para nada.
+     * @param logQueries - si se escriben las consultas, cosa que solo pasa al
+     *   desarrollar. TypeORM llama a estos métodos siempre y deja la decisión
+     *   al logger, así que sin mirarlo aquí no habría forma de apagarlas.
      */
     constructor(
         private readonly logger: PinoLogger,
@@ -53,8 +53,8 @@ export class DatabaseLogger implements Logger {
 
 
     /**
-     * Una consulta que falla se registra siempre, aunque `DB_LOGGING` esté
-     * apagado, porque no es ruido de desarrollo.
+     * Una consulta que falla se registra siempre, aunque el registro de
+     * consultas esté apagado, porque no es ruido de desarrollo.
      *
      * En una petición HTTP esto se ve dos veces, aquí en el momento exacto y al
      * final en el filtro con el volcado completo, y las une el `traceId`. Vale

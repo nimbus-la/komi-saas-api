@@ -100,76 +100,68 @@ El comando `pnpm lint` por ahora no funciona. La configuración de ESLint usa un
 
 ## Variables de entorno
 
-Se leen del archivo `.env` en la raíz. El archivo `.env.exam` trae un ejemplo completo con valores para desarrollo local.
+Se leen del archivo .env en la raíz. El archivo .env.exam trae un ejemplo completo con valores para desarrollo local. Si falta una variable obligatoria o alguna trae un valor que no corresponde, la aplicación no arranca y dice cuál es.
 
 ### Generales
 
 | Variable | Obligatoria | Para qué sirve |
 |---|---|---|
-| `NODE_ENV` | Sí | Entorno en el que corre la aplicación: `development`, `production` o `test`. Es obligatoria porque de ella dependen varias reglas de seguridad, como permitir localhost en CORS o mandar la cookie solo por HTTPS. |
-| `PORT` | No | Puerto donde escucha la API. Si no se define, usa el 3000. |
+| NODE_ENV | Sí | Dice en qué entorno corre la aplicación, que puede ser development, production o test. De ella dependen varias reglas de seguridad, como permitir localhost en CORS o mandar las cookies solo por HTTPS, y también el formato del log. |
+| PORT | No | Puerto donde escucha la API. Si no se define, usa el 3000. |
 
 ### Base de datos
 
 | Variable | Obligatoria | Para qué sirve |
 |---|---|---|
-| `DB_HOST` | Sí | Dirección del servidor de Postgres. En local es `localhost`. |
-| `DB_PORT` | Sí | Puerto de Postgres, normalmente 5432. |
-| `DB_USER` | Sí | Usuario de la base. |
-| `DB_PASSWORD` | Sí | Contraseña de ese usuario. |
-| `DB_NAME` | Sí | Nombre de la base de datos. |
-| `DB_SYNCHRONIZE` | No | Si vale `true`, TypeORM modifica las tablas para que coincidan con las entidades del código. Debe quedarse en `false`, porque el esquema lo definen los scripts SQL. |
-| `DB_LOGGING` | No | Si vale `true`, cada consulta SQL aparece en el log en nivel debug. |
-| `DB_SSL` | No | Ponla en `true` cuando la base esté en un servicio en la nube que exija conexión segura. |
+| DB_HOST | Sí | Dirección del servidor de Postgres. En local es localhost. |
+| DB_PORT | Sí | Puerto de Postgres, normalmente 5432. |
+| DB_USER | Sí | Usuario de la base. |
+| DB_PASSWORD | Sí | Contraseña de ese usuario. |
+| DB_NAME | Sí | Nombre de la base de datos. |
+| DB_SSL | No | Ponla en true cuando la base esté en un servicio en la nube que exija conexión cifrada. Solo acepta true o false. |
 
-El archivo `docker-compose.yaml` usa estas mismas variables `DB_USER`, `DB_PASSWORD`, `DB_NAME` y `DB_PORT` para crear el contenedor, así que la API y la base quedan configuradas con los mismos datos.
+TypeORM nunca modifica las tablas, porque el esquema lo definen los scripts SQL de public/db. Las consultas SQL aparecen en el log solo mientras desarrollas.
+
+El archivo docker-compose.yaml usa estas mismas variables DB_USER, DB_PASSWORD, DB_NAME y DB_PORT para crear el contenedor, así que la API y la base quedan configuradas con los mismos datos.
 
 ### CORS
 
-Controlan desde qué páginas web se puede llamar a la API.
+Controla desde qué páginas web se puede llamar a la API.
 
 | Variable | Obligatoria | Para qué sirve |
 |---|---|---|
-| `CORS_ORIGINS` | Sí | Direcciones del frontend que tienen permiso, separadas por comas. Por ejemplo `https://app.komi.com,https://www.komi.com`. No importa si las escribes con mayúsculas o con barra al final. Con `*` se abre a cualquier origen, pero en producción la aplicación se niega a arrancar así. |
-| `CORS_CREDENTIALS` | No | Permite que el navegador envíe cookies en las peticiones. Solo acepta `true` o `false` y por defecto es `true`. Tiene que estar activa para que funcione la sesión. |
-| `CORS_MAX_AGE` | No | Segundos que el navegador guarda la respuesta de la verificación previa de CORS antes de volver a preguntar. Por defecto 86400, que es un día. |
+| CORS_ORIGINS | Sí | Direcciones del frontend que tienen permiso, separadas por comas, por ejemplo https://app.komi.com,https://www.komi.com. No importa si las escribes con mayúsculas o con barra al final. El asterisco no se admite, porque la sesión viaja en cookies y el navegador no las manda a un origen abierto a cualquiera. |
 
-Fuera de producción, localhost siempre se permite aunque no esté en la lista.
+Fuera de producción, localhost se permite en cualquier puerto aunque no esté en la lista. Esta misma lista la usa la protección contra peticiones que llegan desde otros sitios, así que la dirección del propio frontend también tiene que estar en ella.
 
 ### Sesión y JWT
 
 | Variable | Obligatoria | Para qué sirve |
 |---|---|---|
-| `JWT_SECRET` | Sí | Clave con la que se firman los tokens. Debe tener al menos 32 caracteres. Puedes generar una con `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`. |
-| `JWT_ACCESS_TTL` | No | Duración del token de acceso en segundos. Por defecto 900, que son 15 minutos. El mínimo es 60. |
-| `JWT_REFRESH_TTL_DAYS` | No | Días que dura la sesión antes de que el usuario tenga que volver a iniciar sesión. Por defecto 7. |
+| JWT_SECRET | Sí | Clave con la que se firman los tokens. Debe tener al menos 32 caracteres. Más abajo está el comando para generar una. |
+| JWT_ACCESS_TTL | No | Duración del token de acceso en segundos. Por defecto 900, que son 15 minutos. El mínimo es 60. |
+| JWT_REFRESH_TTL_DAYS | No | Días que dura la sesión antes de que el usuario tenga que volver a iniciar sesión. Por defecto 7. |
 
-### Cookie de sesión
+Para generar una clave segura puedes usar este comando.
 
-La sesión se guarda en una cookie llamada `vorea_session`, que el navegador no deja leer desde JavaScript.
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```
 
-| Variable | Obligatoria | Para qué sirve |
-|---|---|---|
-| `COOKIE_DOMAIN` | No | Dominio de la cookie. Lo normal es no definirla, y así la cookie solo vale para el dominio de la API. Úsala únicamente si la cookie se tiene que compartir entre subdominios. |
-| `COOKIE_SAME_SITE` | No | En qué casos el navegador envía la cookie. Acepta `lax`, `strict` o `none`, en minúsculas, y por defecto es `lax`. |
+### Cookies de sesión
 
-Sobre `COOKIE_SAME_SITE`, lo que conviene saber para elegir:
+La sesión viaja en dos cookies que el navegador no deja leer desde JavaScript. La cookie jwt_access lleva el token de acceso y jwt_refresh lleva el de renovación. No tienen variables propias.
 
-- Usa `lax` cuando el frontend y la API compartan dominio, por ejemplo `restaurante.komi.com` y `api.komi.com`. Funciona en todos los navegadores.
-- Usa `none` cuando estén en dominios distintos, por ejemplo uno en Vercel y otro en Railway. En ese caso la cookie solo viaja por HTTPS, y Safari la bloquea sin que haya forma de evitarlo. Chrome y Firefox sí la aceptan.
-- Dos servicios de Railway bajo `up.railway.app` cuentan como dominios distintos para el navegador, aunque estén en la misma cuenta.
-
-Fuera de desarrollo y pruebas, la cookie solo se envía por HTTPS.
+Las dos se mandan solo al host de la API, valen para todas sus rutas y usan el modo lax. Ese modo funciona en todos los navegadores siempre que el frontend y la API compartan dominio, como restaurante.komi.com y api.komi.com, o que el frontend reenvíe las llamadas a la API desde su propio dominio. Fuera de desarrollo y pruebas solo viajan por HTTPS.
 
 ### Logs
 
-Las tres son opcionales. Sin definir ninguna, el log se comporta bien según el entorno.
+Las dos son opcionales. Sin definirlas, el log se comporta bien según el entorno. En desarrollo sale con colores y fácil de leer, y en producción sale en JSON.
 
 | Variable | Para qué sirve |
 |---|---|
-| `LOG_LEVEL` | Nivel mínimo de lo que se escribe: `fatal`, `error`, `warn`, `info`, `debug`, `trace` o `silent`. Si no se define, en desarrollo es `debug`, en producción `info` y en pruebas `silent`. |
-| `LOG_PRETTY` | Con `true` el log sale con colores y fácil de leer; con `false` sale en JSON. Por defecto es `true`. En producción siempre sale en JSON. |
-| `LOG_REQUEST_PAYLOAD` | Guarda en el log el cuerpo, los parámetros y la query de cada petición, con contraseñas y tokens ocultos. Por defecto es `true`. Sirve apagarla en desarrollo si trabajas con datos reales. En producción nunca se activa. |
+| LOG_LEVEL | Nivel mínimo de lo que se escribe, que puede ser fatal, error, warn, info, debug, trace o silent. Si no se define, en desarrollo es debug, en producción info y en pruebas silent. |
+| LOG_REQUEST_PAYLOAD | Guarda en el log el cuerpo, los parámetros y la query de cada petición, con contraseñas y tokens ocultos. Viene activa en desarrollo, y ponerla en false sirve cuando trabajas con datos reales. En producción nunca se activa. |
 
 ## Arquitectura
 
@@ -195,8 +187,9 @@ La explicación completa, con ejemplos y los pasos para agregar módulos, casos 
 ### Autenticación y separación entre negocios
 
 - Para iniciar sesión se envían el slug del negocio, el usuario y la contraseña a `POST /auth/login`.
-- La API devuelve un token de acceso, que el frontend manda en el encabezado `Authorization` en cada petición, y guarda la sesión en la cookie `vorea_session`.
-- Cuando el token de acceso vence, `POST /auth/refresh` entrega uno nuevo usando la cookie. Cada renovación cambia también la sesión guardada, y la anterior deja de servir.
+- La API guarda el token de acceso y el de renovación en las cookies jwt_access y jwt_refresh. El frontend no maneja ningún token, solo tiene que enviar sus peticiones con credenciales. Para probar con Postman o curl también se acepta el token de acceso en el encabezado Authorization.
+- Cuando el token de acceso vence, POST /auth/refresh entrega uno nuevo usando la cookie de renovación. Cada renovación cambia también la sesión guardada, y la anterior deja de servir.
+- Las peticiones que modifican datos se rechazan si vienen de una página que no está en CORS_ORIGINS. Así una página ajena no puede aprovechar la sesión abierta del usuario.
 - Todas las rutas exigen un token válido, salvo las marcadas como públicas, que hoy son solo las de autenticación.
 - El negocio con el que se trabaja siempre sale del token, nunca de lo que envía el cliente. Además hay una protección general que rechaza cualquier petición que intente hablar de un negocio distinto al del usuario.
 

@@ -8,7 +8,6 @@ export * from './config/logging.config';
 export * from './database/database.module';
 export * from './http/all-exceptions.filter';
 export * from './http/cors.factory';
-export * from './http/refresh-token.cookie';
 export * from './http/response-message.decorator';
 export * from './http/response.interceptor';
 export * from './events/event-emitter.publisher';

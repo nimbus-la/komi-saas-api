@@ -49,6 +49,16 @@ class EnviromentVariables {
     @MinLength(1)
     DB_NAME!: string;
 
+
+    /**
+     * Solo para una base gestionada en la nube. Se valida como literal para
+     * que un 'True' no deje la conexión sin cifrar sin que nadie se entere.
+     */
+    @IsOptional()
+    @IsIn(['true', 'false'])
+    DB_SSL?: string;
+
+
     /**
      * Orígenes permitidos por CORS, separados por comas.
      * Obligatorio: forzarlo evita el clásico "en producción no me funciona".
@@ -56,19 +66,6 @@ class EnviromentVariables {
     @IsString()
     @MinLength(1)
     CORS_ORIGINS!: string;
-
-    /**
-     * Solo 'true' o 'false' literales. Sin esto un 'False' o un '0' pasarían
-     * la validación y habría que confiar en cómo los interprete la config.
-     */
-    @IsOptional()
-    @IsIn(['true', 'false'])
-    CORS_CREDENTIALS?: string;
-
-    @IsOptional()
-    @IsInt()
-    @Min(0)
-    CORS_MAX_AGE?: number;
 
 
     @IsString()
@@ -103,38 +100,12 @@ class EnviromentVariables {
 
 
     /**
-     * Salida coloreada y legible en vez de JSON. Solo 'true' o 'false'
-     * literales. En producción se ignora, que allí el log es JSON siempre.
-     */
-    @IsOptional()
-    @IsIn(['true', 'false'])
-    LOG_PRETTY?: string;
-
-
-    /**
      * Registrar el cuerpo, la query y los parámetros de cada petición. Sirve
      * para apagarlo al desarrollar, porque en producción no se activa nunca.
      */
     @IsOptional()
     @IsIn(['true', 'false'])
     LOG_REQUEST_PAYLOAD?: string;
-
-
-    @IsOptional()
-    @IsString()
-    @MinLength(1)
-    COOKIE_DOMAIN?: string;
-
-
-    /**
-     * Ausente => 'lax'. Se valida exacto y en minúsculas a propósito: un 'Lax'
-     * o un 'None' no se corrigen en silencio, porque una cookie con el modo
-     * equivocado no falla, simplemente deja de viajar y el refresh empieza a
-     * responder 401 sin ninguna pista de por qué.
-     */
-    @IsOptional()
-    @IsIn(['lax', 'strict', 'none'])
-    COOKIE_SAME_SITE?: string;
 }
 
 

@@ -15,7 +15,6 @@ const ALLOWED_HEADERS = [
     'Authorization',
     'Accept',
     'X-Requested-With',
-    'X-Tenant-Id',
     // Permite que el front mande su propio identificador de petición.
     'X-Request-Id',
 ];
@@ -43,19 +42,21 @@ const METHODS = ['GET', 'HEAD', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'];
 const LOCALHOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 /**
- * Lo que comparten los dos modos. Entre el modo abierto ('*') y el modo
- * whitelist solo cambian `origin` y `credentials`; el resto vive aquí para
- * que no puedan divergir.
+ * Cuántos segundos guarda el navegador la respuesta del preflight antes de volver
+ * a preguntar. Chrome no respeta más de dos horas, así que un número mayor no
+ * ahorraría ninguna petición.
  */
-const baseOptions = (cors: CorsConfig): CorsOptions => ({
-    methods: METHODS,
-    allowedHeaders: ALLOWED_HEADERS,
-    exposedHeaders: EXPOSED_HEADERS,
-    maxAge: cors.maxAge,
-    // 204 ya es el default del paquete `cors`; explícito para que la
-    // respuesta al preflight no dependa de que ese default no cambie.
-    optionsSuccessStatus: 204,
-});
+const PREFLIGHT_MAX_AGE_SECONDS = 7200;
+
+
+/**
+ * Indica si un origen de navegador puede hablar con la API. La usan CORS y el
+ * guard de origen, para que los dos acepten exactamente los mismos orígenes.
+ */
+export const isOriginAllowed = (cors: CorsConfig, origin: string): boolean => {
+    return cors.origins.includes(origin)
+        || (cors.allowLocalhost && LOCALHOST_PATTERN.test(origin));
+}
 
 
 /**
@@ -72,18 +73,6 @@ const baseOptions = (cors: CorsConfig): CorsOptions => ({
  * - Cualquier otro => se rechaza y se loguea.
  */
 export const buildCorsOptions = (cors: CorsConfig): CorsOptions => {
-    if (cors.allowAnyOrigin) {
-        // En producción esto ni siquiera llega: cors.config lo bloquea al arrancar.
-        logger.warn("CORS_ORIGINS contiene '*' - cualquier origen puede consumir la API");
-
-        return {
-            ...baseOptions(cors),
-            origin: true,
-            // '*' y credentials son incompatibles por spec
-            credentials: false,
-        };
-    };
-
     if (cors.origins.length === 0) {
         logger.warn('CORS_ORIGINS vacío - se bloqueará cualquier origen de navegador');
     } else {
@@ -95,7 +84,16 @@ export const buildCorsOptions = (cors: CorsConfig): CorsOptions => {
     };
 
     return {
-        ...baseOptions(cors),
+        methods: METHODS,
+        allowedHeaders: ALLOWED_HEADERS,
+        exposedHeaders: EXPOSED_HEADERS,
+        maxAge: PREFLIGHT_MAX_AGE_SECONDS,
+        // 204 ya es el default del paquete cors; explícito para que la
+        // respuesta al preflight no dependa de que ese default no cambie.
+        optionsSuccessStatus: 204,
+        // La sesión viaja en cookies, así que el navegador siempre tiene que
+        // poder mandarlas.
+        credentials: true,
         origin: (
             requestOrigin: string,
             callback: (err: Error | null, allow?: boolean) => void
@@ -105,23 +103,17 @@ export const buildCorsOptions = (cors: CorsConfig): CorsOptions => {
                 return;
             };
 
-            if (cors.origins.includes(requestOrigin)) {
-                callback(null, true);
-                return;
-            };
-
-            if (cors.allowLocalhost && LOCALHOST_PATTERN.test(requestOrigin)) {
+            if (isOriginAllowed(cors, requestOrigin)) {
                 callback(null, true);
                 return;
             };
 
             /**
-             * `debug` y no `warn`: el origen lo controla quien llama, sin
+             * debug y no warn: el origen lo controla quien llama, sin
              * autenticarse, así que a nivel warn cualquiera puede inflar el log.
              */
             logger.debug(`Origen bloqueado por CORS: ${requestOrigin}`);
             callback(null, false);
         },
-        credentials: cors.credentials,
     };
 };

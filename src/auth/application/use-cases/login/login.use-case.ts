@@ -1,6 +1,6 @@
 import { InactiveAccountException, InactiveTenantException, InvalidCredentialsException } from "../../../domain";
 
-import { LoginParams, SessionContext } from "../../dtos";
+import { LoginParams, LoginResult, SessionContext } from "../../dtos";
 import { toUserResponse } from "../../mappers";
 import { AuthUserFinder, PasswordVerifier, TenantResolver } from "../../ports";
 import { SessionIssuer } from "../../services/session-issuer";
@@ -30,7 +30,7 @@ export class LoginUseCase {
     ) { }
 
 
-    public async execute(params: LoginParams, context: SessionContext) {
+    public async execute(params: LoginParams, context: SessionContext): Promise<LoginResult> {
         // Los slugs se guardan en minúsculas, así que aquí se acomoda lo que
         // escribió el usuario en vez de rechazarlo por una mayúscula de más.
         const tenantSlug = params.tenantSlug.trim().toLowerCase();

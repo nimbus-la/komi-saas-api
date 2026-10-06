@@ -67,6 +67,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     // Autenticado, pero apuntando a otro negocio. No es 401: volver al login no
     // arreglaría nada.
     '1107': { status: ResponseStatus.Error, category: ErrorCategory.Forbidden, message: 'No tienes acceso a los datos de este negocio.' },
+    '1109': { status: ResponseStatus.Error, category: ErrorCategory.Forbidden, message: 'La petición no viene de un origen permitido.' },
 
     '1202': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El NIT del tenant ya se encuentra registrado.' },
     '1203': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'El slug del tenant ya se encuentra registrado.' },

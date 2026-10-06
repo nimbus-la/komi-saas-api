@@ -11,8 +11,6 @@ describe('corsConfig', () => {
     beforeEach(() => {
         process.env = { ...ORIGINAL_ENV };
         delete process.env['CORS_ORIGINS'];
-        delete process.env['CORS_CREDENTIALS'];
-        delete process.env['CORS_MAX_AGE'];
         process.env['NODE_ENV'] = 'development';
     });
 
@@ -44,31 +42,16 @@ describe('corsConfig', () => {
 
         it('sin la variable deja la lista vacía y no rompe', () => {
             expect(corsConfig().origins).toEqual([]);
-            expect(corsConfig().allowAnyOrigin).toBe(false);
         });
     });
 
-    describe("bandera '*'", () => {
-        it("saca '*' de la lista de orígenes y levanta allowAnyOrigin", () => {
+    describe('asterisco', () => {
+        // Con la sesión en cookies, un origen comodín deja el login sin funcionar.
+        it.each(['development', 'production'])('impide arrancar en %s', (env) => {
+            process.env['NODE_ENV'] = env;
             process.env['CORS_ORIGINS'] = '*,https://a.com';
 
-            const config = corsConfig();
-
-            expect(config.allowAnyOrigin).toBe(true);
-            expect(config.origins).toEqual(['https://a.com']);
-        });
-
-        it('lanza al arrancar si se usa en producción', () => {
-            process.env['NODE_ENV'] = 'production';
-            process.env['CORS_ORIGINS'] = '*';
-
-            expect(() => corsConfig()).toThrow(/production/);
-        });
-
-        it('lo permite fuera de producción', () => {
-            process.env['CORS_ORIGINS'] = '*';
-
-            expect(() => corsConfig()).not.toThrow();
+            expect(() => corsConfig()).toThrow(/cookies/);
         });
     });
 
@@ -85,39 +68,6 @@ describe('corsConfig', () => {
             process.env['CORS_ORIGINS'] = 'https://app.komi.com';
 
             expect(corsConfig().allowLocalhost).toBe(false);
-        });
-    });
-
-    describe('credentials', () => {
-        it('por defecto está habilitado', () => {
-            expect(corsConfig().credentials).toBe(true);
-        });
-
-        it("solo se habilita con el literal 'true'", () => {
-            process.env['CORS_CREDENTIALS'] = 'true';
-
-            expect(corsConfig().credentials).toBe(true);
-        });
-
-        it.each(['false', 'False', '0', 'no', ''])(
-            "falla en cerrado ante '%s'",
-            (value) => {
-                process.env['CORS_CREDENTIALS'] = value;
-
-                expect(corsConfig().credentials).toBe(false);
-            }
-        );
-    });
-
-    describe('maxAge', () => {
-        it('usa 86400 por defecto', () => {
-            expect(corsConfig().maxAge).toBe(86400);
-        });
-
-        it('respeta el valor de la variable', () => {
-            process.env['CORS_MAX_AGE'] = '3600';
-
-            expect(corsConfig().maxAge).toBe(3600);
         });
     });
 });
