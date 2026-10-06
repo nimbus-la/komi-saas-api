@@ -9,9 +9,8 @@ import { UserModule } from "@/context/user/user.module";
 import { TenantModule } from "@/context/tenants/tenant.module";
 
 import { SessionRepository } from "./domain";
-import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, TenantScopeGuard, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository } from "./infrastructure";
+import { Argon2PasswordVerifier, AuthController, AuthUserFinderAdapter, JwtAuthGuard, JwtTokenIssuer, TenantScopeGuard, SessionModel, Sha256RefreshTokenGenerator, TenantResolverAdapter, TypeOrmSessionRepository, OriginGuard, SessionCookies } from "./infrastructure";
 import { AuthUserFinder, LoginUseCase, LogoutUseCase, PasswordVerifier, RefreshSessionUseCase, RefreshTokenGenerator, SessionIssuer, TenantResolver, TokenIssuer } from "./application";
-import { SessionCookies } from "./infrastructure/http/session-cookies";
 
 
 /**
@@ -40,6 +39,11 @@ import { SessionCookies } from "./infrastructure/http/session-cookies";
 
         // El orden importa: los guards globales corren en el orden en que se
         // registran, y el de tenant necesita el request.user que deja el de JWT.
+        {
+            provide: APP_GUARD,
+            useClass: OriginGuard
+        },
+
         {
             provide: APP_GUARD,
             useClass: JwtAuthGuard

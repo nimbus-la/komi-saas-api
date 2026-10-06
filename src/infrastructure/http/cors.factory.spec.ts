@@ -141,7 +141,8 @@ describe('buildCorsOptions', () => {
             const options = buildCorsOptions(config);
 
             expect(options.allowedHeaders).toContain('Authorization');
-            expect(options.allowedHeaders).toContain('X-Tenant-Id');
+            // El negocio sale del token, así que el front no tiene por qué mandarlo.
+            expect(options.allowedHeaders).not.toContain('X-Tenant-Id');
             expect(options.exposedHeaders).toContain('X-Total-Count');
             // Sin exponerlo, el navegador oculta el header y el front no puede
             // leer el identificador de la petición.

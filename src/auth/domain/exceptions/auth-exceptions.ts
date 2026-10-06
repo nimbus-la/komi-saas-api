@@ -67,3 +67,18 @@ export class CrossTenantAccessException extends DomainException {
         });
     }
 }
+
+
+
+/**
+ * Una petición que modifica datos llegó desde una página que no es nuestro front.
+ * Con la sesión en cookies, así se ve un intento de CSRF.
+ */
+export class ForeignOriginException extends DomainException {
+    constructor(origin: string) {
+        super({
+            code: "1109",
+            detail: `Petición rechazada desde el origen '${origin}'`
+        });
+    }
+}

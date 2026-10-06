@@ -15,7 +15,6 @@ const ALLOWED_HEADERS = [
     'Authorization',
     'Accept',
     'X-Requested-With',
-    'X-Tenant-Id',
     // Permite que el front mande su propio identificador de petición.
     'X-Request-Id',
 ];
@@ -41,6 +40,12 @@ const METHODS = ['GET', 'HEAD', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'];
  * Anclado en ambos extremos: 'http://localhost:3000.evil.com' NO hace match.
  */
 const LOCALHOST_PATTERN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
+export const isOriginAllowed = (cors: CorsConfig, origin: string): boolean => {
+    return cors.allowAnyOrigin
+        || cors.origins.includes(origin)
+        || (cors.allowLocalhost && LOCALHOST_PATTERN.test(origin));
+}
 
 /**
  * Lo que comparten los dos modos. Entre el modo abierto ('*') y el modo
@@ -86,8 +91,10 @@ export const buildCorsOptions = (cors: CorsConfig): CorsOptions => {
 
     if (cors.origins.length === 0) {
         logger.warn('CORS_ORIGINS vacío - se bloqueará cualquier origen de navegador');
+
     } else {
         logger.log(`CORS habilitado para: ${cors.origins.join(', ')}`);
+
     };
 
     if (cors.allowLocalhost) {
@@ -105,15 +112,10 @@ export const buildCorsOptions = (cors: CorsConfig): CorsOptions => {
                 return;
             };
 
-            if (cors.origins.includes(requestOrigin)) {
+            if (isOriginAllowed(cors, requestOrigin)) {
                 callback(null, true);
                 return;
-            };
-
-            if (cors.allowLocalhost && LOCALHOST_PATTERN.test(requestOrigin)) {
-                callback(null, true);
-                return;
-            };
+            }
 
             /**
              * `debug` y no `warn`: el origen lo controla quien llama, sin
