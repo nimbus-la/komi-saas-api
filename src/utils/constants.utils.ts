@@ -55,7 +55,8 @@ export const JWT_ALGORITHM = 'HS256';
  * `__Secure-` sí es compatible con `Path=/auth`, así que vale revisarlo el día
  * que todos los entornos vayan por HTTPS.
  */
-export const REFRESH_COOKIE_NAME = 'vorea_session';
+export const ACCESS_COOKIE_NAME = 'jwt_access';
+export const REFRESH_COOKIE_NAME = 'jwt_refresh';
 
 /**
  * A qué rutas la manda el navegador.
@@ -66,4 +67,4 @@ export const REFRESH_COOKIE_NAME = 'vorea_session';
  * sigue sin viajar en cada petición al resto de la API, que es de lo que se
  * trata acotar el path.
  */
-export const REFRESH_COOKIE_PATH = '/auth';
+export const SESSION_COOKIE_PATH = '/';

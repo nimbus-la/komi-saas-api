@@ -9,7 +9,6 @@ export * from './security/argon2-password-verifier';
 export * from './security/jwt-token.issuer';
 export * from './security/sha256-refresh-token.generator';
 export * from './types/authenticated-user';
-export * from './http/dto/refresh-token.dto';
 export * from './http/dto/user-payload.dto';
 export * from './persistence/adapters/auth-user-finder.adapter';
 export * from './persistence/adapters/tenant-resolver.adapter';

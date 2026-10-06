@@ -12,22 +12,18 @@ export interface SessionContext {
 }
 
 
+export interface SessionExpiration {
+    accessExpiresAt: string;
+    refreshExpiresAt: string;
+}
+
+
+
 export interface AuthTokens {
     accessToken: string;
     accessExpiresAt: Date;
     refreshToken: string;
     refreshExpiresAt: Date;
-}
-
-
-/**
- * Los mismos tokens, ya con los nombres y el formato con los que salen por la
- * API. Login y refresh devuelven exactamente esto, ni uno más ni uno menos.
- */
-export interface AuthTokensResponse {
-    sessionToken: string;
-    expiredAt: string;
-    refreshExpiresAt: string;
 }
 
 
@@ -38,3 +34,7 @@ export interface LoginResult {
     lastLogin: string;
     user: ResponseLoginDto;
 }
+
+
+
+export type LoginResponse = SessionExpiration & Omit<LoginResult, 'tokens'>;

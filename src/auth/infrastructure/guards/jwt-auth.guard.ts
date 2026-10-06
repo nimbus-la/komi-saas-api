@@ -8,6 +8,7 @@ import { JWT_ALGORITHM, JWT_AUDIENCE, JWT_ISSUER } from "@/utils";
 import { SessionRepository, SessionRevocationReason } from "../../domain";
 import { AccessTokenPayload, AuthenticatedUser, RequestWithUser } from "../types";
 import { IS_PUBLIC_KEY } from "../decorators";
+import { SessionCookies } from "../http/session-cookies";
 
 
 @Injectable()
@@ -32,7 +33,7 @@ export class JwtAuthGuard implements CanActivate {
 
         const request = context.switchToHttp().getRequest<RequestWithUser>();
 
-        const token = this.extractBearerToken(request);
+        const token = this.extractToken(request);
 
         if (token === null) {
             throw new UnauthorizedException('Se requiere un token de acceso');
@@ -84,6 +85,11 @@ export class JwtAuthGuard implements CanActivate {
         if (reason !== null && reason !== SessionRevocationReason.Rotated) {
             throw new UnauthorizedException('La sesión fue cerrada');
         }
+    }
+
+
+    private extractToken(request: RequestWithUser): string | null {
+        return SessionCookies.readAccess(request) ?? this.extractBearerToken(request);
     }
 
 
