@@ -65,10 +65,10 @@ describe('DatabaseLogger', () => {
 
         /**
          * TypeORM llama a estos métodos siempre y deja la decisión al logger:
-         * si no se consultara `DB_LOGGING` aquí, esa variable dejaría de
-         * significar nada.
+         * si no se consultara aquí, no habría forma de apagar las consultas
+         * fuera de desarrollo.
          */
-        it('con DB_LOGGING apagado no se registran', () => {
+        it('con el registro apagado no se registran', () => {
             const { pino, logger } = build(false);
 
             logger.logQuery(SELECT, ['mi-negocio']);
@@ -105,7 +105,7 @@ describe('DatabaseLogger', () => {
          * revienta dentro de un handler de eventos o de un `catch` que se la
          * traga, esta es la única constancia de que ocurrió.
          */
-        it('se registran aunque DB_LOGGING esté apagado', () => {
+        it('se registran aunque el registro de consultas esté apagado', () => {
             const { pino, logger } = build(false);
 
             logger.logQueryError(new Error('boom'), SELECT);

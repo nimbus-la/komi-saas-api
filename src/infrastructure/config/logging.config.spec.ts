@@ -8,7 +8,7 @@ import { Enviroment } from './env.validation';
 const build = (env: Record<string, string | undefined>): LoggingConfig => {
     const previous = { ...process.env };
 
-    for (const key of ['NODE_ENV', 'LOG_LEVEL', 'LOG_PRETTY', 'LOG_REQUEST_PAYLOAD']) {
+    for (const key of ['NODE_ENV', 'LOG_LEVEL', 'LOG_REQUEST_PAYLOAD']) {
         delete process.env[key];
     };
 
@@ -51,9 +51,8 @@ describe('loggingConfig', () => {
 
 
     describe('consola legible', () => {
-        it('activa fuera de producción, salvo que se apague', () => {
+        it('activa fuera de producción', () => {
             expect(build({ NODE_ENV: Enviroment.Development }).pretty).toBe(true);
-            expect(build({ NODE_ENV: Enviroment.Development, LOG_PRETTY: 'false' }).pretty).toBe(false);
         });
 
 
@@ -61,8 +60,8 @@ describe('loggingConfig', () => {
          * `pino-pretty` es dependencia de desarrollo: en producción no está
          * instalado y activarlo tumbaría el arranque.
          */
-        it('en producción es que NO, diga lo que diga la variable', () => {
-            expect(build({ NODE_ENV: Enviroment.Production, LOG_PRETTY: 'true' }).pretty).toBe(false);
+        it('en producción sale siempre en JSON', () => {
+            expect(build({ NODE_ENV: Enviroment.Production }).pretty).toBe(false);
         });
     });
 

@@ -32,29 +32,24 @@ export default registerAs(
     (): CorsConfig => {
         const origins = parseOrigins(process.env['CORS_ORIGINS']);
         const isProduction = process.env['NODE_ENV'] === Enviroment.Production;
-        const allowAnyOrigin = origins.includes('*');
 
-        // Mismo criterio que allowLocalhost: en producción esto no se avisa,
-        // se impide. Un warning en el log de un deploy no lo lee nadie.
-        if (allowAnyOrigin && isProduction) {
+        /**
+         * Un asterisco abriría la API a cualquier origen, y eso no convive con la
+         * sesión en cookies, porque el navegador no manda credenciales a un origen
+         * comodín. Por eso la app se niega a arrancar en cualquier entorno, en vez
+         * de levantar con un login que nunca va a funcionar. Para desarrollar no
+         * hace falta, ya que localhost se permite en cualquier puerto.
+         */
+        if (origins.includes('*')) {
             throw new Error(
-                "CORS_ORIGINS no puede contener '*' con NODE_ENV=production. " +
-                'Declara la lista explícita de dominios del frontend.'
+                'CORS_ORIGINS no admite el asterisco porque la sesión viaja en cookies. ' +
+                'Escribe la lista de dominios del frontend.'
             );
         };
 
         return {
-            // '*' se trata como bandera explícita, nunca como un origen más
-            origins: origins.filter((origin) => origin !== '*'),
-            allowAnyOrigin,
-            /**
-             * Comparación en positivo: un typo ('False', '0', 'no') apaga las
-             * credenciales en lugar de habilitarlas. Ausente => true, que es
-             * lo que necesita el front para mandar cookies.
-             */
-            credentials: (process.env['CORS_CREDENTIALS'] ?? 'true') === 'true',
-            maxAge: parseInt(process.env['CORS_MAX_AGE'] ?? '86400', 10),
-            // En producción NUNCA, sin importar lo que digan las variables
+            origins,
+            // En producción nunca, sin importar lo que digan las variables.
             allowLocalhost: !isProduction,
         };
     }

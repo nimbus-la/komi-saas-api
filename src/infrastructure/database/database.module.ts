@@ -1,4 +1,4 @@
-import { Logger, Module } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { PinoLogger } from "nestjs-pino";
@@ -28,11 +28,6 @@ import { DatabaseLogger } from "../logging/database.logger";
             inject: [ConfigService, PinoLogger],
             useFactory: (configService: ConfigService, pinoLogger: PinoLogger) => {
                 const db = configService.getOrThrow<DatabaseConfig>('database');
-                const logger = new Logger('database-module');
-
-                if (db.synchronize) {
-                    logger.warn('synchronize=true - solo para desarrollo');
-                };
 
                 return {
                     type: 'postgres' as const,
@@ -42,7 +37,10 @@ import { DatabaseLogger } from "../logging/database.logger";
                     password: db.password,
                     database: db.database,
                     autoLoadEntities: true,
-                    synchronize: db.synchronize,
+
+                    // El esquema vive en los scripts de public/db, así que TypeORM
+                    // no lo toca en ningún entorno.
+                    synchronize: false,
 
                     // `logging` ya no se pasa. Con un logger propio, TypeORM
                     // llama a sus métodos siempre y no consulta esa opción, así

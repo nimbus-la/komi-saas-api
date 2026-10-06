@@ -7,9 +7,6 @@ import { buildCorsOptions } from './cors.factory';
 
 const baseConfig: CorsConfig = {
     origins: ['https://app.komi.com'],
-    allowAnyOrigin: false,
-    credentials: true,
-    maxAge: 86400,
     allowLocalhost: false,
 };
 
@@ -77,11 +74,12 @@ describe('buildCorsOptions', () => {
             expect(isAllowed(options, 'https://app.komi.com')).toBe(false);
         });
 
-        it('propaga credentials y maxAge', () => {
-            const options = buildCorsOptions(configWith({ credentials: false, maxAge: 600 }));
+        // La sesión viaja en cookies, y sin credenciales el navegador no las manda.
+        it('habilita siempre las credenciales y fija el tiempo del preflight', () => {
+            const options = buildCorsOptions(baseConfig);
 
-            expect(options.credentials).toBe(false);
-            expect(options.maxAge).toBe(600);
+            expect(options.credentials).toBe(true);
+            expect(options.maxAge).toBe(7200);
         });
     });
 
@@ -120,25 +118,9 @@ describe('buildCorsOptions', () => {
         });
     });
 
-    describe("modo '*'", () => {
-        const openConfig = configWith({ allowAnyOrigin: true, origins: [] });
-
-        it('refleja cualquier origen', () => {
-            expect(buildCorsOptions(openConfig).origin).toBe(true);
-        });
-
-        it('fuerza credentials a false aunque la config diga true', () => {
-            expect(openConfig.credentials).toBe(true);
-            expect(buildCorsOptions(openConfig).credentials).toBe(false);
-        });
-    });
-
     describe('cabeceras y métodos', () => {
-        it.each([
-            ['whitelist', baseConfig],
-            ["'*'", configWith({ allowAnyOrigin: true })],
-        ])('%s expone el mismo contrato', (_caso, config) => {
-            const options = buildCorsOptions(config);
+        it('expone el contrato que espera el front', () => {
+            const options = buildCorsOptions(baseConfig);
 
             expect(options.allowedHeaders).toContain('Authorization');
             // El negocio sale del token, así que el front no tiene por qué mandarlo.

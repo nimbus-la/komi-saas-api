@@ -138,22 +138,23 @@ vuelcan enteros y por ahí viaja el `Authorization`.
 
 ## 4. Las palancas del log
 
-Las tres son opcionales. Sin ninguna, la aplicación loguea bien y decide el
+Las dos son opcionales. Sin ninguna, la aplicación loguea bien y decide el
 entorno.
 
 | Variable | Qué hace | En producción |
 |---|---|---|
-| `LOG_LEVEL` | nivel mínimo que se escribe | por defecto `info` |
-| `LOG_PRETTY` | consola legible en vez de JSON | siempre apagada |
-| `LOG_REQUEST_PAYLOAD` | registrar el cuerpo de cada petición | siempre apagada |
+| LOG_LEVEL | nivel mínimo que se escribe | por defecto info |
+| LOG_REQUEST_PAYLOAD | registrar el cuerpo de cada petición | siempre apagada |
 
-Las dos últimas se ignoran en producción diga lo que diga la variable, y por
-motivos distintos. `pino-pretty` es dependencia de desarrollo, así que allí no
-está instalado y activarlo tumbaría el arranque. Y el cuerpo de una petición son
-datos del cliente y no material de depuración, porque un log se copia, se pega en
-un ticket y se archiva.
+El formato no tiene variable. Al desarrollar el log sale legible y con colores, y
+en producción sale en JSON, porque allí lo lee una máquina y además pino-pretty
+es dependencia de desarrollo y no está instalado.
 
-Poner `LOG_REQUEST_PAYLOAD=false` mientras desarrollas apaga el cuerpo sin apagar
+El cuerpo de las peticiones nunca se registra en producción, porque son datos del
+cliente y no material de depuración. Un log se copia, se pega en un ticket y se
+archiva.
+
+Poner LOG_REQUEST_PAYLOAD en false mientras desarrollas apaga el cuerpo sin apagar
 el log, que es lo que hace falta cuando se trabaja con datos reales. Con él se va
 también la línea de entrada, que sin cuerpo no aporta nada.
 
@@ -185,15 +186,11 @@ SELECT de TypeORM se resume en cuántas columnas son. Los valores largos se
 cortan, así que un hash no acaba entero en la consola. Si hace falta la consulta
 exacta, está en la base de datos.
 
-Hay dos palancas y cada una hace algo distinto.
+Las consultas normales solo se emiten al desarrollar, sin variable de por medio.
+Además van en nivel debug, así que con LOG_LEVEL en info desaparecen aunque se
+esté desarrollando.
 
-| Variable | Qué decide |
-|---|---|
-| `DB_LOGGING` | si TypeORM emite las consultas normales |
-| `LOG_LEVEL` | si se ven, porque van en `debug` y con `info` desaparecen |
-
-Las consultas que fallan se registran siempre, aunque `DB_LOGGING` esté en
-`false`. Si una revienta dentro de un handler de eventos o de un `catch` que se
+Las consultas que fallan se registran siempre, en cualquier entorno. Si una revienta dentro de un handler de eventos o de un `catch` que se
 la traga, esa línea es la única constancia de que ocurrió. En una petición HTTP
 se verá dos veces, aquí en el momento exacto y al final en el filtro con el
 volcado completo, y las une el `traceId`.

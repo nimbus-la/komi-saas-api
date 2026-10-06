@@ -33,10 +33,10 @@ describe('validateEnv', () => {
     });
 
     it('convierte los numéricos que llegan como string', () => {
-        const validated = validateEnv({ ...VALID_ENV, CORS_MAX_AGE: '3600' });
+        const validated = validateEnv({ ...VALID_ENV, JWT_ACCESS_TTL: '3600' });
 
         expect(validated.DB_PORT).toBe(5432);
-        expect(validated.CORS_MAX_AGE).toBe(3600);
+        expect(validated.JWT_ACCESS_TTL).toBe(3600);
     });
 
     describe('variables obligatorias', () => {
@@ -115,30 +115,18 @@ describe('validateEnv', () => {
         });
     });
 
-    describe('CORS_CREDENTIALS', () => {
+    describe('DB_SSL', () => {
         it('es opcional', () => {
             expect(() => validateEnv({ ...VALID_ENV })).not.toThrow();
         });
 
         it.each(['true', 'false'])("acepta el literal '%s'", (value) => {
-            expect(() => validateEnv({ ...VALID_ENV, CORS_CREDENTIALS: value })).not.toThrow();
+            expect(() => validateEnv({ ...VALID_ENV, DB_SSL: value })).not.toThrow();
         });
 
-        /**
-         * Sin esta validación, un 'False' llegaría a la config y habría que
-         * confiar en cómo lo interprete el parseo.
-         */
-        it.each(['False', 'TRUE', '0', '1', 'yes'])(
-            "rechaza '%s' al arrancar",
-            (value) => {
-                expect(() => validateEnv({ ...VALID_ENV, CORS_CREDENTIALS: value }))
-                    .toThrow(/CORS_CREDENTIALS/);
-            }
-        );
-    });
-
-    it('rechaza un CORS_MAX_AGE no numérico', () => {
-        expect(() => validateEnv({ ...VALID_ENV, CORS_MAX_AGE: 'un-dia' }))
-            .toThrow(/CORS_MAX_AGE/);
+        // Un True mal escrito dejaría la conexión sin cifrar sin que nadie se entere.
+        it.each(['True', '1', 'yes'])("rechaza '%s' al arrancar", (value) => {
+            expect(() => validateEnv({ ...VALID_ENV, DB_SSL: value })).toThrow(/DB_SSL/);
+        });
     });
 });

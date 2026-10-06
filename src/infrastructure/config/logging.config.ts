@@ -46,11 +46,10 @@ export default registerAs(
                 ? requested
                 : defaultLevel(environment),
 
-            // pino-pretty es dependencia de desarrollo y en producción no
-            // está instalado, así que activarlo allí tumbaría el arranque. Por
-            // eso en producción la respuesta es que no, diga lo que diga la
-            // variable.
-            pretty: !isProduction && process.env['LOG_PRETTY'] !== 'false',
+            // Legible al desarrollar y en JSON en producción, donde lo lee una
+            // máquina. Además pino-pretty es dependencia de desarrollo y allí no
+            // está instalado, así que activarlo tumbaría el arranque.
+            pretty: !isProduction,
 
             // El cuerpo de una petición puede traer datos personales del
             // cliente, así que en producción no se registra. Al desarrollar se
