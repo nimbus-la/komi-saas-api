@@ -146,7 +146,10 @@ export class TypeOrmInventoryItemRepository implements InventoryItemRepository {
 
 
 
-    /** Solo lotes ACTIVOS: con existencias y no vencidos. */
+    /**
+     * Lotes con existencias, vencidos incluidos. El vencimiento depende de la
+     * fecha de cada operación, así que lo resuelve el dominio con isActive(date).
+     */
     private async activeBatchesOf(itemIds: string[], branchId?: string): Promise<InventoryBatchEntity[]> {
         const query = this.batches.createQueryBuilder('b')
             .where('b.inventoryItemId IN (:...itemIds)', { itemIds })

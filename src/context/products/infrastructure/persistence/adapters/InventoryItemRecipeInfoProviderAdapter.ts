@@ -40,33 +40,17 @@ export class InventoryItemRecipeInfoProviderAdapter
     private toRecipeInfo(item: InventoryItem, branchId?: string): InventoryItemRecipeInfo {
         const primitive = item.toPrimitives();
 
-        const currentStock = primitive.batches.reduce(
-            (total, batch) =>
-                total + Number(batch.quantityRemaining),
-            0,
-        );
-
-        const totalCost = primitive.batches.reduce(
-            (total, batch) =>
-                total +
-                (
-                    Number(batch.quantityRemaining) *
-                    Number(batch.unitCostAmount)
-                ),
-            0,
-        );
-
-        const unitCostAmount =
-            currentStock === 0
-                ? null
-                : (totalCost / currentStock).toString();
+        // El repositorio también trae lotes vencidos con existencias; el dominio
+        // los descarta para que no cuenten en el stock ni en el costo.
+        const currentStock = item.currentStock().getValue();
+        const unitCostAmount = item.weightedAverageCost()?.getAmount() ?? null;
 
         return {
             inventoryItemId: primitive.id,
             name: primitive.name,
             unitOfMeasure: primitive.unitOfMeasure,
             unitCostAmount,
-            currentStock: currentStock.toString(),
+            currentStock,
             isActive: primitive.isActive,
             ...(branchId !== undefined
                 ? {

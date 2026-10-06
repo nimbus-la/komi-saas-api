@@ -74,6 +74,33 @@ describe('InventoryItemRecipeInfoProviderAdapter', () => {
         expect(info).not.toHaveProperty('branchStock');
     });
 
+    it('deja los lotes vencidos fuera del stock y del costo promedio', async () => {
+        const { adapter } = buildAdapter([buildItem({
+            batches: [
+                { ...batch('1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f', BRANCH_A, '3', '2099-12-31'), unitCostAmount: '1000' },
+                { ...batch('2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a', BRANCH_A, '4', '2000-01-01'), unitCostAmount: '9000' },
+                { ...batch('3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6a7b', BRANCH_B, '1', '2099-12-31'), unitCostAmount: '2000' },
+            ],
+        })]);
+
+        const info = (await adapter.getMany(TENANT_ID, [ITEM_ID])).get(ITEM_ID);
+
+        expect(Number(info?.currentStock)).toBe(4);
+        // (3 × 1000 + 1 × 2000) / 4 = 1250
+        expect(info?.unitCostAmount).toBe('1250.00');
+    });
+
+    it('devuelve el costo en null cuando solo quedan lotes vencidos', async () => {
+        const { adapter } = buildAdapter([buildItem({
+            batches: [batch('2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a', BRANCH_A, '4', '2000-01-01')],
+        })]);
+
+        const info = (await adapter.getMany(TENANT_ID, [ITEM_ID])).get(ITEM_ID);
+
+        expect(Number(info?.currentStock)).toBe(0);
+        expect(info?.unitCostAmount).toBeNull();
+    });
+
     it('cuenta solo los lotes activos de la sucursal y usa el mínimo global', async () => {
         const { adapter } = buildAdapter([buildItem()]);
 
