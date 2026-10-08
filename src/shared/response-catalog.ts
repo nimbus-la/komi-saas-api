@@ -50,6 +50,9 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1032': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El valor enviado es igual al actual de la sucursal.' },
     '1033': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'La contraseña actual no es correcta.' },
     '1034': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No estás autorizado para cambiar la contraseña de este usuario.' },
+    '1035': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El estado enviado no es válido.' },
+    '1036': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El registro ya se encuentra en ese estado.' },
+    '1037': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El cambio de estado no está permitido.' },
 
 
     // 11xx - Autenticación
@@ -131,8 +134,9 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1401': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del producto es inválido.' },
     '1402': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe un producto registrado con ese nombre.' },
     '1403': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se pudo obtener el siguiente valor de la secuencia de SKU.' },
-    '1404': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra desactivado.' },
-    '1405': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra activado.' },
+    '1404': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra inactivo.' },
+    '1405': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra activo.' },
+    '1406': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto fue eliminado y no se puede modificar.' },
     '1407': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen de beneficio no puede ser menor que 0.' },
     '1408': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se encontraron cambios para actualizar el producto.' },
     '1409': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El negocio es obligatorio para buscar productos.' },
