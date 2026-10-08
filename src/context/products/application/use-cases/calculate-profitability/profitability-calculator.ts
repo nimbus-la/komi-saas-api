@@ -9,7 +9,7 @@ import { ProfitabilityInput, ProfitabilityResult } from "../../../domain/interfa
 const CIEN = new Decimal(100);
 
 /**
- * Fórmulas de rentabilidad de un producto a partir del costo de su receta.
+ * Fórmulas de rentabilidad de un producto a partir de su costo.
  * El margen se mide sobre el precio de venta. Los cálculos se hacen con
  * precisión completa y solo se redondea a dos decimales al devolver.
  */
@@ -21,30 +21,30 @@ export class ProfitabilityCalculator {
      * ninguno solo se devuelve el costo.
      */
     public static calculate(input: ProfitabilityInput): ProfitabilityResult {
-        const costo = new Decimal(input.costoReceta);
-        const { precioVenta, margenObjetivo } = input;
+        const costo = new Decimal(input.cost);
+        const { price, targetMargin } = input;
 
-        if (margenObjetivo !== undefined) {
-            this.assertValidMargin(margenObjetivo);
+        if (targetMargin !== undefined) {
+            this.assertValidMargin(targetMargin);
         }
 
-        if (precioVenta !== undefined) {
-            if (margenObjetivo !== undefined) {
-                this.assertPriceMatchesMargin(costo, new Decimal(precioVenta), new Decimal(margenObjetivo));
+        if (price !== undefined) {
+            if (targetMargin !== undefined) {
+                this.assertPriceMatchesMargin(costo, new Decimal(price), new Decimal(targetMargin));
             }
 
-            return this.fromPrice(costo, new Decimal(precioVenta));
+            return this.fromPrice(costo, new Decimal(price));
         }
 
-        if (margenObjetivo !== undefined) {
-            return this.fromPrice(costo, this.priceForMargin(costo, new Decimal(margenObjetivo)));
+        if (targetMargin !== undefined) {
+            return this.fromPrice(costo, this.priceForMargin(costo, new Decimal(targetMargin)));
         }
 
         return {
-            costoReceta: this.round(costo),
-            precioVenta: null,
-            gananciaBruta: null,
-            margen: null,
+            cost: this.round(costo),
+            price: null,
+            grossProfit: null,
+            margin: null,
             foodCost: null,
             markup: null,
         };
@@ -55,10 +55,10 @@ export class ProfitabilityCalculator {
         const ganancia = precio.minus(costo);
 
         return {
-            costoReceta: this.round(costo),
-            precioVenta: this.round(precio),
-            gananciaBruta: this.round(ganancia),
-            margen: this.round(this.marginOf(costo, precio)),
+            cost: this.round(costo),
+            price: this.round(precio),
+            grossProfit: this.round(ganancia),
+            margin: this.round(this.marginOf(costo, precio)),
             foodCost: precio.isZero() ? null : this.round(costo.div(precio).times(CIEN)),
             // Sin costo el markup sería una división por cero.
             markup: costo.isZero() ? null : this.round(ganancia.div(costo).times(CIEN)),

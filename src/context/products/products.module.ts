@@ -187,17 +187,15 @@ import { ProductBranchConfigEntity } from "@/context/product-branch-config/infra
       provide: CalculateProfitabilityUseCase,
       useFactory: (
         tenantChecker: TenantChecker,
-        recipeInfoProvider: InventoryItemRecipeInfoProvider,
       ) => {
         return new CalculateProfitabilityUseCase(
           tenantChecker,
-          recipeInfoProvider,
         );
       },
 
+      // Recetas: InventoryItemRecipeInfoProvider desconectado en esta versión.
       inject: [
         TenantChecker,
-        InventoryItemRecipeInfoProvider,
       ],
     },
   ],
