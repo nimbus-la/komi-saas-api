@@ -44,22 +44,19 @@ export class ProductController {
   public async update(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateProductDto,
-  ) {
+  ): Promise<void> {
     const { productId, profitMargin, ...changes } = dto;
 
-    const product =
-      await this.updateProductUseCase.execute({
-        ...changes,
-        id: productId,
-        tenantId: user.tenantId,
-        // El margen es opcional en una actualización parcial: sin dato no se
-        // envía la clave, y el caso de uso conserva el que ya tiene el producto.
-        ...(profitMargin !== undefined
-          ? { profitMargin: ProfitMargin.create(profitMargin.toString()) }
-          : {}),
-      });
-
-    return this.findOne(user.tenantId, product.id.value);
+    await this.updateProductUseCase.execute({
+      ...changes,
+      id: productId,
+      tenantId: user.tenantId,
+      // El margen es opcional en una actualización parcial: sin dato no se
+      // envía la clave, y el caso de uso conserva el que ya tiene el producto.
+      ...(profitMargin !== undefined
+        ? { profitMargin: ProfitMargin.create(profitMargin.toString()) }
+        : {}),
+    });
   }
 
 
