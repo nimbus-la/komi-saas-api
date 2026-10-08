@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
-import { DataSource, In, Not, Repository } from "typeorm";
+import { DataSource, Not, Repository } from "typeorm";
 import { Paginated, Pagination } from "@/interfaces";
 import { EntityStatus, VISIBLE_ENTITY_STATUSES } from "@/shared";
 import { ProductEntity } from "../models/product.entity";
@@ -10,7 +10,10 @@ import { ProductName } from "../../../domain/value-object/product-name.value-obj
 import { ProductId } from "../../../domain/value-object/product-id.value-object";
 import { ProductMapper } from "../mappers/products-mapper";
 import { RecipeIngredientEntity } from "../models/recipe-ingredient.entity";
-import { ProductBranchConfigEntity } from "@/context/product-branch-config/infrastructure/persistence/models/product-branch-config.entity";
+
+// Recetas y sucursal: desconectado en esta versión.
+// import { In } from "typeorm";
+// import { ProductBranchConfigEntity } from "@/context/product-branch-config/infrastructure/persistence/models/product-branch-config.entity";
 
 import {
   Product,
@@ -146,20 +149,21 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
+    // Sucursal: desconectado en esta versión.
     // TypeORM no traduce las propiedades en un join sin relación, por eso van
     // los nombres de las columnas.
-    if (filters.branchId !== undefined) {
-      query.leftJoin(
-        ProductBranchConfigEntity,
-        "config",
-        `config.product_id = product.product_id
-          AND config.branch_id = :branchId
-          AND config.tenant_id = :tenantId`,
-        {
-          branchId: filters.branchId,
-        },
-      );
-    }
+    // if (filters.branchId !== undefined) {
+    //   query.leftJoin(
+    //     ProductBranchConfigEntity,
+    //     "config",
+    //     `config.product_id = product.product_id
+    //       AND config.branch_id = :branchId
+    //       AND config.tenant_id = :tenantId`,
+    //     {
+    //       branchId: filters.branchId,
+    //     },
+    //   );
+    // }
 
     // Sin filtro de estado salen los activos y los pausados; los eliminados
     // nunca aparecen en un listado.
@@ -183,79 +187,90 @@ export class ProductRepositoryImpl extends ProductRepository {
 
     const [rows, total] = await query.getManyAndCount();
 
-    const recipeIngredientRepository =
-      this.dataSource.getRepository(RecipeIngredientEntity);
-
-    const recipeIngredients =
-      await recipeIngredientRepository.find({
-        where: {
-          productId: In(rows.map((row) => row.id)),
-        },
-      });
-
-    const ingredientsByProduct = new Map<
-      string,
-      RecipeIngredientEntity[]
-    >();
-
-    for (const ingredient of recipeIngredients) {
-      const list =
-        ingredientsByProduct.get(ingredient.productId) ?? [];
-
-      list.push(ingredient);
-
-      ingredientsByProduct.set(
-        ingredient.productId,
-        list,
-      );
-    }
-
-    const branchConfigs = filters.branchId !== undefined
-      ? await this.findBranchConfigs(
-        filters.tenantId,
-        filters.branchId,
-        rows.map((row) => row.id),
-      )
-      : new Map<string, ProductBranchConfigEntity>();
-
     return {
-      rows: rows.map((row) =>
-        ProductMapper.toResponse(
-          row,
-          ProductMapper.toIngredientsResponse(
-            ingredientsByProduct.get(row.id) ?? [],
-          ),
-          branchConfigs.get(row.id),
-        ),
-      ),
+      rows: rows.map((row) => ProductMapper.toResponse(row)),
       pageNumber: pagination.pageNumber,
       pageSize: pagination.pageSize,
       total,
     };
+
+    // Recetas y sucursal: desconectado en esta versión. Así se armaba la página
+    // con los ingredientes de cada producto y el precio de la sucursal.
+    //
+    // const recipeIngredientRepository =
+    //   this.dataSource.getRepository(RecipeIngredientEntity);
+    //
+    // const recipeIngredients =
+    //   await recipeIngredientRepository.find({
+    //     where: {
+    //       productId: In(rows.map((row) => row.id)),
+    //     },
+    //   });
+    //
+    // const ingredientsByProduct = new Map<
+    //   string,
+    //   RecipeIngredientEntity[]
+    // >();
+    //
+    // for (const ingredient of recipeIngredients) {
+    //   const list =
+    //     ingredientsByProduct.get(ingredient.productId) ?? [];
+    //
+    //   list.push(ingredient);
+    //
+    //   ingredientsByProduct.set(
+    //     ingredient.productId,
+    //     list,
+    //   );
+    // }
+    //
+    // const branchConfigs = filters.branchId !== undefined
+    //   ? await this.findBranchConfigs(
+    //     filters.tenantId,
+    //     filters.branchId,
+    //     rows.map((row) => row.id),
+    //   )
+    //   : new Map<string, ProductBranchConfigEntity>();
+    //
+    // return {
+    //   rows: rows.map((row) =>
+    //     ProductMapper.toRecipeResponse(
+    //       row,
+    //       ProductMapper.toIngredientsResponse(
+    //         ingredientsByProduct.get(row.id) ?? [],
+    //       ),
+    //       branchConfigs.get(row.id),
+    //     ),
+    //   ),
+    //   pageNumber: pagination.pageNumber,
+    //   pageSize: pagination.pageSize,
+    //   total,
+    // };
   }
 
-  /** Configuraciones de la sucursal para los productos de la página, por producto. */
-  private async findBranchConfigs(
-    tenantId: string,
-    branchId: string,
-    productIds: string[],
-  ): Promise<Map<string, ProductBranchConfigEntity>> {
-    if (productIds.length === 0) {
-      return new Map();
-    }
-
-    const configs = await this.dataSource
-      .getRepository(ProductBranchConfigEntity)
-      .find({
-        where: {
-          tenantId,
-          branchId,
-          productId: In(productIds),
-        },
-      });
-
-    return new Map(configs.map((config) => [config.productId, config]));
-  }
+  // Sucursal: desconectado en esta versión.
+  // /** Configuraciones de la sucursal para los productos de la página, por producto. */
+  // private async findBranchConfigs(
+  //   tenantId: string,
+  //   branchId: string,
+  //   productIds: string[],
+  // ): Promise<Map<string, ProductBranchConfigEntity>> {
+  //   if (productIds.length === 0) {
+  //     return new Map();
+  //   }
+  //
+  //   const configs = await this.dataSource
+  //     .getRepository(ProductBranchConfigEntity)
+  //     .find({
+  //       where: {
+  //         tenantId,
+  //         branchId,
+  //         productId: In(productIds),
+  //       },
+  //     });
+  //
+  //   return new Map(configs.map((config) => [config.productId, config]));
+  // }
 
 
   /**

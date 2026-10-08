@@ -1,14 +1,16 @@
-import { Type } from "class-transformer";
 import {
   IsIn,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
-  ValidateNested,
 } from "class-validator";
-import { UpdateRecipeIngredientDto } from "./update-recipe-ingredient.dto";
 import { ENTITY_STATUSES_USER_SET, EntityStatus } from "@/shared";
+
+// Recetas: desconectado en esta versión.
+// import { Type } from "class-transformer";
+// import { ValidateNested } from "class-validator";
+// import { UpdateRecipeIngredientDto } from "./update-recipe-ingredient.dto";
 
 
 export class UpdateProductDto {
@@ -17,34 +19,35 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsUUID()
-  productCategoryId!: string;
+  categoryId?: string;
 
   @IsOptional()
   @IsString()
-  productName!: string;
+  name?: string;
 
   @IsOptional()
   @IsString()
-  productDescription?: string | undefined;
+  description?: string;
 
   @IsOptional()
   @IsString()
-  productImgUrl?: string | undefined;
-
-  @IsOptional()
-  @IsIn(ENTITY_STATUSES_USER_SET)
-  status!: EntityStatus;
+  imageUrl?: string;
 
   @IsOptional()
   @IsString()
-  productBasePrice!: string;
+  price?: string;
 
   @IsOptional()
   @IsNumber()
-  profitMargin?: number;
+  targetMargin?: number;
 
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => UpdateRecipeIngredientDto)
-  recipe?: UpdateRecipeIngredientDto[];
+  @IsIn(ENTITY_STATUSES_USER_SET)
+  status?: EntityStatus;
+
+  // Recetas: desconectado en esta versión.
+  // @IsOptional()
+  // @ValidateNested({ each: true })
+  // @Type(() => UpdateRecipeIngredientDto)
+  // recipe?: UpdateRecipeIngredientDto[];
 }

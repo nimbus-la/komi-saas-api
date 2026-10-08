@@ -1,9 +1,8 @@
-import { Money, Quantity } from "@/shared";
+import { Money } from "@/shared";
 import { UpdateProductApplicationParams } from "@/context/products/domain/interfaces/product-application";
 import { ProductId } from "@/context/products/domain/value-object/product-id.value-object";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
 import { ProfitMargin } from "@/context/products/domain/value-object/profit-margin.value-object";
-import { InventoryItemChecker } from "../../ports/inventory-item-checker";
 import { ProductCategoryChecker } from "../../ports/product-category-checker";
 
 import {
@@ -14,15 +13,20 @@ import {
     TenantNotFoundException,
 } from "../../../domain";
 import { ProductCategoryNotFoundException } from "@/context/product-categories";
-import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
 import { TenantChecker } from "../../ports/tenant-checker";
+
+// Recetas: desconectado en esta versión.
+// import { Quantity } from "@/shared";
+// import { InventoryItemChecker } from "../../ports/inventory-item-checker";
+// import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
 
 export class UpdateProductUseCase {
     constructor(
         private readonly repository: ProductRepository,
         private readonly tenantChecker: TenantChecker,
         private readonly categoryChecker: ProductCategoryChecker,
-        private readonly inventoryChecker: InventoryItemChecker,
+        // Recetas: desconectado en esta versión.
+        // private readonly inventoryChecker: InventoryItemChecker,
     ) { }
 
     public async execute(params: UpdateProductApplicationParams): Promise<Product> {
@@ -58,22 +62,23 @@ export class UpdateProductUseCase {
             }
         }
 
-        if (params.recipe) {
-            for (const ingredient of params.recipe) {
-                const exists =
-                    await this.inventoryChecker.existsForTenant(
-                        params.tenantId,
-                        ingredient.inventoryItemId,
-                    );
-
-                if (!exists) {
-                    throw new InventoryItemNotValidForTenantException(
-                        ingredient.inventoryItemId,
-                        params.tenantId,
-                    );
-                }
-            }
-        }
+        // Recetas: desconectado en esta versión.
+        // if (params.recipe) {
+        //     for (const ingredient of params.recipe) {
+        //         const exists =
+        //             await this.inventoryChecker.existsForTenant(
+        //                 params.tenantId,
+        //                 ingredient.inventoryItemId,
+        //             );
+        //
+        //         if (!exists) {
+        //             throw new InventoryItemNotValidForTenantException(
+        //                 ingredient.inventoryItemId,
+        //                 params.tenantId,
+        //             );
+        //         }
+        //     }
+        // }
 
         const current = product.toPrimitives();
 
@@ -97,9 +102,10 @@ export class UpdateProductUseCase {
                 params.profitMargin.toPrimitives() !== current.profitMargin) ||
 
             (params.status !== undefined &&
-                params.status !== current.status) ||
+                params.status !== current.status);
 
-            (params.recipe !== undefined);
+            // Recetas: desconectado en esta versión.
+            // || (params.recipe !== undefined);
 
         if (!hasChanges) {
             throw new ProductNotModifiedException();
@@ -134,15 +140,16 @@ export class UpdateProductUseCase {
             product.changeStatus(params.status);
         }
 
-        if (params.recipe) {
-            product.replaceRecipe(
-                params.recipe.map((ingredient) => ({
-                    inventoryItemId: ingredient.inventoryItemId,
-                    quantity: Quantity.of(ingredient.quantity),
-                    isOptional: ingredient.isOptional,
-                })),
-            );
-        }
+        // Recetas: desconectado en esta versión.
+        // if (params.recipe) {
+        //     product.replaceRecipe(
+        //         params.recipe.map((ingredient) => ({
+        //             inventoryItemId: ingredient.inventoryItemId,
+        //             quantity: Quantity.of(ingredient.quantity),
+        //             isOptional: ingredient.isOptional,
+        //         })),
+        //     );
+        // }
 
         await this.repository.update(product);
 

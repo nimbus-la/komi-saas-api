@@ -5,8 +5,8 @@ import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { SearchProductsDto } from "./dto/search-products.dto";
-import { CalculateProfitabilityDto } from "./dto/calculate-profitability.dto";
 import { DeleteProductDto } from "./dto/delete-product.dto";
+import { CalculateProfitabilityDto } from "./dto/calculate-profitability.dto";
 import { CalculateProfitabilityUseCase, CreateProductUseCase, DeleteProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "../../application";
 import { ProfitMargin } from "../../domain/value-object/profit-margin.value-object";
 import { ResponseMessage } from "@/infrastructure";
@@ -18,8 +18,8 @@ export class ProductController {
     private readonly createProductUseCase: CreateProductUseCase,
     private readonly updateProductUseCase: UpdateProductUseCase,
     private readonly searchProductsUseCase: SearchProductsUseCase,
-    private readonly calculateProfitabilityUseCase: CalculateProfitabilityUseCase,
     private readonly deleteProductUseCase: DeleteProductUseCase,
+    private readonly calculateProfitabilityUseCase: CalculateProfitabilityUseCase,
   ) { }
 
 
@@ -30,9 +30,13 @@ export class ProductController {
     @Body() dto: CreateProductDto,
   ) {
     const product = await this.createProductUseCase.execute({
-      ...dto,
       tenantId: user.tenantId,
-      profitMargin: ProfitMargin.create(dto.profitMargin.toString())
+      productCategoryId: dto.categoryId,
+      productName: dto.name,
+      productDescription: dto.description,
+      productImgUrl: dto.imageUrl,
+      productBasePrice: dto.price,
+      profitMargin: ProfitMargin.create(dto.targetMargin.toString()),
     });
 
     return this.findOne(user.tenantId, product.id.value);
@@ -45,16 +49,19 @@ export class ProductController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateProductDto,
   ): Promise<void> {
-    const { productId, profitMargin, ...changes } = dto;
-
     await this.updateProductUseCase.execute({
-      ...changes,
-      id: productId,
+      id: dto.productId,
       tenantId: user.tenantId,
+      productCategoryId: dto.categoryId,
+      productName: dto.name,
+      productDescription: dto.description,
+      productImgUrl: dto.imageUrl,
+      productBasePrice: dto.price,
+      status: dto.status,
       // El margen es opcional en una actualización parcial: sin dato no se
       // envía la clave, y el caso de uso conserva el que ya tiene el producto.
-      ...(profitMargin !== undefined
-        ? { profitMargin: ProfitMargin.create(profitMargin.toString()) }
+      ...(dto.targetMargin !== undefined
+        ? { profitMargin: ProfitMargin.create(dto.targetMargin.toString()) }
         : {}),
     });
   }
@@ -65,10 +72,14 @@ export class ProductController {
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: SearchProductsDto,
   ) {
-    const { pageNumber, pageSize, ...filters } = query;
+    const { pageNumber, pageSize, categoryId, ...filters } = query;
 
     return this.searchProductsUseCase.execute(
-      { ...filters, tenantId: user.tenantId },
+      {
+        ...filters,
+        ...(categoryId !== undefined ? { productCategoryId: categoryId } : {}),
+        tenantId: user.tenantId,
+      },
       { pageNumber, pageSize },
     );
   }
@@ -80,13 +91,13 @@ export class ProductController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CalculateProfitabilityDto,
   ) {
-    const { receta, precioVenta, margenObjetivo } = dto;
+    const { cost, price, targetMargin } = dto;
 
     return this.calculateProfitabilityUseCase.execute({
       tenantId: user.tenantId,
-      receta,
-      ...(precioVenta !== undefined ? { precioVenta } : {}),
-      ...(margenObjetivo !== undefined ? { margenObjetivo } : {}),
+      cost,
+      ...(price !== undefined ? { price } : {}),
+      ...(targetMargin !== undefined ? { targetMargin } : {}),
     });
   }
 
@@ -105,7 +116,7 @@ export class ProductController {
   }
 
 
-  /** Devuelve el producto ya compuesto (categoría, receta y costos) tras escribirlo. */
+  /** Devuelve el producto ya compuesto (con el nombre de su categoría) tras escribirlo. */
   private async findOne(tenantId: string, productId: string) {
     const { rows } = await this.searchProductsUseCase.execute(
       { tenantId, productId },

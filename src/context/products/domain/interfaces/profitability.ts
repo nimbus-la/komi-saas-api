@@ -3,9 +3,9 @@
  * (30 significa 30 %), igual que el margen guardado en el producto.
  */
 export interface ProfitabilityInput {
-    costoReceta: string;
-    precioVenta?: string;
-    margenObjetivo?: string;
+    cost: string;
+    price?: string;
+    targetMargin?: string;
 }
 
 /**
@@ -13,10 +13,10 @@ export interface ProfitabilityInput {
  * costo, y el resto de campos sale en null.
  */
 export interface ProfitabilityResult {
-    costoReceta: string;
-    precioVenta: string | null;
-    gananciaBruta: string | null;
-    margen: string | null;
+    cost: string;
+    price: string | null;
+    grossProfit: string | null;
+    margin: string | null;
     foodCost: string | null;
     markup: string | null;
 }

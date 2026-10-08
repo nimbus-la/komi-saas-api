@@ -22,16 +22,14 @@ export class SearchProductsDto {
 
     @IsOptional()
     @IsUUID()
-    productCategoryId?: string;
+    categoryId?: string;
 
-    /**
-     * Sucursal en la que se evalúa el stock de los insumos de cada receta.
-     * También define el precio y el estado de cada producto según su
-     * configuración en esa sucursal; sin configuración salen los generales.
-     */
-    @IsOptional()
-    @IsUUID()
-    branchId?: string;
+    // Sucursal: desconectado en esta versión. Evaluaba el stock de los insumos
+    // de cada receta y definía el precio y el estado según la configuración de
+    // esa sucursal.
+    // @IsOptional()
+    // @IsUUID()
+    // branchId?: string;
 
     @IsOptional()
     @IsIn(ENTITY_STATUSES_USER_SET)

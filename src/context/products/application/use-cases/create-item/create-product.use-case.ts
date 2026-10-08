@@ -1,13 +1,16 @@
-import { BasePriceError, EventPublisher, Money, Quantity } from "@/shared";
+import { BasePriceError, EventPublisher, Money } from "@/shared";
 
 import { CreateProductApplicationParams } from "@/context/products/domain/interfaces/product-application";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
 import { ProductSku } from "@/context/products/domain/value-object/product-sku.value-object";
 import { TenantChecker } from "../../ports/tenant-checker";
 import { ProductCategoryChecker } from "../../ports/product-category-checker";
-import { InventoryItemChecker } from "../../ports/inventory-item-checker";
 import { ProductCategoryNotFoundException } from "@/context/product-categories";
-import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
+
+// Recetas: desconectado en esta versión.
+// import { Quantity } from "@/shared";
+// import { InventoryItemChecker } from "../../ports/inventory-item-checker";
+// import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
 
 import {
     Product,
@@ -21,9 +24,9 @@ export class CreateProductUseCase {
         private readonly repository: ProductRepository,
         private readonly tenantChecker: TenantChecker,
         private readonly categoryChecker: ProductCategoryChecker,
-        private readonly inventoryChecker: InventoryItemChecker,
         private readonly eventPublisher: EventPublisher,
-
+        // Recetas: desconectado en esta versión.
+        // private readonly inventoryChecker: InventoryItemChecker,
     ) { }
 
     public async execute(
@@ -51,20 +54,21 @@ export class CreateProductUseCase {
             );
         }
 
-        for (const ingredient of params.recipe ?? []) {
-
-            const exists = await this.inventoryChecker.existsForTenant(
-                params.tenantId,
-                ingredient.inventoryItemId,
-            );
-
-            if (!exists) {
-                throw new InventoryItemNotValidForTenantException(
-                    ingredient.inventoryItemId,
-                    params.tenantId,
-                );
-            }
-        }
+        // Recetas: desconectado en esta versión.
+        // for (const ingredient of params.recipe ?? []) {
+        //
+        //     const exists = await this.inventoryChecker.existsForTenant(
+        //         params.tenantId,
+        //         ingredient.inventoryItemId,
+        //     );
+        //
+        //     if (!exists) {
+        //         throw new InventoryItemNotValidForTenantException(
+        //             ingredient.inventoryItemId,
+        //             params.tenantId,
+        //         );
+        //     }
+        // }
 
         const productName = ProductName.create(
             params.productName,
@@ -103,20 +107,21 @@ export class CreateProductUseCase {
 
         });
 
-        for (const ingredient of params.recipe ?? []) {
-            product.addIngredient({
-                inventoryItemId:
-                    ingredient.inventoryItemId,
-
-                quantity:
-                    Quantity.of(
-                        ingredient.quantity,
-                    ),
-
-                isOptional:
-                    ingredient.isOptional,
-            });
-        }
+        // Recetas: desconectado en esta versión.
+        // for (const ingredient of params.recipe ?? []) {
+        //     product.addIngredient({
+        //         inventoryItemId:
+        //             ingredient.inventoryItemId,
+        //
+        //         quantity:
+        //             Quantity.of(
+        //                 ingredient.quantity,
+        //             ),
+        //
+        //         isOptional:
+        //             ingredient.isOptional,
+        //     });
+        // }
         await this.repository.save(product);
 
         await this.eventPublisher.publish(

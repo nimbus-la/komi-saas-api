@@ -2,69 +2,52 @@ import { EntityStatus } from '@/shared';
 import { Paginated } from '@/interfaces';
 import { ProductResponse } from '@/context/products/domain/interfaces/product.response';
 
-import { BranchNotFoundForProductsException } from '@/context/products/domain/exceptions/product-exception';
-
 import { SearchProductsUseCase } from './search-product.use-case';
+
+// Recetas y sucursal: desconectado en esta versión.
+// import { BranchNotFoundForProductsException } from '@/context/products/domain/exceptions/product-exception';
+// const BRANCH_ID = '6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b';
+// const ingredient = (inventoryItemId: string, quantity = '1') => ({
+//     id: `receta-${inventoryItemId}`,
+//     inventoryItemId,
+//     quantity,
+//     isOptional: false,
+// });
 
 
 /**
- * Pruebas del listado de productos con dobles de prueba.
- *
- * No revisan el armado del detalle (categoría, receta y costos), que es lo que
- * ya cubre el repositorio real; revisan el contrato del listado: que los
- * filtros y la página lleguen al repositorio tal como entraron y que la
- * respuesta salga con los metadatos de paginación, no como un arreglo suelto.
+ * Pruebas del listado de productos con dobles de prueba: que los filtros y la
+ * página lleguen al repositorio tal como entraron y que la respuesta salga con
+ * los metadatos de paginación y el nombre de la categoría.
  */
 
 const TENANT_ID = '550e8400-e29b-41d4-a716-446655440000';
-const BRANCH_ID = '6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 
-const buildProduct = (
-    id: string,
-    ingredients: ProductResponse['ingredients'] = [],
-): ProductResponse => ({
+const buildProduct = (id: string): ProductResponse => ({
     id,
-    tenantId: TENANT_ID,
-    productCategoryId: 'categoria-1',
-    productName: 'Hamburguesa',
-    productDescription: undefined,
-    productImgUrl: undefined,
-    productSku: 'PRD-001',
-    productBasePrice: '20000',
-    costCurrency: 'COP',
-    profitMargin: '30',
+    sku: 'PRD-001',
+    name: 'Hamburguesa',
+    categoryId: 'categoria-1',
+    description: undefined,
+    imageUrl: undefined,
+    price: '20000',
+    currency: 'COP',
+    targetMargin: '30',
     status: EntityStatus.Active,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-    ingredients,
 });
 
-const ingredient = (inventoryItemId: string, quantity = '1') => ({
-    id: `receta-${inventoryItemId}`,
-    inventoryItemId,
-    quantity,
-    isOptional: false,
-});
-
-const buildHarness = (page: Paginated<ProductResponse>, branchExists = true) => {
+const buildHarness = (page: Paginated<ProductResponse>) => {
     const search = jest.fn().mockResolvedValue(page);
-    const existsInTenant = jest.fn().mockResolvedValue(branchExists);
-    const getMany = jest.fn().mockResolvedValue(new Map([
-        ['pan', {
-            inventoryItemId: 'pan', name: 'Pan', unitOfMeasure: 'UND', unitCostAmount: '500', currentStock: '10', isActive: true,
-            branchStock: { currentStock: '3', minStock: '5' },
-        }],
-    ]));
 
     const useCase = new SearchProductsUseCase(
         { search } as never,
         { exists: jest.fn().mockResolvedValue(true) },
-        { getMany },
         { get: jest.fn().mockResolvedValue({ name: 'Platos fuertes' }) },
-        { existsInTenant },
     );
 
-    return { useCase, search, existsInTenant, getMany };
+    return { useCase, search };
 };
 
 
@@ -100,7 +83,7 @@ describe('SearchProductsUseCase', () => {
 
     // El total es del filtro completo, no de la página: el front lo necesita
     // para saber cuántas páginas hay.
-    it('devuelve las filas junto con los metadatos de paginación', async () => {
+    it('devuelve las filas con su categoría y los metadatos de paginación', async () => {
         const { useCase } = buildHarness({
             rows: [buildProduct('producto-1')],
             pageNumber: 1,
@@ -114,9 +97,11 @@ describe('SearchProductsUseCase', () => {
         );
 
         expect(result.rows).toHaveLength(1);
-        expect(result.rows[0]?.id).toBe('producto-1');
+        expect(result.rows[0]).toMatchObject({ id: 'producto-1', categoryName: 'Platos fuertes' });
         expect(result).toMatchObject({ pageNumber: 1, pageSize: 20, total: 47 });
     });
+
+    /* Recetas y sucursal: desconectado en esta versión.
 
     describe('sucursal para evaluar el stock', () => {
         const emptyPage = { rows: [], pageNumber: 1, pageSize: 20, total: 0 };
@@ -320,4 +305,6 @@ describe('SearchProductsUseCase', () => {
             expect(rows[0]?.stockAlert).toBeNull();
         });
     });
+
+    */
 });

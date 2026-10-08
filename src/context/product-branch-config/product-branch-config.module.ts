@@ -15,7 +15,9 @@ import {
 } from "./application";
 import { ProductsModule } from "../products/products.module";
 import { BranchModule } from "../branch/branch.module";
-import { ProductBranchConfigController } from "./infrastructure/http/product-branch-config.controller";
+// Sucursal: las rutas de configuración por sucursal quedan desconectadas en
+// esta versión. El módulo sigue existiendo porque el seed usa su repositorio.
+// import { ProductBranchConfigController } from "./infrastructure/http/product-branch-config.controller";
 
 @Module({
     imports: [
@@ -27,7 +29,7 @@ import { ProductBranchConfigController } from "./infrastructure/http/product-bra
     ],
 
     controllers: [
-        ProductBranchConfigController,
+        // ProductBranchConfigController,
     ],
 
     providers: [

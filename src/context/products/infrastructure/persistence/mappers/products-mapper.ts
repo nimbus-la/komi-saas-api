@@ -1,4 +1,4 @@
-import { ProductResponse } from "@/context/products/domain/interfaces/product.response";
+import { ProductResponse, ProductWithRecipeResponse } from "@/context/products/domain/interfaces/product.response";
 import { ProductEntity } from "../models/product.entity";
 
 import { Product } from "@/context/products/domain";
@@ -8,12 +8,34 @@ import { ProductBranchConfigEntity } from "@/context/product-branch-config/infra
 
 export class ProductMapper {
 
-    /** Con la configuración de una sucursal, su precio reemplaza al general. */
-    static toResponse(
+    /** Respuesta de esta versión: sin receta ni precio de sucursal. */
+    static toResponse(row: ProductEntity): ProductResponse {
+        return {
+            id: row.id,
+            sku: row.sku,
+            name: row.name,
+            categoryId: row.productCategoryId,
+            description: row.description ?? undefined,
+            imageUrl: row.imageUrl ?? undefined,
+            price: row.basePrice,
+            currency: "COP",
+            targetMargin: row.profitMargin,
+            status: row.status,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+        };
+    }
+
+    /**
+     * Recetas y sucursal: desconectado en esta versión, nadie lo llama.
+     * Es la respuesta anterior: con la configuración de una sucursal, su precio
+     * reemplaza al general. Se conserva para reconectarla con las recetas.
+     */
+    static toRecipeResponse(
         row: ProductEntity,
-        ingredients: ProductResponse["ingredients"] = [],
+        ingredients: ProductWithRecipeResponse["ingredients"] = [],
         branchConfig?: ProductBranchConfigEntity,
-    ): ProductResponse {
+    ): ProductWithRecipeResponse {
         const response = ProductMapper.toGeneralResponse(row, ingredients);
 
         if (branchConfig === undefined) {
@@ -33,8 +55,8 @@ export class ProductMapper {
 
     private static toGeneralResponse(
         row: ProductEntity,
-        ingredients: ProductResponse["ingredients"],
-    ): ProductResponse {
+        ingredients: ProductWithRecipeResponse["ingredients"],
+    ): ProductWithRecipeResponse {
         return {
             id: row.id,
             tenantId: row.tenantId,
@@ -130,7 +152,7 @@ export class ProductMapper {
     }
     static toIngredientsResponse(
         ingredients: RecipeIngredientEntity[],
-    ): ProductResponse["ingredients"] {
+    ): ProductWithRecipeResponse["ingredients"] {
         return ingredients.map((ingredient) => ({
             id: ingredient.id,
             inventoryItemId: ingredient.inventoryItemId,
