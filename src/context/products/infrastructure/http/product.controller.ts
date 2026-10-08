@@ -36,6 +36,7 @@ export class ProductController {
       productDescription: dto.description,
       productImgUrl: dto.imageUrl,
       productBasePrice: dto.price,
+      productCost: dto.cost,
       profitMargin: ProfitMargin.create(dto.targetMargin.toString()),
     });
 
@@ -57,6 +58,7 @@ export class ProductController {
       productDescription: dto.description,
       productImgUrl: dto.imageUrl,
       productBasePrice: dto.price,
+      productCost: dto.cost,
       status: dto.status,
       // El margen es opcional en una actualización parcial: sin dato no se
       // envía la clave, y el caso de uso conserva el que ya tiene el producto.

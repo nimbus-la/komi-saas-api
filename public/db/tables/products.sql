@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS product (
     product_name VARCHAR(120) NOT NULL,
     product_description TEXT,
     product_base_price NUMERIC(12,2) NOT NULL,
+    -- El precio tiene que dejar profit_margin sobre este costo; lo valida la API.
+    product_cost NUMERIC(12,2) NOT NULL,
     profit_margin NUMERIC(5,2) NOT NULL,
     product_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
         CHECK (product_status IN ('ACTIVE', 'INACTIVE', 'ARCHIVED', 'DELETED')),

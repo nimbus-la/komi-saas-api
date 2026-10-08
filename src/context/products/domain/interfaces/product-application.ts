@@ -8,6 +8,7 @@ export interface CreateProductApplicationParams {
     productDescription: string | undefined;
     productImgUrl: string | undefined;
     productBasePrice: string;
+    productCost: string;
     profitMargin: ProfitMargin;
     // Recetas: desconectado en esta versión.
     // recipe?: CreateProductRecipeIngredientParams[];
@@ -28,6 +29,7 @@ export interface UpdateProductApplicationParams {
     productDescription?: string | undefined;
     productImgUrl?: string | undefined;
     productBasePrice?: string | undefined;
+    productCost?: string | undefined;
     profitMargin?: ProfitMargin;
     status?: EntityStatus | undefined;
     // Recetas: desconectado en esta versión.

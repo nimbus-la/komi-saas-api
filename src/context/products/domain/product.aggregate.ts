@@ -1,4 +1,4 @@
-import { AggregateRoot, EntityStatus, Money, Quantity, Status } from "@/shared";
+import { AggregateRoot, BasePriceError, EntityStatus, Money, Quantity, Status } from "@/shared";
 
 import { ProductCreatedEvent } from "./events/product-created.event";
 import { ProductId } from "./value-object/product-id.value-object";
@@ -12,6 +12,7 @@ import { RecipeParams } from "./interfaces/product-application";
 import { ProductAlreadyActivatedException, ProductAlreadyDeactivatedException, ProductDeletedException } from "./exceptions/product-exception";
 import { ProfitMargin } from "./value-object/profit-margin.value-object";
 import { ProductDeletedEvent } from "./events/product-deleted.event";
+import { ProfitabilityCalculator } from "./services/profitability-calculator";
 
 export class Product extends AggregateRoot<ProductId> {
     private tenantId: string;
@@ -21,6 +22,7 @@ export class Product extends AggregateRoot<ProductId> {
     private productSku: ProductSku;
     private productImgUrl: string | undefined;
     private productBasePrice: Money;
+    private productCost: Money;
     private profitMargin: ProfitMargin;
     private status: Status;
     private ingredients: RecipeIngredient[];
@@ -37,6 +39,7 @@ export class Product extends AggregateRoot<ProductId> {
         productSku: ProductSku,
         productImgUrl: string | undefined,
         productBasePrice: Money,
+        productCost: Money,
         profitMargin: ProfitMargin,
         status: Status,
         ingredients: RecipeIngredient[],
@@ -51,6 +54,7 @@ export class Product extends AggregateRoot<ProductId> {
         this.productSku = productSku;
         this.productImgUrl = productImgUrl;
         this.productBasePrice = productBasePrice;
+        this.productCost = productCost;
         this.profitMargin = profitMargin;
         this.status = status;
         this.ingredients = ingredients;
@@ -67,6 +71,7 @@ export class Product extends AggregateRoot<ProductId> {
         productSku: ProductSku;
         productImgUrl: string | undefined;
         productBasePrice: Money;
+        productCost: Money;
         profitMargin: ProfitMargin;
     }): Product {
 
@@ -81,12 +86,15 @@ export class Product extends AggregateRoot<ProductId> {
             params.productSku,
             params.productImgUrl,
             params.productBasePrice,
+            params.productCost,
             params.profitMargin,
             Status.active(),
             [],
             now,
             now,
         );
+
+        product.ensurePricingIsConsistent();
 
         product.registerEvent(
             new ProductCreatedEvent({
@@ -124,6 +132,7 @@ export class Product extends AggregateRoot<ProductId> {
             productImgUrl: this.productImgUrl,
             productBasePrice: this.productBasePrice.getAmount(),
             costCurrency: this.productBasePrice.currency,
+            productCost: this.productCost.getAmount(),
             profitMargin: this.profitMargin.getValue(),
             status: this.status.value,
             ingredients: this.ingredients.map((ingredient) => ingredient.toPrimitives()),
@@ -143,6 +152,7 @@ export class Product extends AggregateRoot<ProductId> {
             ProductSku.fromValue(primitives.productSku),
             primitives.productImgUrl,
             Money.of(primitives.productBasePrice, primitives.costCurrency),
+            Money.of(primitives.productCost, primitives.costCurrency),
             ProfitMargin.create(primitives.profitMargin),
             Status.create(primitives.status),
             primitives.ingredients.map(
@@ -218,6 +228,25 @@ export class Product extends AggregateRoot<ProductId> {
     }
 
 
+    /**
+     * El precio tiene que ser mayor que 0 y dejar exactamente el margen guardado
+     * sobre el costo, comparados a dos decimales. Usa la misma calculadora que
+     * POST /products/profitability, así el front puede pedir ahí el precio y
+     * enviarlo sin que falle por centavos.
+     */
+    private ensurePricingIsConsistent(): void {
+        if (this.productBasePrice.getAmount() === "0.00") {
+            throw new BasePriceError("El precio del producto debe ser mayor que 0.");
+        }
+
+        ProfitabilityCalculator.calculate({
+            cost: this.productCost.getAmount(),
+            price: this.productBasePrice.getAmount(),
+            targetMargin: this.profitMargin.getValue(),
+        });
+    }
+
+
     private ensureNotDelete(): void {
         if (this.status.isDeleted()) {
             throw new ProductDeletedException(this.id.value);
@@ -231,6 +260,7 @@ export class Product extends AggregateRoot<ProductId> {
         productDescription: string | undefined;
         productImgUrl: string | undefined;
         productBasePrice: Money;
+        productCost: Money;
         profitMargin: ProfitMargin;
         recipe?: RecipeParams[];
     }): void {
@@ -241,7 +271,9 @@ export class Product extends AggregateRoot<ProductId> {
         this.productDescription = params.productDescription;
         this.productImgUrl = params.productImgUrl;
         this.productBasePrice = params.productBasePrice;
+        this.productCost = params.productCost;
         this.profitMargin = params.profitMargin;
+        this.ensurePricingIsConsistent();
         this.touch();
     }
 

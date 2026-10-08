@@ -1,6 +1,7 @@
 import {
   IsIn,
   IsNumber,
+  IsNumberString,
   IsOptional,
   IsString,
   IsUUID,
@@ -33,9 +34,17 @@ export class UpdateProductDto {
   @IsString()
   imageUrl?: string;
 
+  /**
+   * Si cambia el precio, el costo o el margen, lo que no llegue se toma de lo
+   * guardado y los tres resultantes tienen que cuadrar.
+   */
   @IsOptional()
   @IsString()
   price?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  cost?: string;
 
   @IsOptional()
   @IsNumber()

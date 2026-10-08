@@ -23,6 +23,7 @@ const buildProduct = (): Product => Product.fromPrimitives({
     productImgUrl: undefined,
     productBasePrice: '20000',
     costCurrency: 'COP',
+    productCost: '14000',
     profitMargin: '30',
     status: EntityStatus.Active,
     ingredients: [],

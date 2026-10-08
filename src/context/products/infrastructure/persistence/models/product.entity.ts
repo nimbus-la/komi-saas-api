@@ -28,6 +28,9 @@ export class ProductEntity {
   @Column({ name: "product_base_price", type: "numeric", precision: 12, scale: 2 })
   basePrice!: string;
 
+  @Column({ name: "product_cost", type: "numeric", precision: 12, scale: 2 })
+  cost!: string;
+
   @Column({ name: "profit_margin", type: "numeric", precision: 5, scale: 2 })
   profitMargin!: string;
 

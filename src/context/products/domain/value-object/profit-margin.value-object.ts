@@ -22,7 +22,8 @@ export class ProfitMargin {
             throw new InvalidProfitMarginException();
         }
 
-        if (decimal.isZero() || decimal.isNegative()) {
+        // Con 100 o más no existe precio que deje ese margen.
+        if (decimal.isZero() || decimal.isNegative() || decimal.greaterThanOrEqualTo(100)) {
             throw new InvalidProfitMarginException();
         }
 

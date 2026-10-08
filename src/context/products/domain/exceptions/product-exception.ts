@@ -84,7 +84,7 @@ export class InvalidProfitMarginException extends DomainException {
         super({
             code: "1407",
             detail:
-                `El margen de beneficio no puede ser menor que 0.`,
+                `El margen de beneficio debe ser mayor que 0 y menor que 100.`,
         });
     }
 }
