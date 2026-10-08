@@ -1,8 +1,8 @@
 import {
     InvalidTargetMarginException,
     PriceMarginMismatchException,
-} from '../exceptions/product-exception';
-import { ProfitabilityCalculator } from '../../application/use-cases/calculate-profitability/profitability-calculator';
+} from '../../../domain/exceptions/product-exception';
+import { ProfitabilityCalculator } from './profitability-calculator';
 
 describe('ProfitabilityCalculator', () => {
 

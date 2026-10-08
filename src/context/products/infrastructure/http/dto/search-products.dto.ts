@@ -1,6 +1,6 @@
-import { Transform, Type } from "class-transformer";
+import { Type } from "class-transformer";
 import {
-    IsBoolean,
+    IsIn,
     IsInt,
     IsOptional,
     IsString,
@@ -9,7 +9,7 @@ import {
     Min,
 } from "class-validator";
 
-import { VALIDATION_DEFAULTS } from "@/shared";
+import { ENTITY_STATUSES_USER_SET, EntityStatus, VALIDATION_DEFAULTS } from "@/shared";
 
 export class SearchProductsDto {
     @IsOptional()
@@ -33,23 +33,9 @@ export class SearchProductsDto {
     @IsUUID()
     branchId?: string;
 
-    /**
-     * Llega como string en el query: sin este Transform, "false" sería truthy.
-     *
-     * Solo traduce "true" y "false"; cualquier otra cosa pasa tal cual para que
-     * `@IsBoolean()` la rechace con un 400. Si se tradujera todo lo demás a
-     * `false`, un `?productStatus=activo` filtraría por inactivos en silencio.
-     */
     @IsOptional()
-    @Transform(({ value }) => {
-        if (value === "true" || value === "false") {
-            return value === "true";
-        }
-
-        return value as unknown;
-    })
-    @IsBoolean()
-    productStatus?: boolean;
+    @IsIn(ENTITY_STATUSES_USER_SET)
+    status?: EntityStatus;
 
     @Type(() => Number)
     @IsInt()

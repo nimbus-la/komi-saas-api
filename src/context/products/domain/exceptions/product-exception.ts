@@ -49,7 +49,7 @@ export class ProductAlreadyDeactivatedException extends DomainException {
     constructor() {
         super({
             code: "1404",
-            detail: "El producto ya se encuentra desactivado.",
+            detail: "El producto ya se encuentra inactivo.",
         });
     }
 }
@@ -58,7 +58,22 @@ export class ProductAlreadyActivatedException extends DomainException {
     constructor() {
         super({
             code: "1405",
-            detail: "El producto ya se encuentra activado.",
+            detail: "El producto ya se encuentra activo.",
+        });
+    }
+}
+
+
+/**
+ * El producto está en DELETED. Normalmente ni se llega a cargar, porque el
+ * repositorio no devuelve eliminados; esto protege al agregado si alguien lo
+ * construye igual.
+ */
+export class ProductDeletedException extends DomainException {
+    constructor(productId: string) {
+        super({
+            code: "1406",
+            detail: `El producto ${productId} fue eliminado y no se puede modificar.`,
         });
     }
 }

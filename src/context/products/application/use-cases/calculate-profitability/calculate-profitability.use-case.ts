@@ -9,7 +9,7 @@ import {
 import { DuplicateIngredientException } from "@/context/products/domain/recipe/exceptions/duplicate-ingredient.exception";
 import { InventoryItemNotValidForTenantException } from "@/context/products/domain/recipe/exceptions/inventory-item-not-valid-for-tenant.exception";
 import { ProfitabilityCalculator } from "@/context/products/application/use-cases/calculate-profitability/profitability-calculator";
-import { ProfitabilityResult } from "@/context/products/domain/types/profitability";
+import { ProfitabilityResult } from "@/context/products/domain/interfaces/profitability";
 import { TenantChecker } from "../../ports/tenant-checker";
 import { InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
 

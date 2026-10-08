@@ -1,3 +1,4 @@
+import { EntityStatus } from '@/shared';
 import { ProductBranchConfigEntity } from '@/context/product-branch-config/infrastructure/persistence/models/product-branch-config.entity';
 
 import { ProductEntity } from '../models/product.entity';
@@ -6,11 +7,10 @@ import { ProductMapper } from './products-mapper';
 
 /**
  * Cómo se combina el producto general con su configuración en una sucursal al
- * listar: el precio de la sucursal reemplaza al general y su estado solo puede
- * apagar el producto.
+ * listar: el precio de la sucursal reemplaza al general.
  */
 
-const buildRow = (isActive = true): ProductEntity => Object.assign(new ProductEntity(), {
+const buildRow = (): ProductEntity => Object.assign(new ProductEntity(), {
     id: 'producto-1',
     tenantId: 'negocio-1',
     productCategoryId: 'categoria-1',
@@ -18,7 +18,7 @@ const buildRow = (isActive = true): ProductEntity => Object.assign(new ProductEn
     description: null,
     basePrice: '20000.00',
     profitMargin: '30.00',
-    isActive,
+    status: EntityStatus.Active,
     imageUrl: null,
     sku: 'PRD-001',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -46,7 +46,7 @@ describe('ProductMapper.toResponse con la configuración de la sucursal', () => 
         expect(response).toMatchObject({
             productBasePrice: '20000.00',
             costCurrency: 'COP',
-            productStatus: true,
+            status: EntityStatus.Active,
         });
     });
 
@@ -68,25 +68,5 @@ describe('ProductMapper.toResponse con la configuración de la sucursal', () => 
         );
 
         expect(response).toMatchObject({ productBasePrice: '20000.00', costCurrency: 'COP' });
-    });
-
-    it('apaga el producto cuando la sucursal lo marca como no disponible', () => {
-        const response = ProductMapper.toResponse(
-            buildRow(true),
-            [],
-            buildConfig({ isAvailable: false }),
-        );
-
-        expect(response.productStatus).toBe(false);
-    });
-
-    it('mantiene inactivo un producto apagado en general aunque la sucursal lo tenga disponible', () => {
-        const response = ProductMapper.toResponse(
-            buildRow(false),
-            [],
-            buildConfig({ isAvailable: true }),
-        );
-
-        expect(response.productStatus).toBe(false);
     });
 });

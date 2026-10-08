@@ -1,5 +1,5 @@
 import { DomainEvent } from "@/shared";
-import { ProductCreatedProps } from "../types/product-events";
+import { ProductCreatedProps } from "../interfaces/product-events";
 import { ProfitMargin } from "../value-object/profit-margin.value-object";
 
 export class ProductCreatedEvent extends DomainEvent {
@@ -14,7 +14,7 @@ export class ProductCreatedEvent extends DomainEvent {
     public readonly productBasePrice: string;
     public readonly costCurrency: string;
     public readonly profitMargin: ProfitMargin;
-    public readonly productStatus: boolean;
+    public readonly status: string;
 
     constructor(props: ProductCreatedProps) {
         super();
@@ -28,6 +28,6 @@ export class ProductCreatedEvent extends DomainEvent {
         this.productBasePrice = props.productBasePrice;
         this.costCurrency = props.costCurrency;
         this.profitMargin = props.profitMargin;
-        this.productStatus = props.productStatus;
+        this.status = props.status;
     }
 }

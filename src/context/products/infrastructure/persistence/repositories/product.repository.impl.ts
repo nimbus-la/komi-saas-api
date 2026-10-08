@@ -1,10 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
-import { DataSource, In, Repository } from "typeorm";
+import { DataSource, In, Not, Repository } from "typeorm";
 import { Paginated, Pagination } from "@/interfaces";
+import { EntityStatus, VISIBLE_ENTITY_STATUSES } from "@/shared";
 import { ProductEntity } from "../models/product.entity";
-import { SearchProductsFilters } from "../../../domain/types/product-application";
-import { ProductResponse } from "../../../domain/types/product.response";
+import { SearchProductsFilters } from "../../../domain/interfaces/product-application";
+import { ProductResponse } from "../../../domain/interfaces/product.response";
 import { ProductName } from "../../../domain/value-object/product-name.value-object";
 import { ProductId } from "../../../domain/value-object/product-id.value-object";
 import { ProductMapper } from "../mappers/products-mapper";
@@ -80,7 +81,7 @@ export class ProductRepositoryImpl extends ProductRepository {
           imageUrl: primitives.productImgUrl ?? null,
           basePrice: primitives.productBasePrice,
           profitMargin: primitives.profitMargin.toString(),
-          isActive: primitives.productStatus,
+          status: primitives.status,
         },
       );
 
@@ -145,10 +146,8 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    // Con sucursal, el estado que se filtra es el mismo que se muestra: el
-    // general, apagado si la sucursal lo marcó como no disponible. TypeORM no
-    // traduce las propiedades en un join sin relación, por eso van los nombres
-    // de las columnas.
+    // TypeORM no traduce las propiedades en un join sin relación, por eso van
+    // los nombres de las columnas.
     if (filters.branchId !== undefined) {
       query.leftJoin(
         ProductBranchConfigEntity,
@@ -162,15 +161,14 @@ export class ProductRepositoryImpl extends ProductRepository {
       );
     }
 
-    if (filters.productStatus !== undefined) {
-      query.andWhere(
-        filters.branchId !== undefined
-          ? "(product.product_status AND COALESCE(config.is_available, TRUE)) = :status"
-          : "product.isActive = :status",
-        {
-          status: filters.productStatus,
-        },
-      );
+    // Sin filtro de estado salen los activos y los pausados; los eliminados
+    // nunca aparecen en un listado.
+    if (filters.status !== undefined) {
+      query.andWhere("product.status = :status", { status: filters.status });
+    } else {
+      query.andWhere("product.status IN (:...visibleStatuses)", {
+        visibleStatuses: [...VISIBLE_ENTITY_STATUSES],
+      });
     }
 
     // El orden explícito es lo que hace que paginar sea estable: sin ORDER BY,
@@ -284,6 +282,10 @@ export class ProductRepositoryImpl extends ProductRepository {
       .andWhere("product.tenantId = :tenantId", {
         tenantId,
       })
+      // El nombre de un producto eliminado queda libre para uno nuevo.
+      .andWhere("product.status <> :deleted", {
+        deleted: EntityStatus.Deleted,
+      })
       .getCount();
 
     return count > 0;
@@ -294,9 +296,11 @@ export class ProductRepositoryImpl extends ProductRepository {
     tenantId: string,
   ): Promise<Product | null> {
     const row = await this.productRepository.findOne({
+      // Un producto eliminado se trata como inexistente.
       where: {
         id: id.value,
-        tenantId
+        tenantId,
+        status: Not(EntityStatus.Deleted),
       },
     });
 

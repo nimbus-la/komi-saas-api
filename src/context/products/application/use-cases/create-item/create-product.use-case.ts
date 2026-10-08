@@ -1,6 +1,6 @@
 import { BasePriceError, EventPublisher, Money, Quantity } from "@/shared";
 
-import { CreateProductApplicationParams } from "@/context/products/domain/types/product-application";
+import { CreateProductApplicationParams } from "@/context/products/domain/interfaces/product-application";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
 import { ProductSku } from "@/context/products/domain/value-object/product-sku.value-object";
 import { TenantChecker } from "../../ports/tenant-checker";

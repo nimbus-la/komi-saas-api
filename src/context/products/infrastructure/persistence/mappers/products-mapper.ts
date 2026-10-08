@@ -1,4 +1,4 @@
-import { ProductResponse } from "@/context/products/domain/types/product.response";
+import { ProductResponse } from "@/context/products/domain/interfaces/product.response";
 import { ProductEntity } from "../models/product.entity";
 
 import { Product } from "@/context/products/domain";
@@ -8,11 +8,7 @@ import { ProductBranchConfigEntity } from "@/context/product-branch-config/infra
 
 export class ProductMapper {
 
-    /**
-     * Con la configuración de una sucursal, su precio reemplaza al general y su
-     * estado solo puede apagar el producto: uno inactivo en general sigue
-     * inactivo aunque la sucursal diga que está disponible.
-     */
+    /** Con la configuración de una sucursal, su precio reemplaza al general. */
     static toResponse(
         row: ProductEntity,
         ingredients: ProductResponse["ingredients"] = [],
@@ -32,7 +28,6 @@ export class ProductMapper {
                     costCurrency: branchConfig.priceCurrency ?? response.costCurrency,
                 }
                 : {}),
-            productStatus: row.isActive && (branchConfig.isAvailable ?? true),
         };
     }
 
@@ -51,7 +46,7 @@ export class ProductMapper {
             productBasePrice: row.basePrice,
             costCurrency: "COP",
             profitMargin: row.profitMargin,
-            productStatus: row.isActive,
+            status: row.status,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
             ingredients,
@@ -74,7 +69,7 @@ export class ProductMapper {
             productBasePrice: row.basePrice,
             costCurrency: "COP",
             profitMargin: row.profitMargin,
-            productStatus: row.isActive,
+            status: row.status,
             createdAt: row.createdAt,
             updatedAt: row.updatedAt,
             ingredients
@@ -96,7 +91,7 @@ export class ProductMapper {
             imageUrl: primitives.productImgUrl ?? null,
             basePrice: primitives.productBasePrice,
             profitMargin: primitives.profitMargin.toString(),
-            isActive: primitives.productStatus,
+            status: primitives.status,
         };
     }
     static toCreateResponse(product: Product) {

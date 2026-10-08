@@ -1,5 +1,6 @@
+import { EntityStatus } from '@/shared';
 import { Paginated } from '@/interfaces';
-import { ProductResponse } from '@/context/products/domain/types/product.response';
+import { ProductResponse } from '@/context/products/domain/interfaces/product.response';
 
 import { BranchNotFoundForProductsException } from '@/context/products/domain/exceptions/product-exception';
 
@@ -32,7 +33,7 @@ const buildProduct = (
     productBasePrice: '20000',
     costCurrency: 'COP',
     profitMargin: '30',
-    productStatus: true,
+    status: EntityStatus.Active,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     ingredients,
@@ -81,7 +82,7 @@ describe('SearchProductsUseCase', () => {
                 tenantId: TENANT_ID,
                 text: 'hamburguesa',
                 productCategoryId: 'categoria-1',
-                productStatus: false,
+                status: EntityStatus.Inactive,
             },
             { pageNumber: 2, pageSize: 20 },
         );
@@ -91,7 +92,7 @@ describe('SearchProductsUseCase', () => {
                 tenantId: TENANT_ID,
                 text: 'hamburguesa',
                 productCategoryId: 'categoria-1',
-                productStatus: false,
+                status: EntityStatus.Inactive,
             },
             { pageNumber: 2, pageSize: 20 },
         );

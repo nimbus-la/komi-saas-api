@@ -1,5 +1,5 @@
 import { IngredientStockStatus } from "@/context/products/domain/recipe/recipe-ingredient-primitives";
-import { StockAlertLevel } from "@/context/products/domain/types/product.response";
+import { StockAlertLevel } from "@/context/products/domain/interfaces/product.response";
 
 /** Resultado de evaluar un insumo de la receta en la sucursal. */
 export interface IngredientStockEvaluation {

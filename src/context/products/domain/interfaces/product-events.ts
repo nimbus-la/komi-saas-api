@@ -11,5 +11,5 @@ export interface ProductCreatedProps {
     productBasePrice: string;
     costCurrency: string;
     profitMargin: ProfitMargin;
-    productStatus: boolean;
+    status: string;
 }
