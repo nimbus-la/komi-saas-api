@@ -7,7 +7,7 @@ import { ProductRepositoryImpl } from "./infrastructure/persistence/repositories
 import { ProductRepository } from "./domain";
 import { UpdateProductUseCase } from "./application/use-cases/update-item/update-product.use-case";
 import { SearchProductsUseCase } from "./application/use-cases/search-items/search-product.use-case";
-import { CalculateProfitabilityUseCase, CreateProductUseCase } from "./application";
+import { CalculateProfitabilityUseCase, CreateProductUseCase, DeleteProductUseCase } from "./application";
 import { CategoriesModule } from "../product-categories/categories.module";
 import { TenantModule } from "../tenants/tenant.module";
 import { TenantChecker } from "@/context/products/application/ports/tenant-checker";
@@ -142,6 +142,27 @@ import { ProductBranchConfigEntity } from "@/context/product-branch-config/infra
         TenantChecker,
         ProductCategoryChecker,
         InventoryItemChecker,
+      ],
+    },
+
+    {
+      provide: DeleteProductUseCase,
+      useFactory: (
+        repository: ProductRepository,
+        tenantChecker: TenantChecker,
+        eventPublisher: EventPublisher,
+      ) => {
+        return new DeleteProductUseCase(
+          repository,
+          tenantChecker,
+          eventPublisher,
+        );
+      },
+
+      inject: [
+        ProductRepository,
+        TenantChecker,
+        EventPublisher,
       ],
     },
 

@@ -51,7 +51,7 @@ export interface SearchProductsFilters {
     /** Coincidencia parcial contra el nombre o el SKU del producto. */
     text?: string | undefined;
     productCategoryId?: string | undefined;
-    productStatus?: boolean | undefined;
+    status?: EntityStatus | undefined;
     /**
      * Sucursal en la que se evalúa el stock de los insumos y de la que salen el
      * precio y el estado de cada producto. Sin ella no se evalúa el stock y se

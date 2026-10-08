@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS product (
     product_description TEXT,
     product_base_price NUMERIC(12,2) NOT NULL,
     profit_margin NUMERIC(5,2) NOT NULL,
-    product_status BOOLEAN NOT NULL DEFAULT TRUE,
+    product_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
+        CHECK (product_status IN ('ACTIVE', 'INACTIVE', 'ARCHIVED', 'DELETED')),
     product_img_url TEXT,
     product_sku_seq VARCHAR(50) NOT NULL UNIQUE,
 

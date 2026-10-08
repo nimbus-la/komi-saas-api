@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Patch, Post, Query } from "@nestjs/common";
 
 import { type AuthenticatedUser, CurrentUser } from "@/auth/infrastructure";
 
@@ -6,7 +6,8 @@ import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { SearchProductsDto } from "./dto/search-products.dto";
 import { CalculateProfitabilityDto } from "./dto/calculate-profitability.dto";
-import { CalculateProfitabilityUseCase, CreateProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "../../application";
+import { DeleteProductDto } from "./dto/delete-product.dto";
+import { CalculateProfitabilityUseCase, CreateProductUseCase, DeleteProductUseCase, SearchProductsUseCase, UpdateProductUseCase } from "../../application";
 import { ProfitMargin } from "../../domain/value-object/profit-margin.value-object";
 import { ResponseMessage } from "@/infrastructure";
 
@@ -18,6 +19,7 @@ export class ProductController {
     private readonly updateProductUseCase: UpdateProductUseCase,
     private readonly searchProductsUseCase: SearchProductsUseCase,
     private readonly calculateProfitabilityUseCase: CalculateProfitabilityUseCase,
+    private readonly deleteProductUseCase: DeleteProductUseCase,
   ) { }
 
 
@@ -88,6 +90,20 @@ export class ProductController {
       receta,
       ...(precioVenta !== undefined ? { precioVenta } : {}),
       ...(margenObjetivo !== undefined ? { margenObjetivo } : {}),
+    });
+  }
+
+
+  @Delete("delete")
+  @ResponseMessage("Producto eliminado exitosamente.")
+  public async delete(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: DeleteProductDto,
+  ): Promise<void> {
+    await this.deleteProductUseCase.execute({
+      id: dto.productId,
+      tenantId: user.tenantId,
+      deletedBy: user.userId,
     });
   }
 

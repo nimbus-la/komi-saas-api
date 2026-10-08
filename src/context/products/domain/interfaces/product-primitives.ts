@@ -1,3 +1,5 @@
+import { EntityStatus } from "@/shared";
+
 import { RecipeIngredientPrimitives } from "../recipe/recipe-ingredient-primitives";
 
 export interface ProductPrimitives {
@@ -11,7 +13,7 @@ export interface ProductPrimitives {
     productBasePrice: string;
     costCurrency: string;
     profitMargin: string;
-    status: string;
+    status: EntityStatus;
     ingredients: RecipeIngredientPrimitives[];
     createdAt: Date;
     updatedAt: Date;

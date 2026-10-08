@@ -25,10 +25,10 @@ export const ENTITY_STATUSES: readonly EntityStatus[] = Object.values(EntityStat
  * Los que un usuario puede elegir al actualizar. Eliminar tiene su propio
  * endpoint, y archivar llegará con la papelera.
  */
-export const ENTITY_STATUSES_USER_SET: ReadonlySet<EntityStatus> = new Set([
+export const ENTITY_STATUSES_USER_SET: readonly EntityStatus[] = [
     EntityStatus.Active,
     EntityStatus.Inactive,
-]);
+];
 
 
 /** Los que salen en un listado normal. */

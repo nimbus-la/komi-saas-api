@@ -1,4 +1,5 @@
 
+import { EntityStatus } from "@/shared";
 import {
   Column,
   CreateDateColumn,
@@ -30,8 +31,8 @@ export class ProductEntity {
   @Column({ name: "profit_margin", type: "numeric", precision: 5, scale: 2 })
   profitMargin!: string;
 
-  @Column({ name: "product_status", type: "boolean", default: true })
-  isActive!: boolean;
+  @Column({ name: "product_status", type: "varchar", length: 20, default: EntityStatus.Active })
+  status!: EntityStatus;
 
   @Column({ name: "product_img_url", type: "text", nullable: true })
   imageUrl!: string | null;

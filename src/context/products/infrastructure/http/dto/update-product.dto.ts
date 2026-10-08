@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
 import {
-  IsBoolean,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -8,6 +8,7 @@ import {
   ValidateNested,
 } from "class-validator";
 import { UpdateRecipeIngredientDto } from "./update-recipe-ingredient.dto";
+import { ENTITY_STATUSES_USER_SET, EntityStatus } from "@/shared";
 
 
 export class UpdateProductDto {
@@ -31,8 +32,8 @@ export class UpdateProductDto {
   productImgUrl?: string | undefined;
 
   @IsOptional()
-  @IsBoolean()
-  productStatus!: boolean;
+  @IsIn(ENTITY_STATUSES_USER_SET)
+  status!: EntityStatus;
 
   @IsOptional()
   @IsString()
