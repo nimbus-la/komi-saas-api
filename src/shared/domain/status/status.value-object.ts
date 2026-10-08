@@ -14,7 +14,7 @@ export class Status {
     };
 
 
-    private constructor(private readonly value: EntityStatus) { }
+    private constructor(public readonly value: EntityStatus) { }
 
 
     public static active(): Status {
@@ -68,7 +68,7 @@ export class Status {
     public isEditable(): boolean {
         return this.is(EntityStatus.Active) || this.is(EntityStatus.Inactive);
     }
-    
+
 
     public equals(other: Status): boolean {
         return this.value === other.value;

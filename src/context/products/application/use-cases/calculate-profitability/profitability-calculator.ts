@@ -4,7 +4,7 @@ import {
     InvalidTargetMarginException,
     PriceMarginMismatchException,
 } from "../../../domain/exceptions/product-exception";
-import { ProfitabilityInput, ProfitabilityResult } from "../../../domain/types/profitability";
+import { ProfitabilityInput, ProfitabilityResult } from "../../../domain/interfaces/profitability";
 
 const CIEN = new Decimal(100);
 

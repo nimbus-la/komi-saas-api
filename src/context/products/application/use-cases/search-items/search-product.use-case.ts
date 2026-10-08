@@ -1,13 +1,13 @@
 import { Paginated, Pagination } from "@/interfaces";
 
-import { SearchProductsFilters } from "@/context/products/domain/types/product-application";
+import { SearchProductsFilters } from "@/context/products/domain/interfaces/product-application";
 import {
     BranchNotFoundForProductsException,
     ProductRepository,
     TenantIdRequiredForSearchException,
     TenantNotFoundException,
 } from "../../../domain";
-import { ProductResponse } from "@/context/products/domain/types/product.response";
+import { ProductResponse } from "@/context/products/domain/interfaces/product.response";
 import { TenantChecker } from "../../ports/tenant-checker";
 import { InventoryItemRecipeInfo, InventoryItemRecipeInfoProvider } from "../../ports/inventory-item-recipe-info.provider";
 import { ProductCategoryProvider } from "../../ports/ProductCategoryProvider";

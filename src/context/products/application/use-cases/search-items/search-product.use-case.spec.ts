@@ -1,5 +1,5 @@
 import { Paginated } from '@/interfaces';
-import { ProductResponse } from '@/context/products/domain/types/product.response';
+import { ProductResponse } from '@/context/products/domain/interfaces/product.response';
 
 import { BranchNotFoundForProductsException } from '@/context/products/domain/exceptions/product-exception';
 

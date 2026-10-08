@@ -1,4 +1,4 @@
-import { ProductResponse } from "@/context/products/domain/types/product.response";
+import { ProductResponse } from "@/context/products/domain/interfaces/product.response";
 import { ProductEntity } from "../models/product.entity";
 
 import { Product } from "@/context/products/domain";

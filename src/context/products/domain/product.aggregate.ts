@@ -1,16 +1,17 @@
-import { AggregateRoot, Money, Quantity } from "@/shared";
+import { AggregateRoot, EntityStatus, Money, Quantity, Status } from "@/shared";
 
 import { ProductCreatedEvent } from "./events/product-created.event";
 import { ProductId } from "./value-object/product-id.value-object";
 import { ProductName } from "./value-object/product-name.value-object";
 import { ProductSku } from "./value-object/product-sku.value-object";
-import { ProductPrimitives } from "./types/product-primitives";
+import { ProductPrimitives } from "./interfaces/product-primitives";
 import { DuplicateIngredientException } from "./recipe/exceptions/duplicate-ingredient.exception";
 import { IngredientNotInRecipeException } from "./recipe/exceptions/ingredient-not-in-recipe.exception";
 import { RecipeIngredient } from "./recipe/recipe-ingredient.entity";
-import { RecipeParams } from "./types/product-application";
-import { ProductAlreadyActivatedException, ProductAlreadyDeactivatedException } from "./exceptions/product-exception";
+import { RecipeParams } from "./interfaces/product-application";
+import { ProductAlreadyActivatedException, ProductAlreadyDeactivatedException, ProductDeletedException } from "./exceptions/product-exception";
 import { ProfitMargin } from "./value-object/profit-margin.value-object";
+import { ProductDeletedEvent } from "./events/product-deleted.event";
 
 export class Product extends AggregateRoot<ProductId> {
     private tenantId: string;
@@ -19,13 +20,13 @@ export class Product extends AggregateRoot<ProductId> {
     private productDescription: string | undefined;
     private productSku: ProductSku;
     private productImgUrl: string | undefined;
-
     private productBasePrice: Money;
     private profitMargin: ProfitMargin;
-    private productStatus: boolean;
+    private status: Status;
     private ingredients: RecipeIngredient[];
     private readonly createdAt: Date;
     private updatedAt: Date;
+
 
     private constructor(
         id: ProductId,
@@ -37,7 +38,7 @@ export class Product extends AggregateRoot<ProductId> {
         productImgUrl: string | undefined,
         productBasePrice: Money,
         profitMargin: ProfitMargin,
-        productStatus: boolean,
+        status: Status,
         ingredients: RecipeIngredient[],
         createdAt: Date,
         updatedAt: Date,
@@ -51,11 +52,12 @@ export class Product extends AggregateRoot<ProductId> {
         this.productImgUrl = productImgUrl;
         this.productBasePrice = productBasePrice;
         this.profitMargin = profitMargin;
-        this.productStatus = productStatus;
+        this.status = status;
         this.ingredients = ingredients;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
+
 
     public static create(params: {
         tenantId: string;
@@ -80,7 +82,7 @@ export class Product extends AggregateRoot<ProductId> {
             params.productImgUrl,
             params.productBasePrice,
             params.profitMargin,
-            true,
+            Status.active(),
             [],
             now,
             now,
@@ -98,16 +100,18 @@ export class Product extends AggregateRoot<ProductId> {
                 productBasePrice: product.productBasePrice.getAmount(),
                 costCurrency: product.productBasePrice.currency,
                 profitMargin: product.profitMargin,
-                productStatus: product.productStatus,
+                status: product.status.value,
             }),
         );
 
         return product;
     }
 
+
     private touch(date: Date = new Date()): void {
         this.updatedAt = date;
     }
+
 
     public toPrimitives(): ProductPrimitives {
         return {
@@ -121,18 +125,15 @@ export class Product extends AggregateRoot<ProductId> {
             productBasePrice: this.productBasePrice.getAmount(),
             costCurrency: this.productBasePrice.currency,
             profitMargin: this.profitMargin.getValue(),
-            productStatus: this.productStatus,
-            ingredients: this.ingredients.map(
-                (ingredient) => ingredient.toPrimitives(),
-            ),
+            status: this.status.value,
+            ingredients: this.ingredients.map((ingredient) => ingredient.toPrimitives()),
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
         };
     }
 
-    public static fromPrimitives(
-        primitives: ProductPrimitives,
-    ): Product {
+
+    public static fromPrimitives(primitives: ProductPrimitives): Product {
         return new Product(
             ProductId.create(primitives.id),
             primitives.tenantId,
@@ -143,7 +144,7 @@ export class Product extends AggregateRoot<ProductId> {
             primitives.productImgUrl,
             Money.of(primitives.productBasePrice, primitives.costCurrency),
             ProfitMargin.create(primitives.profitMargin),
-            primitives.productStatus,
+            Status.create(primitives.status),
             primitives.ingredients.map(
                 (ingredient) => RecipeIngredient.fromPrimitives(ingredient),
             ),
@@ -152,21 +153,77 @@ export class Product extends AggregateRoot<ProductId> {
         );
     }
 
+
     public deactivate(): void {
-        if (!this.productStatus) {
+        this.ensureNotDelete();
+
+        if (this.status.is(EntityStatus.Inactive)) {
             throw new ProductAlreadyDeactivatedException();
         }
-        this.productStatus = false;
+
+        this.status = this.status.transitionTo(EntityStatus.Inactive);
         this.touch();
     }
 
+
     public activate(): void {
-        if (this.productStatus) {
+        this.ensureNotDelete();
+
+        if (this.status.isActive()) {
             throw new ProductAlreadyActivatedException();
         }
-        this.productStatus = true;
+
+        this.status = this.status.transitionTo(EntityStatus.Active);
         this.touch();
     }
+
+
+    /**
+     * Cambia entre ACTIVE e INACTIVE con el valor que llega de la actualización.
+     * Eliminar no pasa por aquí: tiene su propio método y su propio endpoint.
+     */
+    public changeStatus(next: EntityStatus): void {
+        if (next === EntityStatus.Active) {
+            this.activate();
+            return;
+        }
+
+        if (next === EntityStatus.Inactive) {
+            this.deactivate();
+            return;
+        }
+
+        this.status.transitionTo(next);
+    }
+
+
+    public delete(deletedBy: string): void {
+        this.ensureNotDelete();
+
+        this.status = this.status.transitionTo(EntityStatus.Deleted);
+        this.touch();
+
+        this.registerEvent(
+            new ProductDeletedEvent({
+                tenantId: this.tenantId,
+                productId: this.id.value,
+                deletedBy
+            })
+        )
+    }
+
+
+    public getStatus(): EntityStatus {
+        return this.status.value;
+    }
+
+
+    private ensureNotDelete(): void {
+        if (this.status.isDeleted()) {
+            throw new ProductDeletedException(this.id.value);
+        }
+    }
+
 
     public update(params: {
         productCategoryId: string;
@@ -177,6 +234,8 @@ export class Product extends AggregateRoot<ProductId> {
         profitMargin: ProfitMargin;
         recipe?: RecipeParams[];
     }): void {
+        this.ensureNotDelete();
+        
         this.productCategoryId = params.productCategoryId;
         this.productName = params.productName;
         this.productDescription = params.productDescription;

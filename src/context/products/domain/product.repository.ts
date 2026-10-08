@@ -1,8 +1,8 @@
 import { Paginated, Pagination } from "@/interfaces";
 
 import { Product } from "./product.aggregate";
-import { SearchProductsFilters } from "./types/product-application";
-import { ProductResponse } from "./types/product.response";
+import { SearchProductsFilters } from "./interfaces/product-application";
+import { ProductResponse } from "./interfaces/product.response";
 import { ProductId } from "./value-object/product-id.value-object";
 import { ProductName } from "./value-object/product-name.value-object";
 

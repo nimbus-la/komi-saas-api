@@ -11,8 +11,7 @@ export interface ProductPrimitives {
     productBasePrice: string;
     costCurrency: string;
     profitMargin: string;
-    productStatus: boolean;
-
+    status: string;
     ingredients: RecipeIngredientPrimitives[];
     createdAt: Date;
     updatedAt: Date;

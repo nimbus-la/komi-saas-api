@@ -1,5 +1,5 @@
 import { Money, Quantity } from "@/shared";
-import { UpdateProductApplicationParams } from "@/context/products/domain/types/product-application";
+import { UpdateProductApplicationParams } from "@/context/products/domain/interfaces/product-application";
 import { ProductId } from "@/context/products/domain/value-object/product-id.value-object";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
 import { ProfitMargin } from "@/context/products/domain/value-object/profit-margin.value-object";
