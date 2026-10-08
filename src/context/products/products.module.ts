@@ -98,25 +98,21 @@ import { ProductBranchConfigEntity } from "@/context/product-branch-config/infra
         repository: ProductRepository,
         tenantChecker: TenantChecker,
         categoryChecker: ProductCategoryChecker,
-        inventoryChecker: InventoryItemChecker,
         eventPublisher: EventPublisher,
-
       ) => {
         return new CreateProductUseCase(
           repository,
           tenantChecker,
           categoryChecker,
-          inventoryChecker,
           eventPublisher,
-
         );
       },
 
+      // Recetas: InventoryItemChecker desconectado en esta versión.
       inject: [
         ProductRepository,
         TenantChecker,
         ProductCategoryChecker,
-        InventoryItemChecker,
         EventPublisher,
       ],
     },
@@ -127,21 +123,19 @@ import { ProductBranchConfigEntity } from "@/context/product-branch-config/infra
         repository: ProductRepository,
         tenantChecker: TenantChecker,
         categoryChecker: ProductCategoryChecker,
-        inventoryChecker: InventoryItemChecker,
       ) => {
         return new UpdateProductUseCase(
           repository,
           tenantChecker,
           categoryChecker,
-          inventoryChecker,
         );
       },
 
+      // Recetas: InventoryItemChecker desconectado en esta versión.
       inject: [
         ProductRepository,
         TenantChecker,
         ProductCategoryChecker,
-        InventoryItemChecker,
       ],
     },
 
@@ -171,25 +165,21 @@ import { ProductBranchConfigEntity } from "@/context/product-branch-config/infra
       useFactory: (
         repository: ProductRepository,
         tenantChecker: TenantChecker,
-        recipeInfoProvider: InventoryItemRecipeInfoProvider,
         productCategoryProvider: ProductCategoryProvider,
-        branchChecker: BranchChecker,
       ) => {
         return new SearchProductsUseCase(
           repository,
           tenantChecker,
-          recipeInfoProvider,
           productCategoryProvider,
-          branchChecker,
         );
       },
 
+      // Recetas y sucursal: InventoryItemRecipeInfoProvider y BranchChecker
+      // desconectados en esta versión.
       inject: [
         ProductRepository,
         TenantChecker,
-        InventoryItemRecipeInfoProvider,
         ProductCategoryProvider,
-        BranchChecker,
       ],
     },
 

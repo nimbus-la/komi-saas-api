@@ -1,42 +1,42 @@
-import { Type } from "class-transformer";
-
 import {
-  IsArray,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   MinLength,
-  ValidateNested,
 } from "class-validator";
 
-import { CreateRecipeIngredientDto } from "./create-recipe-ingredient.dto";
+// Recetas: desconectado en esta versión.
+// import { Type } from "class-transformer";
+// import { IsArray, ValidateNested } from "class-validator";
+// import { CreateRecipeIngredientDto } from "./create-recipe-ingredient.dto";
 
 export class CreateProductDto {
 
   @IsUUID()
-  productCategoryId!: string;
+  categoryId!: string;
 
   @IsString()
   @MinLength(2)
-  productName!: string;
+  name!: string;
 
   @IsString()
   @IsOptional()
-  productDescription: string | undefined;
+  description: string | undefined;
 
   @IsString()
   @IsOptional()
-  productImgUrl: string | undefined;
+  imageUrl: string | undefined;
 
   @IsString()
-  productBasePrice!: string;
+  price!: string;
 
   @IsNumber()
-  profitMargin!: number;
+  targetMargin!: number;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateRecipeIngredientDto)
-  recipe!: CreateRecipeIngredientDto[];
+  // Recetas: desconectado en esta versión.
+  // @IsArray()
+  // @ValidateNested({ each: true })
+  // @Type(() => CreateRecipeIngredientDto)
+  // recipe!: CreateRecipeIngredientDto[];
 }

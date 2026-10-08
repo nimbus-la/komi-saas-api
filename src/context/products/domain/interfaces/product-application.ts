@@ -9,9 +9,11 @@ export interface CreateProductApplicationParams {
     productImgUrl: string | undefined;
     productBasePrice: string;
     profitMargin: ProfitMargin;
-    recipe?: CreateProductRecipeIngredientParams[];
+    // Recetas: desconectado en esta versión.
+    // recipe?: CreateProductRecipeIngredientParams[];
 }
 
+/** Recetas: sin uso en esta versión, se conserva para reconectarlas. */
 export interface CreateProductRecipeIngredientParams {
     inventoryItemId: string;
     quantity: string;
@@ -21,14 +23,15 @@ export interface CreateProductRecipeIngredientParams {
 export interface UpdateProductApplicationParams {
     id: string;
     tenantId: string;
-    productCategoryId: string;
-    productName: string;
+    productCategoryId?: string | undefined;
+    productName?: string | undefined;
     productDescription?: string | undefined;
     productImgUrl?: string | undefined;
-    productBasePrice: string;
+    productBasePrice?: string | undefined;
     profitMargin?: ProfitMargin;
-    status: EntityStatus;
-    recipe?: RecipeParams[];
+    status?: EntityStatus | undefined;
+    // Recetas: desconectado en esta versión.
+    // recipe?: RecipeParams[];
 }
 
 
@@ -52,10 +55,8 @@ export interface SearchProductsFilters {
     text?: string | undefined;
     productCategoryId?: string | undefined;
     status?: EntityStatus | undefined;
-    /**
-     * Sucursal en la que se evalúa el stock de los insumos y de la que salen el
-     * precio y el estado de cada producto. Sin ella no se evalúa el stock y se
-     * muestran los valores generales.
-     */
-    branchId?: string | undefined;
+    // Sucursal: desconectado en esta versión. Definía en qué sucursal se
+    // evaluaba el stock de los insumos y de dónde salían el precio y el estado
+    // de cada producto.
+    // branchId?: string | undefined;
 }
