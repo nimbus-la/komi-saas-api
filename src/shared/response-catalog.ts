@@ -130,7 +130,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     // códigos para crecer, y del 1481 al 1499 quedan libres por si hace falta
     // otra parte más.
     // Productos: 1400 - 1420
-    '1400': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se encontró el producto.' },
+    '1400': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'No se ha encontrado información del producto solicitado.' },
     '1401': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El nombre del producto es inválido.' },
     '1402': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'Ya existe un producto registrado con ese nombre.' },
     '1403': { status: ResponseStatus.Error, category: ErrorCategory.Conflict, message: 'No se pudo obtener el siguiente valor de la secuencia de SKU.' },
