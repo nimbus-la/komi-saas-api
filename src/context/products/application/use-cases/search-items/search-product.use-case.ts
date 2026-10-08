@@ -25,11 +25,7 @@ export class SearchProductsUseCase {
         private readonly branchChecker: BranchChecker,
     ) { }
 
-    public async execute(
-        filters: SearchProductsFilters,
-        pagination: Pagination,
-    ): Promise<Paginated<ProductResponse>> {
-
+    public async execute(filters: SearchProductsFilters, pagination: Pagination): Promise<Paginated<ProductResponse>> {
         if (!filters.tenantId) {
             throw new TenantIdRequiredForSearchException();
         }
@@ -73,7 +69,6 @@ export class SearchProductsUseCase {
 
         const products = await Promise.all(
             rows.map(async (product) => {
-
                 const category = await this.productCategoryProvider.get(
                     filters.tenantId,
                     product.productCategoryId,
@@ -106,7 +101,7 @@ export class SearchProductsUseCase {
                     productBasePrice: product.productBasePrice,
                     costCurrency: product.costCurrency,
                     profitMargin: product.profitMargin,
-                    productStatus: product.productStatus,
+                    status: product.status,
 
                     createdAt: product.createdAt,
                     updatedAt: product.updatedAt,

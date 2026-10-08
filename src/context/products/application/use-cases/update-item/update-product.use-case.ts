@@ -25,19 +25,15 @@ export class UpdateProductUseCase {
         private readonly inventoryChecker: InventoryItemChecker,
     ) { }
 
-    public async execute(
-        params: UpdateProductApplicationParams,
-    ): Promise<Product> {
-
-        const tenantExists = await this.tenantChecker.exists(
-            params.tenantId,
-        );
+    public async execute(params: UpdateProductApplicationParams): Promise<Product> {
+        const tenantExists = await this.tenantChecker.exists(params.tenantId);
 
         if (!tenantExists) {
             throw new TenantNotFoundException(
                 params.tenantId,
             );
         }
+
         const product = await this.repository.findById(
             ProductId.create(params.id),
             params.tenantId,
@@ -47,8 +43,8 @@ export class UpdateProductUseCase {
         if (!product) {
             throw new ProductNotFoundException(params.id);
         }
-        if (params.productCategoryId) {
 
+        if (params.productCategoryId) {
             const categoryExists =
                 await this.categoryChecker.existsForTenant(
                     params.tenantId,
@@ -61,10 +57,9 @@ export class UpdateProductUseCase {
                 );
             }
         }
+
         if (params.recipe) {
-
             for (const ingredient of params.recipe) {
-
                 const exists =
                     await this.inventoryChecker.existsForTenant(
                         params.tenantId,
@@ -79,6 +74,7 @@ export class UpdateProductUseCase {
                 }
             }
         }
+
         const current = product.toPrimitives();
 
         const hasChanges =
@@ -100,8 +96,8 @@ export class UpdateProductUseCase {
             (params.profitMargin !== undefined &&
                 params.profitMargin.toPrimitives() !== current.profitMargin) ||
 
-            (params.productStatus !== undefined &&
-                params.productStatus !== current.productStatus) ||
+            (params.status !== undefined &&
+                params.status !== current.status) ||
 
             (params.recipe !== undefined);
 
@@ -134,12 +130,8 @@ export class UpdateProductUseCase {
         });
 
 
-        if (params.productStatus !== undefined) {
-            if (params.productStatus) {
-                product.activate();
-            } else {
-                product.deactivate();
-            }
+        if (params.status !== undefined && params.status !== current.status) {
+            product.changeStatus(params.status);
         }
 
         if (params.recipe) {

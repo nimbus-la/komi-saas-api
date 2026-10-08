@@ -1,3 +1,4 @@
+import { EntityStatus } from "@/shared";
 import { ProfitMargin } from "../value-object/profit-margin.value-object";
 
 export interface CreateProductApplicationParams {
@@ -26,9 +27,18 @@ export interface UpdateProductApplicationParams {
     productImgUrl?: string | undefined;
     productBasePrice: string;
     profitMargin?: ProfitMargin;
-    productStatus: boolean;
+    status: EntityStatus;
     recipe?: RecipeParams[];
 }
+
+
+export interface DeleteProductApplicationParams {
+    id: string;
+    tenantId: string;
+    deletedBy: string;
+}
+
+
 export interface RecipeParams {
     inventoryItemId: string;
     quantity: string;
