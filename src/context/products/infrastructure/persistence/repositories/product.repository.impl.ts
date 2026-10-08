@@ -83,6 +83,7 @@ export class ProductRepositoryImpl extends ProductRepository {
           sku: primitives.productSku,
           imageUrl: primitives.productImgUrl ?? null,
           basePrice: primitives.productBasePrice,
+          cost: primitives.productCost,
           profitMargin: primitives.profitMargin.toString(),
           status: primitives.status,
         },

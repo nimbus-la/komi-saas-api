@@ -31,6 +31,7 @@ const buildProduct = (id: string): ProductResponse => ({
     description: undefined,
     imageUrl: undefined,
     price: '20000',
+    cost: '14000',
     currency: 'COP',
     targetMargin: '30',
     status: EntityStatus.Active,

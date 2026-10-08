@@ -1,3 +1,5 @@
+import Decimal from "decimal.js";
+
 import { EventPublisher, Money, Quantity } from "@/shared";
 
 import { TenantAggregate, TenantDescription, TenantName, TenantNit, TenantRepository, TenantSlug } from "@/context/tenants/domain";
@@ -305,6 +307,7 @@ export class RunSeedUseCase {
                 productSku: ProductSku.fromNumber(await this.products.nextSkuSequence()),
                 productImgUrl: undefined,
                 productBasePrice: Money.of(productData.basePrice),
+                productCost: this.costForMargin(productData.basePrice, productData.profitMargin),
                 profitMargin: ProfitMargin.create(productData.profitMargin),
             });
 
@@ -335,6 +338,18 @@ export class RunSeedUseCase {
         }
 
         return data.products.length;
+    }
+
+
+    /**
+     * Los datos traen precio y margen, no costo. El costo se deriva para que
+     * los tres cuadren: precio × (1 − margen / 100). Es la misma fórmula del
+     * ALTER que rellena product_cost en una base existente.
+     */
+    private costForMargin(basePrice: string, profitMargin: string): Money {
+        const factor = new Decimal(100).minus(profitMargin).div(100);
+
+        return Money.of(Money.of(basePrice).multiply(factor.toString()).getAmount());
     }
 
 

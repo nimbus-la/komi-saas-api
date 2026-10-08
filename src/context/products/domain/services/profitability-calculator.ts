@@ -3,8 +3,8 @@ import Decimal from "decimal.js";
 import {
     InvalidTargetMarginException,
     PriceMarginMismatchException,
-} from "../../../domain/exceptions/product-exception";
-import { ProfitabilityInput, ProfitabilityResult } from "../../../domain/interfaces/profitability";
+} from "../exceptions/product-exception";
+import { ProfitabilityInput, ProfitabilityResult } from "../interfaces/profitability";
 
 const CIEN = new Decimal(100);
 

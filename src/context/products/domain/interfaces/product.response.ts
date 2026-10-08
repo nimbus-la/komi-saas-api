@@ -13,6 +13,7 @@ export interface ProductResponse {
     description: string | undefined;
     imageUrl: string | undefined;
     price: string;
+    cost: string;
     currency: string;
     targetMargin: string;
     status: EntityStatus;

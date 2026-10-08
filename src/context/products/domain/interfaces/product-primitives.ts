@@ -12,6 +12,7 @@ export interface ProductPrimitives {
     productImgUrl: string | undefined;
     productBasePrice: string;
     costCurrency: string;
+    productCost: string;
     profitMargin: string;
     status: EntityStatus;
     ingredients: RecipeIngredientPrimitives[];

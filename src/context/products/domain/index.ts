@@ -19,3 +19,4 @@ export * from './recipe/exceptions/duplicate-ingredient.exception';
 export * from './recipe/exceptions/ingredient-not-in-recipe.exception';
 export * from './recipe/exceptions/inventory-item-not-valid-for-tenant.exception';
 export * from './recipe/exceptions/non-positive-ingredient-quantity.exception';
+export * from './services/profitability-calculator';

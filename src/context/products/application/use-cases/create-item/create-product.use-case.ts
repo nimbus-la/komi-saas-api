@@ -1,4 +1,4 @@
-import { BasePriceError, EventPublisher, Money } from "@/shared";
+import { EventPublisher, Money } from "@/shared";
 
 import { CreateProductApplicationParams } from "@/context/products/domain/interfaces/product-application";
 import { ProductName } from "@/context/products/domain/value-object/product-name.value-object";
@@ -88,13 +88,8 @@ export class CreateProductUseCase {
         const sequence =
             await this.repository.nextSkuSequence();
 
-        const productBasePrice = Money.of(params.productBasePrice);
-
-        if (productBasePrice.getAmount() === "0.00") {
-            throw new BasePriceError(
-                "El precio base del producto debe ser mayor que 0."
-            );
-        }
+        // El agregado valida que el precio sea mayor que 0 y que cuadre con el
+        // costo y el margen.
         const product = Product.create({
             tenantId: params.tenantId,
             productCategoryId: params.productCategoryId,
@@ -103,8 +98,8 @@ export class CreateProductUseCase {
             productSku: ProductSku.fromNumber(sequence),
             productImgUrl: params.productImgUrl,
             productBasePrice: Money.of(params.productBasePrice),
+            productCost: Money.of(params.productCost),
             profitMargin: params.profitMargin,
-
         });
 
         // Recetas: desconectado en esta versión.

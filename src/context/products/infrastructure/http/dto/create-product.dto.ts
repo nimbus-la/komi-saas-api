@@ -1,5 +1,6 @@
 import {
   IsNumber,
+  IsNumberString,
   IsOptional,
   IsString,
   IsUUID,
@@ -28,8 +29,15 @@ export class CreateProductDto {
   @IsOptional()
   imageUrl: string | undefined;
 
+  /**
+   * Precio, costo y margen tienen que cuadrar: el precio debe dejar ese margen
+   * sobre el costo. El front puede obtener el precio en POST /products/profitability.
+   */
   @IsString()
   price!: string;
+
+  @IsNumberString()
+  cost!: string;
 
   @IsNumber()
   targetMargin!: number;

@@ -11,4 +11,4 @@ export * from './use-cases/search-items/search-product.use-case';
 export * from './use-cases/delete-item/delete-product.use-case';
 export * from './use-cases/update-item/update-product.use-case';
 export * from './use-cases/calculate-profitability/calculate-profitability.use-case';
-export * from './use-cases/calculate-profitability/profitability-calculator';
+

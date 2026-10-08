@@ -98,6 +98,9 @@ export class UpdateProductUseCase {
             (params.productBasePrice !== undefined &&
                 params.productBasePrice !== current.productBasePrice) ||
 
+            (params.productCost !== undefined &&
+                params.productCost !== current.productCost) ||
+
             (params.profitMargin !== undefined &&
                 params.profitMargin.toPrimitives() !== current.profitMargin) ||
 
@@ -130,6 +133,13 @@ export class UpdateProductUseCase {
                 params.productBasePrice !== undefined
                     ? Money.of(params.productBasePrice)
                     : Money.of(current.productBasePrice),
+
+            // Lo que no llega se toma de lo guardado, y el agregado comprueba
+            // que el costo, el precio y el margen resultantes cuadren.
+            productCost:
+                params.productCost !== undefined
+                    ? Money.of(params.productCost)
+                    : Money.of(current.productCost),
 
             profitMargin:
                 params.profitMargin ?? ProfitMargin.create(current.profitMargin),

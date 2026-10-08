@@ -137,7 +137,7 @@ export const RESPONSE_CATALOG: Record<string, CatalogEntryResponse> = {
     '1404': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra inactivo.' },
     '1405': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto ya se encuentra activo.' },
     '1406': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El producto fue eliminado y no se puede modificar.' },
-    '1407': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen de beneficio no puede ser menor que 0.' },
+    '1407': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El margen de beneficio debe ser mayor que 0 y menor que 100.' },
     '1408': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'No se encontraron cambios para actualizar el producto.' },
     '1409': { status: ResponseStatus.Error, category: ErrorCategory.Validation, message: 'El negocio es obligatorio para buscar productos.' },
     '1410': { status: ResponseStatus.Error, category: ErrorCategory.NotFound, message: 'La sucursal no existe o no está disponible.' },

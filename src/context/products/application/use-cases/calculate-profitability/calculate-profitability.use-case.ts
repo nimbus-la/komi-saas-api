@@ -1,7 +1,7 @@
 import { Money } from "@/shared";
 
 import { TenantNotFoundException } from "@/context/products/domain/exceptions/product-exception";
-import { ProfitabilityCalculator } from "@/context/products/application/use-cases/calculate-profitability/profitability-calculator";
+import { ProfitabilityCalculator } from "@/context/products/domain/services/profitability-calculator";
 import { ProfitabilityResult } from "@/context/products/domain/interfaces/profitability";
 import { TenantChecker } from "../../ports/tenant-checker";
 
