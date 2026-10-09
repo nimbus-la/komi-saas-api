@@ -1,6 +1,5 @@
 import {
   IsIn,
-  IsNumber,
   IsNumberString,
   IsOptional,
   IsString,
@@ -47,8 +46,8 @@ export class UpdateProductDto {
   cost?: string;
 
   @IsOptional()
-  @IsNumber()
-  targetMargin?: number;
+  @IsNumberString()
+  targetMargin?: string;
 
   @IsOptional()
   @IsIn(ENTITY_STATUSES_USER_SET)
