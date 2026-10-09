@@ -1,5 +1,4 @@
 import {
-  IsNumber,
   IsNumberString,
   IsOptional,
   IsString,
@@ -39,8 +38,8 @@ export class CreateProductDto {
   @IsNumberString()
   cost!: string;
 
-  @IsNumber()
-  targetMargin!: number;
+  @IsNumberString()
+  targetMargin!: string;
 
   // Recetas: desconectado en esta versión.
   // @IsArray()

@@ -37,7 +37,7 @@ export class ProductController {
       productImgUrl: dto.imageUrl,
       productBasePrice: dto.price,
       productCost: dto.cost,
-      profitMargin: ProfitMargin.create(dto.targetMargin.toString()),
+      profitMargin: ProfitMargin.create(dto.targetMargin),
     });
 
     return this.findOne(user.tenantId, product.id.value);
@@ -63,7 +63,7 @@ export class ProductController {
       // El margen es opcional en una actualización parcial: sin dato no se
       // envía la clave, y el caso de uso conserva el que ya tiene el producto.
       ...(dto.targetMargin !== undefined
-        ? { profitMargin: ProfitMargin.create(dto.targetMargin.toString()) }
+        ? { profitMargin: ProfitMargin.create(dto.targetMargin) }
         : {}),
     });
   }
