@@ -1,5 +1,3 @@
-import { MAX_LENGTH } from "class-validator";
-
 /**
  * Límites de validación por defecto, compartidos por las DTOs (la entrada HTTP)
  * y los objetos de valor del dominio.

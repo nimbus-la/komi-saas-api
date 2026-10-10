@@ -358,36 +358,6 @@ CREATE INDEX IF NOT EXISTS idx_inventory_movements_occurred
 CREATE INDEX IF NOT EXISTS idx_inventory_movements_tenant
     ON inventory_movements (tenant_id);
 
--- ============================================
--- TABLA DE CATEGORÍAS
--- ============================================
-CREATE TABLE IF NOT EXISTS product_category (
-    id UUID PRIMARY KEY,
-
-    tenant_id UUID NOT NULL
-        REFERENCES tenants(tenant_id)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT,
-
-    name VARCHAR(120) NOT NULL,
-    description TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_product_category_tenant
-    ON product_category (tenant_id);
-
--- El nombre de la categoría es único dentro de cada tenant,
--- sin distinguir mayúsculas/minúsculas.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_product_category_name_tenant_lower
-ON product_category (
-    tenant_id,
-    LOWER(name)
-);
-
 
 -- ============================================
 -- PRODUCTOS, RECETAS Y CONFIGURACIÓN POR SUCURSAL

@@ -1,10 +1,41 @@
 -- ============================================
--- PRODUCTOS, RECETAS Y CONFIGURACIÓN POR SUCURSAL
+-- CATEGORÍAS, PRODUCTOS, RECETAS Y CONFIGURACIÓN POR SUCURSAL
 -- ============================================
--- Se incluye desde 01-init.sql con \ir, después de tenants, sucursales,
--- inventario y categorías, que tienen las tablas a las que apuntan estas
--- llaves foráneas. Está en una subcarpeta para que Postgres no la ejecute por
--- su cuenta al iniciar.
+-- Se incluye desde 01-init.sql con \ir, después de tenants, sucursales e
+-- inventario, que tienen las tablas a las que apuntan estas llaves foráneas.
+-- Las categorías van primero porque los productos las referencian.
+-- Está en una subcarpeta para que Postgres no la ejecute por su cuenta al iniciar.
+
+
+-- ============================================
+-- TABLA DE CATEGORÍAS DE PRODUCTO
+-- ============================================
+CREATE TABLE IF NOT EXISTS product_category (
+    category_id UUID PRIMARY KEY,
+
+    tenant_id UUID NOT NULL
+        REFERENCES tenants(tenant_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    name VARCHAR(40) NOT NULL,
+    description VARCHAR(250),
+    status VARCHAR(12) NOT NULL DEFAULT 'ACTIVE'
+        CHECK (status IN ('ACTIVE', 'INACTIVE', 'ARCHIVED', 'DELETED')),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_category_tenant
+    ON product_category (tenant_id);
+
+-- El nombre no se repite dentro del negocio, sin importar mayúsculas.
+-- Las eliminadas no cuentan, así el nombre queda libre para reusarlo.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_product_category_name_tenant_lower
+    ON product_category (tenant_id, LOWER(name))
+    WHERE status <> 'DELETED';
+
 
 -- ============================================
 -- SECUENCIA PARA SKU DE PRODUCTOS
@@ -26,7 +57,7 @@ CREATE TABLE IF NOT EXISTS product (
         ON DELETE RESTRICT,
 
     product_category_id UUID NOT NULL
-        REFERENCES product_category(id)
+        REFERENCES product_category(category_id)
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
 
