@@ -14,6 +14,7 @@ import {
     ProductCategoryRepository,
     SearchCategoriesFilters,
 } from "../../../domain";
+import { VISIBLE_ENTITY_STATUSES } from "@/shared";
 
 /** Violación de restricción única en PostgreSQL. */
 const UNIQUE_VIOLATION = "23505";
@@ -119,12 +120,14 @@ export class ProductCategoryRepositoryImpl extends ProductCategoryRepository {
                 .addSelect(
                     `(SELECT COUNT(*)::int FROM product p
                       WHERE p.product_category_id = category.id
-                        AND p.tenant_id = :tenantId)`,
+                        AND p.tenant_id = :tenantId
+                        AND p.product_status IN (:...visibleStatuses))`,
                     "product_count",
                 )
                 .where("category.tenantId = :tenantId", {
                     tenantId: filters.tenantId,
-                });
+                })
+                .setParameter("visibleStatuses", [...VISIBLE_ENTITY_STATUSES]);
 
         if (filters.id) {
             query.andWhere("category.id = :id", { id: filters.id });
