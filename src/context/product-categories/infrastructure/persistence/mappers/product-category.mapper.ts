@@ -1,30 +1,45 @@
 import { ProductCategory } from "../../../domain";
-import { ProductCategoryEntity } from "../models/product-category.entity";
 
+import { ProductCategoryModel } from "../models/product-category.model";
+
+
+/**
+ * Traduce entre el agregado ProductCategory y la fila de la tabla product_category.
+ * Existe para que el dominio no dependa de TypeORM, así que solo lo usa el repositorio.
+ */
 export class ProductCategoryMapper {
-    static toEntity(category: ProductCategory): ProductCategoryEntity {
+    /**
+     * Convierte la categoría en el modelo que se guarda en la base.
+     * La descripción vacía se guarda como null, que es como la columna la espera.
+     */
+    public static toModel(category: ProductCategory): ProductCategoryModel {
         const primitives = category.toPrimitives();
 
-        const entity = new ProductCategoryEntity();
+        const model = new ProductCategoryModel();
 
-        entity.id = primitives.id;
-        entity.tenantId = primitives.tenantId;
-        entity.name = primitives.name;
-        entity.description = primitives.description ?? null;
-        entity.isActive = primitives.isActive;
-        entity.createdAt = primitives.createdAt;
-        entity.updatedAt = primitives.updatedAt;
+        model.categoryId = primitives.id;
+        model.tenantId = primitives.tenantId;
+        model.name = primitives.name;
+        model.description = primitives.description ?? null;
+        model.status = primitives.status;
+        model.createdAt = primitives.createdAt;
+        model.updatedAt = primitives.updatedAt;
 
-        return entity;
+        return model;
     }
 
-    static toDomain(entity: ProductCategoryEntity): ProductCategory {
+
+    /**
+     * Reconstruye la categoría a partir de la fila leída de la base.
+     * El null de la descripción vuelve a ser undefined, que es lo que usa el dominio.
+     */
+    public static toDomain(entity: ProductCategoryModel): ProductCategory {
         return ProductCategory.fromPrimitives({
-            id: entity.id,
+            id: entity.categoryId,
             tenantId: entity.tenantId,
             name: entity.name,
             description: entity.description ?? undefined,
-            isActive: entity.isActive,
+            status: entity.status,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
         });

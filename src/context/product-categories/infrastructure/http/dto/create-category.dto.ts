@@ -12,8 +12,8 @@ export class CreateCategoryDto {
 
     @IsString()
     @IsNotEmpty()
-    @MinLength(VALIDATION_DEFAULTS.NAME.MIN_LENGTH)
-    @MaxLength(VALIDATION_DEFAULTS.NAME.MAX_LENGTH)
+    @MinLength(VALIDATION_DEFAULTS.PRODUCTS_CATEGORY.MIN_LENGTH_NAME)
+    @MaxLength(VALIDATION_DEFAULTS.PRODUCTS_CATEGORY.MAX_LENGTH_NAME)
     name!: string;
 
     @IsOptional()

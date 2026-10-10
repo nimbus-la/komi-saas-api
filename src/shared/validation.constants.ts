@@ -1,3 +1,5 @@
+import { MAX_LENGTH } from "class-validator";
+
 /**
  * Límites de validación por defecto, compartidos por las DTOs (la entrada HTTP)
  * y los objetos de valor del dominio.
@@ -22,6 +24,14 @@ export const VALIDATION_DEFAULTS = {
         MIN_LENGTH: 2,
         MAX_LENGTH: 120,
     },
+
+    PRODUCTS_CATEGORY: {
+        MIN_LENGTH_NAME: 2,
+        MAX_LENGTH_NAME: 40,
+        MAX_LENGTH_DESCRIPTION: 250
+    },
+
+    STATUS_MAX_LENGTH: 12,
 
     /**
      * Código estable con el que el front señala una entrada de un catálogo

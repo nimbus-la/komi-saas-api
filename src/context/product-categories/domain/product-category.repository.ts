@@ -13,7 +13,7 @@ export abstract class ProductCategoryRepository {
      * distinguir mayúsculas. Las eliminadas no cuentan porque su nombre queda libre.
      * La propia categoría se ignora, así que sirve igual al crear y al renombrar.
      */
-    abstract isNameTake(category: ProductCategory): Promise<boolean>;
+    abstract isNameTaken(category: ProductCategory): Promise<boolean>;
 
     abstract update(category: ProductCategory): Promise<void>;
 

@@ -1,4 +1,6 @@
 import { Pagination } from "@/interfaces";
+import { EntityStatus } from "@/shared";
+
 import { CategoryPrimitives } from "./category.primitives";
 
 
@@ -10,9 +12,9 @@ export interface CategoryListItem extends CategoryPrimitives {
 
 export interface SearchCategoriesFilters extends Pagination {
     tenantId: string;
-    id?: string | undefined;
+    categoryId?: string | undefined;
     text?: string | undefined;
-    isActive?: boolean | undefined;
+    status?: EntityStatus | undefined;
     createdAt?: string | undefined;
     updatedAt?: string | undefined;
 }

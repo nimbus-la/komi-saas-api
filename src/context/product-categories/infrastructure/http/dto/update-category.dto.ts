@@ -1,5 +1,5 @@
 import {
-    IsBoolean,
+    IsIn,
     IsOptional,
     IsString,
     IsUUID,
@@ -7,7 +7,8 @@ import {
     MinLength,
 } from "class-validator";
 
-import { VALIDATION_DEFAULTS } from "@/shared";
+import { ENTITY_STATUSES_USER_SET, EntityStatus, VALIDATION_DEFAULTS } from "@/shared";
+
 
 export class UpdateCategoryDto {
     @IsUUID()
@@ -15,15 +16,16 @@ export class UpdateCategoryDto {
 
     @IsOptional()
     @IsString()
-    @MinLength(VALIDATION_DEFAULTS.NAME.MIN_LENGTH)
-    @MaxLength(VALIDATION_DEFAULTS.NAME.MAX_LENGTH)
+    @MinLength(VALIDATION_DEFAULTS.PRODUCTS_CATEGORY.MIN_LENGTH_NAME)
+    @MaxLength(VALIDATION_DEFAULTS.PRODUCTS_CATEGORY.MAX_LENGTH_NAME)
     name?: string;
 
     @IsOptional()
     @IsString()
+    @MaxLength(VALIDATION_DEFAULTS.PRODUCTS_CATEGORY.MAX_LENGTH_DESCRIPTION)
     description?: string;
 
     @IsOptional()
-    @IsBoolean()
-    isActive?: boolean;
+    @IsIn(ENTITY_STATUSES_USER_SET)
+    status?: EntityStatus;
 }

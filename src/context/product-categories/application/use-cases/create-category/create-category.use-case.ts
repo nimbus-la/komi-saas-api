@@ -35,7 +35,7 @@ export class CreateCategoryUseCase {
         });
 
         // El id es nuevo y no está en la tabla, así que solo compara contra las demás
-        if (await this.repository.isNameTake(category)) {
+        if (await this.repository.isNameTaken(category)) {
             throw new ProductCategoryAlreadyExistsException(category.getName());
         }
 

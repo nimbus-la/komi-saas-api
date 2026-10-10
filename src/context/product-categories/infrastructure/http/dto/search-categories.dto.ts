@@ -1,7 +1,7 @@
-import { Transform, Type } from "class-transformer";
+import { Type } from "class-transformer";
 import {
-    IsBoolean,
     IsDateString,
+    IsIn,
     IsInt,
     IsOptional,
     IsString,
@@ -10,24 +10,21 @@ import {
     Min,
 } from "class-validator";
 
-import { VALIDATION_DEFAULTS } from "@/shared";
+import { ENTITY_STATUSES_USER_SET, EntityStatus, VALIDATION_DEFAULTS } from "@/shared";
+
 
 export class SearchCategoriesDto {
+    @IsOptional()
+    @IsUUID()
+    categoryId?: string;
+
     @IsOptional()
     @IsString()
     text?: string;
 
     @IsOptional()
-    @IsUUID()
-    id?: string;
-
-    // Llega como string en el query: sin este Transform, "false" sería truthy.
-    @IsOptional()
-    @Transform(({ value }) =>
-        value === undefined ? undefined : value === "true" || value === true,
-    )
-    @IsBoolean()
-    isActive?: boolean;
+    @IsIn(ENTITY_STATUSES_USER_SET)
+    status?: EntityStatus;
 
     @IsOptional()
     @IsDateString()

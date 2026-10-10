@@ -49,7 +49,7 @@ export class UpdateCategoryUseCase {
         // Se valida despues de aplicar el cambio en el dominio para comparar con el nombre nuevo.
         if (
             params.name !== undefined &&
-            await this.repository.isNameTake(category)
+            await this.repository.isNameTaken(category)
         ) {
             throw new ProductCategoryAlreadyExistsException(category.getName());
         }
