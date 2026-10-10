@@ -8,9 +8,17 @@ export abstract class ProductCategoryRepository {
 
     abstract findById(categoryId: string, tenantId: string): Promise<ProductCategory | null>;
 
-    abstract existsByName(name: string, tenantId: string, excludeId?: string): Promise<boolean>;
+    /**
+     * Indica si otra categoría del mismo negocio ya usa el nombre de esta, sin
+     * distinguir mayúsculas. Las eliminadas no cuentan porque su nombre queda libre.
+     * La propia categoría se ignora, así que sirve igual al crear y al renombrar.
+     */
+    abstract isNameTake(category: ProductCategory): Promise<boolean>;
 
     abstract update(category: ProductCategory): Promise<void>;
+
+    /** Consulta el total de productos asociados a una categoria. Eliminados y archivados no cuentan. */
+    abstract countProducts(categoryId: string, tenantId: string): Promise<number>;
 
     abstract search(filters: SearchCategoriesFilters): Promise<Paginated<CategoryListItem>>;
 }

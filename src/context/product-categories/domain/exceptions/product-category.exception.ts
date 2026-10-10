@@ -88,3 +88,17 @@ export class ProductCategoryDeletedException extends DomainException {
     });
   }
 }
+
+
+export class CategoryHasProductsException extends DomainException {
+  constructor(name: string, productCount: number) {
+    const products = productCount === 1
+      ? "1 producto asociado"
+      : `${productCount} productos asociados`;
+
+    super({
+      code: "1448",
+      detail: `No es posible eliminar la categoría "${name}" porque tiene ${products}. Asígnalos a otra categoría o elimínalos y vuelve a intentarlo.`,
+    });
+  }
+}

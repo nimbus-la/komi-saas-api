@@ -1,3 +1,5 @@
+import { EntityStatus } from "@/shared";
+
 export interface CreateCategoryApplicationParams {
     tenantId: string;
     name: string;
@@ -7,7 +9,14 @@ export interface CreateCategoryApplicationParams {
 
 export interface UpdateCategoryApplicationParams {
     tenantId: string;
+    categoryId: string;
     name?: string | undefined;
     description?: string | undefined;
-    isActive?: boolean | undefined;
+    status?: EntityStatus;
+}
+
+
+export interface DeleteCategoryApplicationParams {
+    categoryId: string;
+    tenantId: string;
 }

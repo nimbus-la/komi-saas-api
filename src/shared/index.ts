@@ -9,6 +9,7 @@ export * from './value-object/money.value-object';
 export * from './value-object/quantity.value-object';
 export * from './value-object/uuid-generator.value-object';
 export * from './value-object/uuid.value-object';
+export * from './domain/exceptions/tenant.exceptions';
 export * from './domain/status/entity-status';
 export * from './domain/status/status.exception';
 export * from './domain/status/status.value-object';
