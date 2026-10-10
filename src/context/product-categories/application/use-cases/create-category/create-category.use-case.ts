@@ -1,47 +1,43 @@
+import { TenantNotFoundException } from "@/shared";
+
 import {
     CategoryName,
-    CreateCategoryApplicationParams,
     ProductCategory,
     ProductCategoryAlreadyExistsException,
     ProductCategoryRepository,
-    TenantNotFoundException,
 } from "../../../domain";
+
+import { CreateCategoryApplicationParams } from "../../interfaces/category.params"
 import { TenantChecker } from "../../ports/tenant-checker";
 
+
 export class CreateCategoryUseCase {
-    constructor(
-        private readonly repository: ProductCategoryRepository,
-        private readonly tenantChecker: TenantChecker,
-    ) { }
+    private readonly repository: ProductCategoryRepository;
+    private readonly tenantChecker: TenantChecker;
 
-    public async execute(
-        params: CreateCategoryApplicationParams,
-    ): Promise<void> {
 
-        const tenantExists = await this.tenantChecker.exists(params.tenantId);
+    constructor(repository: ProductCategoryRepository, tenantChecker: TenantChecker) {
+        this.repository = repository;
+        this.tenantChecker = tenantChecker;
+    }
 
-        if (!tenantExists) {
+
+    public async execute(params: CreateCategoryApplicationParams): Promise<void> {
+        if (!(await this.tenantChecker.exists(params.tenantId))) {
             throw new TenantNotFoundException(params.tenantId);
         }
 
-        // Se normaliza antes de consultar: si no, "  Bebidas " esquiva el chequeo
-        // de duplicados y termina guardándose como "Bebidas".
-        const name = CategoryName.create(params.name);
-
-        const exists = await this.repository.existsByName(
-            name.value,
-            params.tenantId,
-        );
-
-        if (exists) {
-            throw new ProductCategoryAlreadyExistsException(name.value);
-        }
-
+        // CategoryName limpia los espacios, así "  Bebidas " se compara como "Bebidas"
         const category = ProductCategory.create({
             tenantId: params.tenantId,
-            name,
-            description: params.description,
+            name: CategoryName.create(params.name),
+            description: params.description
         });
+
+        // El id es nuevo y no está en la tabla, así que solo compara contra las demás
+        if (await this.repository.isNameTake(category)) {
+            throw new ProductCategoryAlreadyExistsException(category.getName());
+        }
 
         await this.repository.save(category);
     }

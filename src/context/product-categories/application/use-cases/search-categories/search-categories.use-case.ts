@@ -1,4 +1,4 @@
-import { Paginated, Pagination } from "@/interfaces";
+import { Paginated } from "@/interfaces";
 
 import {
     CategoryListItem,
@@ -7,40 +7,29 @@ import {
     TenantIdRequiredForSearchException,
     TenantNotFoundException,
 } from "../../../domain";
+
 import { TenantChecker } from "../../ports/tenant-checker";
 
 export class SearchCategoriesUseCase {
-    constructor(
-        private readonly repository: ProductCategoryRepository,
-        private readonly tenantChecker: TenantChecker,
-    ) { }
+    private readonly repository: ProductCategoryRepository;
+    private readonly tenantChecker: TenantChecker;
 
-    public async execute(
-        filters: SearchCategoriesFilters,
-        pagination: Pagination,
-    ): Promise<Paginated<CategoryListItem>> {
 
-        if (!filters.tenantId) {
+    constructor(repository: ProductCategoryRepository, tenantChecker: TenantChecker) {
+        this.repository = repository;
+        this.tenantChecker = tenantChecker;
+    }
+
+
+    public async execute(params: SearchCategoriesFilters): Promise<Paginated<CategoryListItem>> {
+        if (!params.tenantId) {
             throw new TenantIdRequiredForSearchException();
         }
 
-        const tenantExists = await this.tenantChecker.exists(filters.tenantId);
-
-        if (!tenantExists) {
-            throw new TenantNotFoundException(filters.tenantId);
+        if (!(await this.tenantChecker.exists(params.tenantId))) {
+            throw new TenantNotFoundException(params.tenantId);
         }
 
-        const { rows, pageNumber, pageSize, total } =
-            await this.repository.search(filters, pagination);
-
-        return {
-            rows: rows.map(({ category, productCount }) => ({
-                ...category.toPrimitives(),
-                productCount,
-            })),
-            pageNumber,
-            pageSize,
-            total,
-        };
+        return await this.repository.search(params);
     }
 }
