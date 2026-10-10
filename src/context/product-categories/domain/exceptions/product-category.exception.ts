@@ -9,6 +9,7 @@ export class ProductCategoryNotFoundException extends DomainException {
   }
 }
 
+
 export class ProductCategoryAlreadyExistsException extends DomainException {
   constructor(name: string) {
     super({
@@ -17,6 +18,7 @@ export class ProductCategoryAlreadyExistsException extends DomainException {
     });
   }
 }
+
 
 export class ProductCategoryAlreadyActivatedException extends DomainException {
   constructor() {
@@ -27,6 +29,7 @@ export class ProductCategoryAlreadyActivatedException extends DomainException {
   }
 }
 
+
 export class ProductCategoryAlreadyDeactivatedException extends DomainException {
   constructor() {
     super({
@@ -35,6 +38,7 @@ export class ProductCategoryAlreadyDeactivatedException extends DomainException 
     });
   }
 }
+
 
 export class CategoryNameTooShortException extends DomainException {
   constructor(minLength: number) {
@@ -45,6 +49,7 @@ export class CategoryNameTooShortException extends DomainException {
   }
 }
 
+
 export class CategoryNameTooLongException extends DomainException {
   constructor(maxLength: number) {
     super({
@@ -53,6 +58,7 @@ export class CategoryNameTooLongException extends DomainException {
     });
   }
 }
+
 
 export class TenantNotFoundException extends DomainException {
   constructor(tenantId: string) {
@@ -63,11 +69,22 @@ export class TenantNotFoundException extends DomainException {
   }
 }
 
+
 export class TenantIdRequiredForSearchException extends DomainException {
   constructor() {
     super({
       code: "1447",
       detail: "El negocio es obligatorio para operar sobre categorías.",
+    });
+  }
+}
+
+
+export class ProductCategoryDeletedException extends DomainException {
+  constructor(id: string) {
+    super({
+      code: "1449",
+      detail: `La categoría con id '${id}' fue eliminada y no se puede modificar.`,
     });
   }
 }
